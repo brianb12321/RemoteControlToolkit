@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net47</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="1.9.0" />
+    <PackageReference Include="NAudio.Flac" Version="1.0.5702.29018" />
+    <PackageReference Include="NAudio.Vorbis" Version="1.0.0" />
+    <PackageReference Include="VideoLibrary" Version="2.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RemoteControlToolkitCore.Common\RemoteControlToolkitCore.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
+</Project>
