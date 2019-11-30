@@ -72,7 +72,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 {
                     CancelProcess(pid);
                 }
-                catch (ProcessException e)
+                catch
                 {
                 }
             }

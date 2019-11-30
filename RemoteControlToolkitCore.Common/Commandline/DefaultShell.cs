@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net.Mime;
 using System.Text;
 using System.Threading;
 using Crayon;
@@ -16,13 +18,14 @@ using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Scripting;
+using RemoteControlToolkitCore.Common.Utilities;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {
     [PluginModule(Name = "shell", ExecutingSide = NetworkSide.Proxy | NetworkSide.Server)]
     [CommandHelp("The main entry point for executing commands.")]
-    public class DefaultShell : RCTApplication, ICommandShell
+    public class DefaultShell : RCTApplication, IShellExtensions
     {
         private List<string> _history;
         private IScriptingEngine _engine;
@@ -36,6 +39,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public override CommandResponse Execute(CommandRequest args, RCTProcess currentProc, CancellationToken token)
         {
+            initializeEnvironmentVariables(currentProc);
             currentProc.ControlC += CurrentProc_ControlC;
             _builtInCommands.Add("cls", (args2) =>
             {
@@ -55,6 +59,27 @@ namespace RemoteControlToolkitCore.Common.Commandline
             _builtInCommands.Add("title", arg2 =>
             {
                 currentProc.Out.Write($"\u001b]2;{arg2.Arguments[1].ToString()}\007");
+                return new CommandResponse(CommandResponse.CODE_SUCCESS);
+            });
+            _builtInCommands.Add("set", arg2 =>
+            {
+                if (arg2.Arguments.Count() <= 1)
+                {
+                    currentProc.Out.WriteLine(currentProc.EnvironmentVariables.ShowDictionary());
+                }
+                else
+                {
+                    string key = arg2.Arguments[1].ToString();
+                    if (currentProc.EnvironmentVariables.ContainsKey(key))
+                    {
+                        currentProc.EnvironmentVariables[key] = arg2.Arguments[2].ToString();
+                    }
+                    else
+                    {
+                        currentProc.EnvironmentVariables.Add(key, arg2.Arguments[2].ToString());
+                    }
+                }
+
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             });
             string command = string.Empty;
@@ -89,7 +114,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                         currentProc.Out.Write($"[{Environment.MachineName}]> ");
                     }
 
-                    string newCommand = readLine(currentProc.In, currentProc.Out, sb);
+                    string newCommand = ReadLine(currentProc, sb, _history);
                     if (string.IsNullOrWhiteSpace(newCommand)) continue;
                     _history.Add(newCommand);
                     var result = executeCommand(newCommand, currentProc, token);
@@ -99,13 +124,23 @@ namespace RemoteControlToolkitCore.Common.Commandline
             else return executeCommand(command, currentProc, token);
         }
 
-        private string readLine(TextReader tr, TextWriter tw, StringBuilder sb)
+        private void initializeEnvironmentVariables(RCTProcess process)
         {
-            int historyPosition = _history.Count;
-            int col;
-            int row;
-            //save cursor position.
-            tw.Write("\u001b[s");
+            _logger.LogInformation("Initializing environment variables.");
+            process.EnvironmentVariables.Add("TERMINAL_ROWS", "36");
+            process.EnvironmentVariables.Add("TERMINAL_COLUMNS", "130");
+        }
+
+
+        public string ReadLine(RCTProcess process, StringBuilder sb, List<string> history)
+        {
+            TextReader tr = process.In;
+            TextWriter tw = process.Out;
+            int col = int.Parse(process.EnvironmentVariables["TERMINAL_COLUMNS"]);
+            int row = int.Parse(process.EnvironmentVariables["TERMINAL_ROWS"]);
+            int historyPosition = history.Count;
+            int originalCol = int.Parse(getCursorPosition(tw, tr).column);
+            int originalRow = int.Parse(getCursorPosition(tw, tr).row);
             string c;
             int cursorPosition = 0;
             //Read from the terminal
@@ -121,6 +156,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                             sb.Remove(cursorPosition - 1, 1);
                             cursorPosition--;
                         }
+
                         break;
                     case "\u001b":
                         char[] chars = new char[4];
@@ -134,6 +170,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                                 {
                                     cursorPosition = Math.Max(0, cursorPosition - 1);
                                 }
+
                                 break;
                             //Cursor Right
                             case "[C":
@@ -141,7 +178,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                                 break;
                             //Up Arrow
                             case "[A":
-                                if (_history.Count > 0 && historyPosition > 0)
+                                if (history.Count > 0 && historyPosition > 0)
                                 {
                                     historyPosition--;
                                     sb.Clear();
@@ -150,19 +187,20 @@ namespace RemoteControlToolkitCore.Common.Commandline
                                     sb.Append(historyCommand);
                                     cursorPosition = historyCommand.Length;
                                 }
+
                                 break;
                             //Down Arrow
                             case "[B":
-                                if (_history.Count > 0 && historyPosition < _history.Count - 1)
+                                if (history.Count > 0 && historyPosition < _history.Count - 1)
                                 {
                                     historyPosition++;
                                     sb.Clear();
                                     cursorPosition = 0;
-                                    string historyCommand = _history[historyPosition];
+                                    string historyCommand = history[historyPosition];
                                     sb.Append(historyCommand);
                                     cursorPosition = historyCommand.Length;
                                 }
-                                break;
+
                                 break;
                             //Home
                             case "[1~":
@@ -172,28 +210,95 @@ namespace RemoteControlToolkitCore.Common.Commandline
                             case "[4~":
                                 cursorPosition = sb.Length;
                                 break;
+                            //F1
+                            case "[11~":
+                                sb.Clear();
+                                cursorPosition = 0;
+                                break;
                         }
+
                         break;
                     default:
                         sb.Insert(cursorPosition, c);
                         cursorPosition++;
                         break;
                 }
+
+                int realStringLength = sb.Length + originalCol;
+                int realCursorPosition = (cursorPosition + originalCol);
+                int rowsToMove = realStringLength / col;
+                int cursorRowsToMove = realCursorPosition / col;
+                int cellsToMove = (realCursorPosition % col) - 1;
+                //The cursor position is a multiple of the column
+                if (cellsToMove == -1)
+                {
+                    cursorRowsToMove--;
+                    cellsToMove = col;
+                }
                 //Restore saved cursor position.
-                tw.Write("\u001b[u");
-                //Clear line
-                tw.Write("\u001b[0K");
+                tw.Write($"\u001b[{originalRow};{originalCol}H");
+                //Clear lines
+                if (rowsToMove > 0)
+                {
+                    for (int i = 0; i <= rowsToMove; i++)
+                    {
+                        tw.Write("\u001b[0K");
+                        tw.Write("\u001b[B");
+                        tw.Write("\u001b[10000000000D");
+                    }
+                }
+                else
+                {
+                    tw.Write("\u001b[0K");
+                }
+
+                tw.Write($"\u001b[{originalRow};{originalCol}H");
                 //Print data
                 tw.Write(sb.ToString());
-                tw.Write("\u001b[u");
+                tw.Write($"\u001b[{originalRow};{originalCol}H");
+                //Reposition cursor
                 if (cursorPosition > 0)
                 {
-                    tw.Write("\u001b[" + cursorPosition + "C");
+                    if (realCursorPosition > col)
+                    {
+                        for (int i = 0; i < cursorRowsToMove; i++)
+                        {
+                            tw.Write("\u001b[E");
+
+                        }
+
+                        if (cellsToMove > 0)
+                        {
+                            tw.Write($"\u001b[{cellsToMove}C");
+                        }
+                    }
+                    else
+                    {
+                        tw.Write("\u001b[" + cursorPosition + "C");
+                    }
                 }
             }
 
             tw.WriteLine();
             return sb.ToString();
+        }
+
+        private (string row, string column) getCursorPosition(TextWriter tw, TextReader tr)
+        {
+            //Send code for cursor position.
+            tw.Write("\u001b[6n");
+            char[] buffer = new char[8];
+            tr.Read(buffer, 0, buffer.Length);
+            string newString = new string(buffer);
+            //Get rid of \0
+            newString = newString.Replace("\0", string.Empty);
+            //Get rid of ANSI escape code.
+            newString = newString.Replace("\u001b", string.Empty);
+            //Get rid of brackets
+            newString = newString.Replace("[", string.Empty);
+            //Split between the semicolon and R.
+            string[] position = newString.Split(';', 'R');
+            return (position[0], position[1]);
         }
 
         private void CurrentProc_ControlC(object sender, ControlCEventArgs e)
@@ -351,12 +456,12 @@ namespace RemoteControlToolkitCore.Common.Commandline
             return shellProcess;
         }
 
-        public void Attach(IInstanceSession owner)
+        public void Attach(RCTProcess owner)
         {
             
         }
 
-        public void Detach(IInstanceSession owner)
+        public void Detach(RCTProcess owner)
         {
             
         }

@@ -7,10 +7,8 @@ namespace RemoteControlToolkitCore.Common.Commandline.Parsing
 {
     public class Parser : IParser
     {
-        private IScriptingEngine _scriptingEngine;
-        private IScriptExecutionContext _context;
-        private CommandToken[] _tokens;
-        private int _position;
+        private readonly IScriptingEngine _scriptingEngine;
+        private readonly IScriptExecutionContext _context;
 
         public Parser(IScriptingEngine engine, IScriptExecutionContext context)
         {

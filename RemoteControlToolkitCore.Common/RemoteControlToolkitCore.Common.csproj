@@ -23,7 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Commandline\" />
     <Folder Include="Scripting\" />
     <Folder Include="Proxy\" />
     <Folder Include="Plugin\" />

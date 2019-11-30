@@ -10,11 +10,9 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
     [ModuleInstance(TransientMode = true)]
     public abstract class RCTApplication : IApplication
     {
-        public IExtensionCollection<IApplication> Extensions { get; }
 
         protected RCTApplication()
         {
-            Extensions = new ExtensionCollection<IApplication>(this);
         }
 
 

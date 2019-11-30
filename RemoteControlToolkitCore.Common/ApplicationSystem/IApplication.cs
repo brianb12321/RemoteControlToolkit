@@ -6,7 +6,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common.ApplicationSystem
 {
-    public interface IApplication : IPluginModule, IExtensibleObject<IApplication>, IDisposable
+    public interface IApplication : IPluginModule, IDisposable
     {
         string ProcessName { get; }
         CommandResponse Execute(CommandRequest args, RCTProcess currentProcess, CancellationToken token);

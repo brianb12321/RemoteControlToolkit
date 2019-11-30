@@ -13,6 +13,7 @@ using System.Threading;
 using Crayon;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
+using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 using RemoteControlToolkitCore.Common.Plugin;
 
@@ -22,12 +23,12 @@ namespace RemoteControlToolkitCore.Common.Networking
     {
         private TcpClient _client;
         private NetworkStream _networkStream;
-        private SslStream _sslStream;
-        private Thread _workingThread;
-        private ILogger<NetworkInstance> _logger;
+        private readonly Thread _workingThread;
+        private readonly ILogger<NetworkInstance> _logger;
         private StreamReader _streamReader;
         private StreamWriter _streamWriter;
-        private bool _stopFlag = false;
+        private readonly CancellationTokenSource _cts;
+        private RCTProcess _commandShell;
 
         public IExtensionCollection<IInstanceSession> Extensions { get; }
         public Guid ClientUniqueID { get; }
@@ -47,20 +48,24 @@ namespace RemoteControlToolkitCore.Common.Networking
             {
                 provider.GetExtension(this);
             }
+            _cts = new CancellationTokenSource();
+
             _workingThread = new Thread(() =>
             {
+                _cts.Token.Register(() => _commandShell.Close());
                 _streamReader = new StreamReader(_networkStream);
                 _streamWriter = new StreamWriter(_networkStream);
                 _streamWriter.AutoFlush = true;
                 try
                 {
-                    var commandShell = ProcessTable.Factory.CreateOnApplication(this, appSubsystem.GetApplication("shell"),
+                    _commandShell = ProcessTable.Factory.CreateOnApplication(this, appSubsystem.GetApplication("shell"),
                         null, new CommandRequest(new ICommandElement[] { new StringCommandElement("shell"), }));
-                    commandShell.SetOut(GetClientWriter());
-                    commandShell.SetIn(GetClientReader());
-                    commandShell.SetError(GetClientWriter());
-                    commandShell.Start();
-                    commandShell.WaitForExit();
+                    _commandShell.Extensions.Add(new DefaultShell());
+                    _commandShell.SetOut(GetClientWriter());
+                    _commandShell.SetIn(GetClientReader());
+                    _commandShell.SetError(GetClientWriter());
+                    _commandShell.Start();
+                    _commandShell.WaitForExit();
                 }
                 catch (Exception e)
                 {
@@ -87,7 +92,7 @@ namespace RemoteControlToolkitCore.Common.Networking
 
         public void Stop()
         {
-            _stopFlag = true;
+            _cts.Cancel();
         }
         public StreamReader GetClientReader()
         {

@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.ServiceModel;
+using System.Text;
 using System.Threading;
 using Crayon;
 using RemoteControlToolkitCore.Common.Commandline;
@@ -11,7 +14,7 @@ using ThreadState = System.Threading.ThreadState;
 namespace RemoteControlToolkitCore.Common.ApplicationSystem
 {
     public delegate CommandResponse ProcessDelegate(RCTProcess current, CancellationToken token);
-    public class RCTProcess
+    public class RCTProcess : IExtensibleObject<RCTProcess>
     {
         public uint Pid { get; set; }
         public bool DisposeIO { get; set; } = true;
@@ -19,6 +22,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public TextWriter Out { get; private set; }
         public TextWriter Error { get; private set; }
         public TextReader In { get; private set; }
+        public IExtensionCollection<RCTProcess> Extensions { get; }
         public bool Running => State == ThreadState.Running;
         public ThreadState State => _workingThread.ThreadState;
         public string Name { get; }
@@ -30,6 +34,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         private CancellationTokenSource cts;
         private ProcessDelegate _threadStart;
         public CommandResponse ExitCode { get; private set; }
+        public Dictionary<string, string> EnvironmentVariables { get; }
         public bool Disposed { get; private set; }
         private IProcessTable _table;
 
@@ -41,6 +46,8 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             _threadStart = threadStart;
             ClientContext = session;
             Pid = _table.LatestProcess + 1;
+            Extensions = new ExtensionCollection<RCTProcess>(this);
+            EnvironmentVariables = new Dictionary<string, string>();
             if (Parent != null)
             {
                 Parent.Child = this;
@@ -48,6 +55,14 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 In = Parent.In;
                 Error = Parent.Error;
                 ClientContext = Parent.ClientContext;
+                IExtension<RCTProcess>[] buffer = new IExtension<RCTProcess>[Parent.Extensions.Count];
+                Parent.Extensions.CopyTo(buffer, 0);
+                Extensions = new ExtensionCollection<RCTProcess>(this);
+                foreach (IExtension<RCTProcess> extension in buffer)
+                {
+                    Extensions.Add(extension);
+                }
+                EnvironmentVariables = new Dictionary<string, string>(Parent.EnvironmentVariables);
             }
 
             _workingThread = new Thread(startThread);
@@ -80,7 +95,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             {
                 ExitCode = _threadStart?.Invoke((RCTProcess)data, cts.Token);
             }
-            catch (ThreadAbortException e)
+            catch (ThreadAbortException)
             {
                 ExitCode = new CommandResponse(CommandResponse.CODE_THREAD_ABORT);
             }
@@ -194,9 +209,11 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                         extProcess.Start();
                         extProcess.BeginOutputReadLine();
                         extProcess.BeginErrorReadLine();
+                        StringBuilder sb = new StringBuilder();
                         while (!extProcess.HasExited)
                         {
-                            string text = proc.In.ReadLine();
+                            sb.Clear();
+                            string text = proc.Extensions.Find<IShellExtensions>().ReadLine(proc, sb, new List<string>(0));
                             extProcess.StandardInput.WriteLine(text);
                         }
 
