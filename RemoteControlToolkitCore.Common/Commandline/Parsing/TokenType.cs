@@ -2,6 +2,7 @@
 {
     public enum TokenType
     {
+        EnvironmentVariable,
         Word,
         Quote,
         Script,

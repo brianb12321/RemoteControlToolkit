@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 using RemoteControlToolkitCore.Common.Scripting;
@@ -9,11 +11,13 @@ namespace RemoteControlToolkitCore.Common.Commandline.Parsing
     {
         private readonly IScriptingEngine _scriptingEngine;
         private readonly IScriptExecutionContext _context;
+        private readonly IReadOnlyDictionary<string, string> _envVars;
 
-        public Parser(IScriptingEngine engine, IScriptExecutionContext context)
+        public Parser(IScriptingEngine engine, IScriptExecutionContext context, IReadOnlyDictionary<string, string> envVars)
         {
             _context = context;
             _scriptingEngine = engine;
+            _envVars = envVars;
         }
 
         public RedirectionMode OutputRedirected { get; private set; } = RedirectionMode.None;
@@ -49,9 +53,14 @@ namespace RemoteControlToolkitCore.Common.Commandline.Parsing
                     case TokenType.Script:
                         _elements.Add(new ScriptCommandElement(tokens[i].ToString(), _scriptingEngine, _context));
                         break;
-                    //case TokenType.Resource:
-                    //    _elements.Add(new ResourceCommandElement(tokens[i].ToString(), _fileSystem));
-                    //    break;
+                    case TokenType.EnvironmentVariable:
+                        string value = tokens[i].Value.Substring(1);
+                        if (!_envVars.ContainsKey(value))
+                        {
+                            throw new ParserException($"Environment variable \"{value}\" does not exist.");
+                        }
+                        _elements.Add(new StringCommandElement(_envVars[value]));
+                        break;
                     case TokenType.OutRedirect:
                         if (tokens[i].Value.StartsWith("$"))
                         {

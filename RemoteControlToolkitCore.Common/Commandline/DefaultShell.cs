@@ -8,6 +8,7 @@ using System.Net.Mime;
 using System.Text;
 using System.Threading;
 using Crayon;
+using IronPython.Modules;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NDesk.Options;
@@ -82,6 +83,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             });
+            _builtInCommands.Add("bell", arg2 =>
+            {
+                Bell(currentProc);
+                return new CommandResponse(CommandResponse.CODE_SUCCESS);
+            });
             string command = string.Empty;
             bool showHelp = false;
             OptionSet options = new OptionSet()
@@ -115,22 +121,48 @@ namespace RemoteControlToolkitCore.Common.Commandline
                     }
 
                     string newCommand = ReadLine(currentProc, sb, _history);
+                    if (newCommand.StartsWith("`"))
+                    {
+                        handleMultipleCommands(token, currentProc, sb);
+                        continue;
+                    }
                     if (string.IsNullOrWhiteSpace(newCommand)) continue;
                     _history.Add(newCommand);
-                    var result = executeCommand(newCommand, currentProc, token);
+                    currentProc.EnvironmentVariables["."] = executeCommand(newCommand, currentProc, token).Code.ToString();
                 }
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }
             else return executeCommand(command, currentProc, token);
         }
 
+        private void handleMultipleCommands(CancellationToken token, RCTProcess currentProc, StringBuilder sb)
+        {
+            List<string> _commands = new List<string>();
+            while (true)
+            {
+                sb.Clear();
+                currentProc.Out.Write("> ");
+                string batchCommand = ReadLine(currentProc, sb, _history);
+                if (batchCommand.Contains("`"))
+                {
+                    break;
+                }
+                _commands.Add(batchCommand);
+            }
+
+            CommandResponse latest = new CommandResponse(CommandResponse.CODE_SUCCESS);
+            foreach (var command in _commands)
+            {
+                currentProc.EnvironmentVariables["."] = executeCommand(command, currentProc, token).Code.ToString();
+            }
+        }
         private void initializeEnvironmentVariables(RCTProcess process)
         {
             _logger.LogInformation("Initializing environment variables.");
             process.EnvironmentVariables.Add("TERMINAL_ROWS", "36");
             process.EnvironmentVariables.Add("TERMINAL_COLUMNS", "130");
+            process.EnvironmentVariables.Add(".", "0");
         }
-
 
         public string ReadLine(RCTProcess process, StringBuilder sb, List<string> history)
         {
@@ -283,6 +315,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
             return sb.ToString();
         }
 
+        public void Bell(RCTProcess process)
+        {
+            process.Out.Write("\a");
+        }
+
         private (string row, string column) getCursorPosition(TextWriter tw, TextReader tr)
         {
             //Send code for cursor position.
@@ -315,7 +352,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             IReadOnlyList<IReadOnlyList<ICommandElement>> parsedItems = null;
             try
             {
-                IParser parser = new Parser(_engine, context);
+                IParser parser = new Parser(_engine, context, currentProc.EnvironmentVariables);
                 var lexedItems = lexer.Lex(command);
                 parsedItems = parser.Parse(lexedItems);
                 CommandRequest newRequest = new CommandRequest(parsedItems[0].ToArray());
@@ -357,7 +394,9 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 {
                     var _fileSystem = currentProc.ClientContext.GetExtension<IExtensionFileSystem>().FileSystem;
                     if (parser.OutputRedirected == RedirectionMode.File)
+                    {
                         _process.SetOut(new StreamWriter(parser.Output, parser.OutputAppendMode));
+                    }
                     else if (parser.OutputRedirected == RedirectionMode.VFS)
                     {
                         StreamWriter sw = StreamWriter.Null;
@@ -380,7 +419,6 @@ namespace RemoteControlToolkitCore.Common.Commandline
                     {
                         _engine.SetOut(currentProc.Out);
                         _engine.SetError(currentProc.Error);
-                        _process.DisposeIO = false;
                     }
                     StreamReader sr = StreamReader.Null;
                     if (parser.InputRedirected == RedirectionMode.File)
@@ -405,6 +443,10 @@ namespace RemoteControlToolkitCore.Common.Commandline
                     currentProc.Error.WriteLine(Output.Red($"Error while redirecting IO: {ex.Message}"));
                     return new CommandResponse(CommandResponse.CODE_FAILURE);
                 }
+                //Configure dispose options
+                if (parser.ErrorRedirected == RedirectionMode.None) _process.DisposeError = false;
+                if (parser.OutputRedirected == RedirectionMode.None) _process.DisposeOut = false;
+                if (parser.InputRedirected == RedirectionMode.None) _process.DisposeIn = false;
                 _process.Start();
                 _process.WaitForExit();
                 return _process.ExitCode;

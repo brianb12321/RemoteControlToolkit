@@ -17,7 +17,10 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
     public class RCTProcess : IExtensibleObject<RCTProcess>
     {
         public uint Pid { get; set; }
-        public bool DisposeIO { get; set; } = true;
+        public bool DisposeIn { get; set; } = true;
+        public bool DisposeOut { get; set; } = true;
+        public bool DisposeError { get; set; } = true;
+
         public IInstanceSession ClientContext { get; set; }
         public TextWriter Out { get; private set; }
         public TextWriter Error { get; private set; }
@@ -150,12 +153,9 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                     cts?.Cancel();
                 }
                 cts?.Dispose();
-                if (DisposeIO)
-                {
-                    In?.Close();
-                    Out?.Close();
-                    Error?.Close();
-                }
+                if (DisposeIn) In?.Close();
+                if (DisposeOut) Out?.Close();
+                if(DisposeError) Error?.Close();
                 Child?.Dispose();
                 _table.RemoveProcess(Pid);
                 Disposed = true;

@@ -86,29 +86,35 @@ namespace RemoteControlToolkitCore.Common.Commandline.Parsing
                         lexBoundary(_tokens, ref i, input, '}', TokenType.Script);
                         break;
                     case '>':
-                        if (input.Length <= i++)
+                        int newI;
+                        if (input.Length <= i + 1)
                         {
                             throw new ParserException("EOF while scanning for redirected file or resource.");
                         }
 
-                        if (input[i++] == '>')
+                        if (input[i + 1] == '>')
                         {
-                            int newI = ++i;
+                            newI = i + 3;
                             lexWord(_tokens, ref newI, input, TokenType.AppendOutRedirect);
                         }
                         else
                         {
-                            lexWord(_tokens, ref i, input, TokenType.OutRedirect);
+                            newI = i + 2;
+                            lexWord(_tokens, ref newI, input, TokenType.OutRedirect);
                         }
 
                         break;
                     case '<':
-                        if (input.Length <= i++)
+                        if (input.Length <= i + 1)
                         {
                             throw new ParserException("EOF while scanning for redirected file or resource.");
                         }
 
-                        lexWord(_tokens, ref i, input, TokenType.InRedirect);
+                        int newI2 = i + 2;
+                        lexWord(_tokens, ref newI2, input, TokenType.InRedirect);
+                        break;
+                    case '$':
+                        lexWord(_tokens, ref i, input, TokenType.EnvironmentVariable);
                         break;
                     default:
                         lexWord(_tokens, ref i, input, TokenType.Word);

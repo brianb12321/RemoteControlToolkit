@@ -15,5 +15,6 @@ namespace RemoteControlToolkitCore.Common.Commandline
     public interface IShellExtensions : IExtension<RCTProcess>
     {
         string ReadLine(RCTProcess process, StringBuilder sb, List<string> history);
+        void Bell(RCTProcess process);
     }
 }

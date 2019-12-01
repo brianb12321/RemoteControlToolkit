@@ -81,6 +81,7 @@ namespace RemoteControlToolkitCore.Common.Networking
                     {
                         provider.RemoveExtension(this);
                     }
+                    _logger.LogInformation("Channel closed.");
                 }
             });
         }
