@@ -12,9 +12,12 @@ namespace RemoteControlToolkitCore.Common.Commandline
     /// <summary>
     /// Provides helper methods for reading and writing to and from the terminal.
     /// </summary>
-    public interface IShellExtensions : IExtension<RCTProcess>
+    public interface ITerminalHandler : IExtension<RCTProcess>
     {
-        string ReadLine(RCTProcess process, StringBuilder sb, List<string> history);
-        void Bell(RCTProcess process);
+        List<string> History { get; }
+        string ReadLine();
+        (string row, string column) GetCursorPosition();
+        void Clear();
+        void Bell();
     }
 }

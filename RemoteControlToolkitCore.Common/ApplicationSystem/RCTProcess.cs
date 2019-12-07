@@ -214,7 +214,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                         while (!extProcess.HasExited)
                         {
                             sb.Clear();
-                            string text = proc.Extensions.Find<IShellExtensions>().ReadLine(proc, sb, new List<string>(0));
+                            string text = proc.Extensions.Find<ITerminalHandler>().ReadLine();
                             extProcess.StandardInput.WriteLine(text);
                         }
 

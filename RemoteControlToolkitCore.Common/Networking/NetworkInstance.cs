@@ -57,7 +57,6 @@ namespace RemoteControlToolkitCore.Common.Networking
                 {
                     _commandShell = ProcessTable.Factory.CreateOnApplication(this, appSubsystem.GetApplication("shell"),
                         proc, new CommandRequest(new ICommandElement[] { new StringCommandElement("shell"), }));
-                    _commandShell.Extensions.Add(new DefaultShell());
                     _commandShell.SetOut(GetClientWriter());
                     _commandShell.SetIn(GetClientReader());
                     _commandShell.SetError(GetClientWriter());
@@ -84,6 +83,7 @@ namespace RemoteControlToolkitCore.Common.Networking
                 }
             }, null);
             initializeEnvironmentVariables(_workingThread);
+            _workingThread.Extensions.Add(new TerminalHandler());
         }
         private void initializeEnvironmentVariables(RCTProcess process)
         {
