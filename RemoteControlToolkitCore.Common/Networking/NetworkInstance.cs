@@ -23,11 +23,10 @@ namespace RemoteControlToolkitCore.Common.Networking
     {
         private TcpClient _client;
         private NetworkStream _networkStream;
-        private readonly Thread _workingThread;
+        private readonly RCTProcess _workingThread;
         private readonly ILogger<NetworkInstance> _logger;
         private StreamReader _streamReader;
         private StreamWriter _streamWriter;
-        private readonly CancellationTokenSource _cts;
         private RCTProcess _commandShell;
 
         public IExtensionCollection<IInstanceSession> Extensions { get; }
@@ -48,28 +47,28 @@ namespace RemoteControlToolkitCore.Common.Networking
             {
                 provider.GetExtension(this);
             }
-            _cts = new CancellationTokenSource();
 
-            _workingThread = new Thread(() =>
+            _workingThread = ProcessTable.Factory.Create(this, "Network Process", (proc, token) =>
             {
-                _cts.Token.Register(() => _commandShell.Close());
                 _streamReader = new StreamReader(_networkStream);
                 _streamWriter = new StreamWriter(_networkStream);
                 _streamWriter.AutoFlush = true;
                 try
                 {
                     _commandShell = ProcessTable.Factory.CreateOnApplication(this, appSubsystem.GetApplication("shell"),
-                        null, new CommandRequest(new ICommandElement[] { new StringCommandElement("shell"), }));
+                        proc, new CommandRequest(new ICommandElement[] { new StringCommandElement("shell"), }));
                     _commandShell.Extensions.Add(new DefaultShell());
                     _commandShell.SetOut(GetClientWriter());
                     _commandShell.SetIn(GetClientReader());
                     _commandShell.SetError(GetClientWriter());
                     _commandShell.Start();
                     _commandShell.WaitForExit();
+                    return new CommandResponse(CommandResponse.CODE_SUCCESS);
                 }
                 catch (Exception e)
                 {
                     _logger.LogError(e, "A communication error occurred. The connection will be terminated.");
+                    return new CommandResponse(CommandResponse.CODE_FAILURE);
                 }
                 finally
                 {
@@ -83,7 +82,15 @@ namespace RemoteControlToolkitCore.Common.Networking
                     }
                     _logger.LogInformation("Channel closed.");
                 }
-            });
+            }, null);
+            initializeEnvironmentVariables(_workingThread);
+        }
+        private void initializeEnvironmentVariables(RCTProcess process)
+        {
+            _logger.LogInformation("Initializing environment variables.");
+            process.EnvironmentVariables.Add("TERMINAL_ROWS", "36");
+            process.EnvironmentVariables.Add("TERMINAL_COLUMNS", "130");
+            process.EnvironmentVariables.Add(".", "0");
         }
 
         public void Start()
@@ -93,7 +100,7 @@ namespace RemoteControlToolkitCore.Common.Networking
 
         public void Stop()
         {
-            _cts.Cancel();
+            _workingThread.Close();
         }
         public StreamReader GetClientReader()
         {

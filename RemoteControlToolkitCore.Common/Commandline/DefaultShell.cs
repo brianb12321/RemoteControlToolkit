@@ -40,7 +40,6 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public override CommandResponse Execute(CommandRequest args, RCTProcess currentProc, CancellationToken token)
         {
-            initializeEnvironmentVariables(currentProc);
             currentProc.ControlC += CurrentProc_ControlC;
             _builtInCommands.Add("cls", (args2) =>
             {
@@ -143,25 +142,19 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 sb.Clear();
                 currentProc.Out.Write("> ");
                 string batchCommand = ReadLine(currentProc, sb, _history);
+                if (string.IsNullOrWhiteSpace(batchCommand)) continue;
                 if (batchCommand.Contains("`"))
                 {
                     break;
                 }
+                _history.Add(batchCommand);
                 _commands.Add(batchCommand);
             }
 
-            CommandResponse latest = new CommandResponse(CommandResponse.CODE_SUCCESS);
             foreach (var command in _commands)
             {
                 currentProc.EnvironmentVariables["."] = executeCommand(command, currentProc, token).Code.ToString();
             }
-        }
-        private void initializeEnvironmentVariables(RCTProcess process)
-        {
-            _logger.LogInformation("Initializing environment variables.");
-            process.EnvironmentVariables.Add("TERMINAL_ROWS", "36");
-            process.EnvironmentVariables.Add("TERMINAL_COLUMNS", "130");
-            process.EnvironmentVariables.Add(".", "0");
         }
 
         public string ReadLine(RCTProcess process, StringBuilder sb, List<string> history)

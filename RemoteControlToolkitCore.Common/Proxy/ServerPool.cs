@@ -4,7 +4,7 @@ using RemoteControlToolkitCore.Common.Networking;
 
 namespace RemoteControlToolkitCore.Common.Proxy
 {
-    public class ServerPool<TContract> : IServerPool
+    public class ServerPool : IServerPool
     {
         private List<IInstanceSession> _servers = new List<IInstanceSession>();
         private IInstanceSession _selectedServer;

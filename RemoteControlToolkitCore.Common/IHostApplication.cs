@@ -6,7 +6,7 @@ namespace RemoteControlToolkitCore.Common
 {
     public interface IHostApplication : IDisposable
     {
-        void Run();
+        void Run(string[] args);
         NetworkSide ExecutingSide { get; }
     }
 }

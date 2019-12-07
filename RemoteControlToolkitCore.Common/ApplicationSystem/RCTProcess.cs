@@ -105,6 +105,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             catch (Exception ex)
             {
                 ThreadError?.Invoke(this, ex);
+                ExitCode = new CommandResponse(CommandResponse.CODE_THREAD_ABORT);
             }
         }
 

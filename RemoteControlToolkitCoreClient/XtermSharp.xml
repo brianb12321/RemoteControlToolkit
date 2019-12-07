@@ -1,0 +1,344 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>XtermSharp</name>
+    </assembly>
+    <members>
+        <member name="T:XtermSharp.Buffer">
+            <summary>
+            This class represents a terminal buffer (an internal state of the terminal), where text contents, cursor and scroll position are stored.
+            </summary>
+        </member>
+        <member name="P:XtermSharp.Buffer.HasScrollback">
+            <summary>
+            Gets a value indicating whether this <see cref="T:XtermSharp.Buffer"/> has scrollback.
+            </summary>
+            <value><c>true</c> if has scrollback; otherwise, <c>false</c>.</value>
+        </member>
+        <member name="M:XtermSharp.Buffer.#ctor(XtermSharp.Terminal,System.Boolean)">
+            <summary>
+            Initializes a new instance of the <see cref="T:XtermSharp.Buffer"/> class.
+            </summary>
+            <param name="terminal">The terminal the Buffer will belong to.</param>
+            <param name="hasScrollback">Whether the buffer should respect the scrollback of the terminal.</param>
+        </member>
+        <member name="M:XtermSharp.Buffer.Clear">
+            <summary>
+            Clears the buffer to it's initial state, discarding all previous data.
+            </summary>
+        </member>
+        <member name="M:XtermSharp.Buffer.FillViewportRows(System.Nullable{System.Int32})">
+            <summary>
+            Fills the buffer's viewport with blank lines.
+            </summary>
+        </member>
+        <member name="M:XtermSharp.Buffer.Resize(System.Int32,System.Int32)">
+            <summary>
+            Resize the buffer, adjusting its data accordingly
+            </summary>
+            <returns>The resize.</returns>
+            <param name="newCols">New columns.</param>
+            <param name="newRows">New rows.</param>
+        </member>
+        <member name="M:XtermSharp.Buffer.TranslateBufferLineToString(System.Int32,System.Boolean,System.Int32,System.Int32)">
+            <summary>
+            Translates a buffer line to a string, with optional start and end columns.   Wide characters will count as two columns in the resulting string. This 
+            function is useful for getting the actual text underneath the raw selection position.
+            </summary>
+            <returns>The buffer line to string.</returns>
+            <param name="lineIndex">The line being translated.</param>
+            <param name="trimRight">If set to <c>true</c> trim whitespace to the right.</param>
+            <param name="startCol">The column to start at.</param>
+            <param name="endCol">The column to end at.</param>
+        </member>
+        <member name="M:XtermSharp.Buffer.SetupTabStops(System.Int32)">
+            <summary>
+            Setups the tab stops.
+            </summary>
+            <param name="index">Index to start setting tabs stops from.</param>
+        </member>
+        <member name="M:XtermSharp.Buffer.PreviousTabStop(System.Int32)">
+            <summary>
+            Move the cursor to the previous tab stop from the given position (default is current).
+            </summary>
+            <returns>The tab stop.</returns>
+            <param name="index">The position to move the cursor to the previous tab stop.</param>
+        </member>
+        <member name="M:XtermSharp.Buffer.NextTabStop(System.Int32)">
+            <summary>
+            Move the cursor one tab stop forward from the given position (default is current).
+            </summary>
+            <returns>The tab stop.</returns>
+            <param name="index">The position to move the cursor one tab stop forward.</param>
+        </member>
+        <member name="T:XtermSharp.BufferSet">
+            <summary>
+            The BufferSet represents the set of two buffers used by xterm terminals (normal and alt) and
+            provides also utilities for working with them.
+            </summary>
+        </member>
+        <member name="E:XtermSharp.BufferSet.Activated">
+            <summary>
+            Raised when a buffer is activated, the parameters is the buffer that was activated and the second parameter is the Inactive buffer.
+            </summary>
+        </member>
+        <member name="M:XtermSharp.BufferSet.ActivateNormalBuffer">
+            <summary>
+            Sets the normal Buffer of the BufferSet as its currently active Buffer
+            </summary>
+        </member>
+        <member name="M:XtermSharp.BufferSet.ActivateAltBuffer(System.Nullable{System.Int32})">
+            <summary>
+            Sets the alt Buffer of the BufferSet as its currently active Buffer
+            </summary>
+            <param name="fillAttr">Attribute to fill the screen with</param>
+        </member>
+        <member name="M:XtermSharp.BufferSet.Resize(System.Int32,System.Int32)">
+            <summary>
+            Resizes both normal and alt buffers, adjusting their data accordingly.
+            </summary>
+            <returns>The resize.</returns>
+            <param name="newColumns">The new number of columns.</param>
+            <param name="newRows">The new number of rows.</param>
+        </member>
+        <member name="M:XtermSharp.BufferSet.SetupTabStops(System.Int32)">
+            <summary>
+            Setups the tab stops.
+            </summary>
+            <param name="index">The index to start setting up tab stops from, or -1 to do it from the start.</param>
+        </member>
+        <member name="F:XtermSharp.ParsingState.Position">
+            <summary>
+            Position in Parse String
+            </summary>
+        </member>
+        <member name="F:XtermSharp.ParsingState.Code">
+            <summary>
+            Actual character code
+            </summary>
+        </member>
+        <member name="F:XtermSharp.ParsingState.CurrentState">
+            <summary>
+            Current Parser State
+            </summary>
+        </member>
+        <member name="F:XtermSharp.ParsingState.Print">
+            <summary>
+            Print buffer start index (-1 for not set)
+            </summary>
+        </member>
+        <member name="F:XtermSharp.ParsingState.Dcs">
+            <summary>
+             Buffer start index (-1 for not set)
+            </summary>
+        </member>
+        <member name="F:XtermSharp.ParsingState.Osc">
+            <summary>
+            Osc string buffer
+            </summary>
+        </member>
+        <member name="F:XtermSharp.ParsingState.Collect">
+            <summary>
+            Collect buffer with intermediate characters
+            </summary>
+        </member>
+        <member name="F:XtermSharp.ParsingState.Parameters">
+            <summary>
+            Parameters buffer
+            </summary>
+        </member>
+        <member name="M:XtermSharp.Pty.ForkAndExec(System.String,System.String[],System.String[],System.Int32@,XtermSharp.UnixWindowSize)">
+            <summary>
+            Forks a process and returns a file handle that is connected to the standard output of the child process
+            </summary>
+            <param name="programName">Name of the program to run</param>
+            <param name="args">Argument to pass to the program</param>
+            <param name="env">Desired environment variables for the program</param>
+            <param name="master">The file descriptor connected to the input and output of the child process</param>
+            <param name="winSize">Desired window size</param>
+            <returns></returns>
+        </member>
+        <member name="M:XtermSharp.Pty.SetWinSize(System.Int32,XtermSharp.UnixWindowSize@)">
+            <summary>
+            Sends a request to the pseudo terminal to set the size to the specified one
+            </summary>
+            <param name="fd">File descriptor returned by ForkPty</param>
+            <param name="winSize">The desired window size</param>
+            <returns></returns>
+        </member>
+        <member name="M:XtermSharp.Pty.AvailableBytes(System.Int32,System.Int64@)">
+            <summary>
+            Returns the number of bytes available for reading on a file descriptor
+            </summary>
+            <param name="fd"></param>
+            <param name="size"></param>
+            <returns></returns>
+        </member>
+        <member name="M:XtermSharp.ITerminalDelegate.SizeChanged(XtermSharp.Terminal)">
+            <summary>
+            This event is triggered from the engine, when the request to resize the window is received from an escape sequence.
+            </summary>
+            <param name="source">Source.</param>
+        </member>
+        <member name="M:XtermSharp.ITerminalDelegate.Send(System.Byte[])">
+            <summary>
+            Used to respond to the client running on the other end.  This information should be sent to the remote end or subshell.
+            </summary>
+            <param name="data"></param>
+        </member>
+        <member name="P:XtermSharp.Terminal.MouseEvents">
+            <summary>
+            If MouseEvents is set, then we are supposed to send some kind of mouse events, which
+            are determined by the boolean flags below.  Additionally, a "style" is encoded in
+            SgrMouse, UrxvtMouse which alter the responses.
+            </summary>
+            <value><c>true</c> if mouse events; otherwise, <c>false</c>.</value>
+        </member>
+        <member name="P:XtermSharp.Terminal.MouseSendsRelease">
+            <summary>
+            If MouseEvents is set, then this value should be probed to determine whether a UI front-end needs to send the MouseRelease event.
+            </summary>
+            <value><c>true</c> if the UI is expected to send a mouse release event when the button is released.</value>
+        </member>
+        <member name="P:XtermSharp.Terminal.MouseSendsAllMotion">
+            <summary>
+            If MosueEvents is set, and this is set, then all motion events should be sent, regardless of the state of the mouse buttons. (Xterm flag 1003)
+            </summary>
+            <value><c>true</c> if mouse sends all motion; otherwise, <c>false</c>.</value>
+        </member>
+        <member name="P:XtermSharp.Terminal.MouseSendsMotionWhenPressed">
+            <summary>
+            If MouseEvents is set, then motion events should be sent when the mouse button is held down (Xterm flag 1002)
+            </summary>
+            <value><c>true</c> if mouse sends motion when pressed; otherwise, <c>false</c>.</value>
+        </member>
+        <member name="P:XtermSharp.Terminal.MouseSendsWheel">
+            <summary>
+            If MouseEvents is set, this determines whether the UI layer should send Wheel events.
+            </summary>
+            <value><c>true</c> if mouse sends wheel; otherwise, <c>false</c>.</value>
+        </member>
+        <member name="M:XtermSharp.Terminal.Refresh(System.Int32,System.Int32)">
+            <summary>
+            Implemented by subclasses - must refresh the display from the starting to the end row.
+            </summary>
+            <param name="startRow">Initial row to update, offset starts at zero.</param>
+            <param name="endRow">Last row to update.</param>
+        </member>
+        <member name="M:XtermSharp.Terminal.EncodeButton(System.Int32,System.Boolean,System.Boolean,System.Boolean,System.Boolean)">
+            <summary>
+            Encodes the button.
+            </summary>
+            <returns>The button.</returns>
+            <param name="button">Button (0, 1, 2 for left, middle, right) and 4 for wheel up, and 5 for wheel down.</param>
+            <param name="release">If set to <c>true</c> release.</param>
+            <param name="wheelUp">If set to <c>true</c> wheel up.</param>
+            <param name="shift">If set to <c>true</c> shift.</param>
+            <param name="meta">If set to <c>true</c> meta.</param>
+            <param name="control">If set to <c>true</c> control.</param>
+        </member>
+        <member name="M:XtermSharp.Terminal.SendEvent(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Sends a mouse event for a specific button at the specific location
+            </summary>
+            <param name="buttonFlags">Button flags encoded in Cb mode.</param>
+            <param name="x">The x coordinate.</param>
+            <param name="y">The y coordinate.</param>
+        </member>
+        <member name="M:XtermSharp.Terminal.SetCursorStyle(XtermSharp.CursorStyle)">
+            <summary>
+            Implement to change the cursor style, call the base implementation.
+            </summary>
+            <param name="style"></param>
+        </member>
+        <member name="M:XtermSharp.Terminal.SetTitle(System.String)">
+            <summary>
+            Override to set the current terminal text
+            </summary>
+            <param name="text"></param>
+        </member>
+        <member name="M:XtermSharp.Terminal.GetEnvironmentVariables(System.String)">
+            <summary>
+            Provides a baseline set of environment variables that would be useful to run the terminal,
+            you can customzie these accordingly.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:XtermSharp.CircularList`1">
+            <summary>
+            Represents a circular list; a list with a maximum size that wraps around when push is called overriding values at the start of the list.
+            </summary>
+        </member>
+        <member name="M:XtermSharp.CircularList`1.#ctor(System.Int32)">
+            <summary>
+            Initializes a new instance of the <see cref="T:XtermSharp.CircularList`1"/> class with the specified number of elements.
+            </summary>
+            <param name="maxLength">Max length.</param>
+        </member>
+        <member name="P:XtermSharp.CircularList`1.MaxLength">
+            <summary>
+            Gets or sets the maximum length of the circular list
+            </summary>
+            <value>The length of the max.</value>
+        </member>
+        <member name="P:XtermSharp.CircularList`1.Length">
+            <summary>
+            The current length of the circular buffer
+            </summary>
+            <value>The length.</value>
+        </member>
+        <member name="M:XtermSharp.CircularList`1.ForEach(System.Action{`0,System.Int32})">
+            <summary>
+            Invokes the specificied callback for each items of the circular list, the first parameter is the value, the second is the ith-index.
+            </summary>
+            <param name="callback">Callback.</param>
+        </member>
+        <member name="P:XtermSharp.CircularList`1.Item(System.Int32)">
+            <summary>
+            Gets or sets the <see cref="T:XtermSharp.CircularList`1"/> at the specified index.
+            </summary>
+            <param name="index">Index.</param>
+        </member>
+        <member name="F:XtermSharp.CircularList`1.Trimmed">
+            <summary>
+            Event raised when an item is removed from the circular array, the parameter is the number of items removed.
+            </summary>
+        </member>
+        <member name="M:XtermSharp.CircularList`1.Push(`0)">
+            <summary>
+            Pushes a new value onto the list, wrapping around to the start of the array, overriding index 0 if the maximum length is reached
+            </summary>
+            <returns>The push.</returns>
+            <param name="value">Value to push.</param>
+        </member>
+        <member name="M:XtermSharp.CircularList`1.Pop">
+            <summary>
+              Removes and returns the last value on the list. 
+            </summary>
+            <returns>The popped value.</returns>
+        </member>
+        <member name="M:XtermSharp.CircularList`1.Splice(System.Int32,System.Int32,`0[])">
+            <summary>
+            Deletes and/or inserts items at a particular index (in that order).
+            </summary>
+            <returns>The splice.</returns>
+            <param name="start">The index to delete and/or insert.</param>
+            <param name="deleteCount">The number of elements to delete.</param>
+            <param name="items">The items to insert.</param>
+        </member>
+        <member name="M:XtermSharp.CircularList`1.TrimStart(System.Int32)">
+            <summary>
+            Trims a number of items from the start of the list.
+            </summary>
+            <param name="count">The number of items to remove..</param>
+        </member>
+        <member name="M:XtermSharp.CircularList`1.ShiftElements(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Shifts the elements.
+            </summary>
+            <param name="start">Start.</param>
+            <param name="count">Count.</param>
+            <param name="offset">Offset.</param>
+        </member>
+    </members>
+</doc>

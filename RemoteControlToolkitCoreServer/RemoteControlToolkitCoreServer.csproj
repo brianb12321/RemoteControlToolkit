@@ -10,4 +10,10 @@
     <ProjectReference Include="..\RemoteControlToolkitCore.Subsystem.Audio\RemoteControlToolkitCore.Subsystem.Audio.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="XtermSharp">
+      <HintPath>..\Lib\XtermSharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

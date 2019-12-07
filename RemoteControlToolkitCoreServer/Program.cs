@@ -8,6 +8,7 @@ using RemoteControlToolkitCore.Common.VirtualFileSystem;
 using RemoteControlToolkitCore.Common.Scripting;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Plugin;
+using RemoteControlToolkitCore.Common.Proxy;
 using RemoteControlToolkitCore.Subsystem.Audio;
 
 namespace RemoteControlToolkitCoreServer
@@ -19,7 +20,7 @@ namespace RemoteControlToolkitCoreServer
             IHostApplication app = new AppBuilder()
                 .UseStartup<Startup>()
                 .Build();
-            app.Run();
+            app.Run(args);
         }
     }
 
@@ -33,6 +34,7 @@ namespace RemoteControlToolkitCoreServer
             services.AddScriptingEngine<IronPythonScriptingEngine>();
             services.AddAudio();
             services.AddCommandLine();
+            services.AddSingleton<IServerPool, ServerPool>();
         }
 
         public void PostConfigureServices(IServiceProvider provider, IHostApplication application)
