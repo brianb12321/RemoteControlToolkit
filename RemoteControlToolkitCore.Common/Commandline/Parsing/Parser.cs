@@ -105,11 +105,11 @@ namespace RemoteControlToolkitCore.Common.Commandline.Parsing
                             i++;
                         }
                         break;
-                    //case TokenType.Pipe:
-                    //    _parsedElements.Add(new List<ICommandElement>(_elements));
-                    //    _parsedElements.Add(new List<ICommandElement>() { new PipeCommandElement() });
-                    //    _elements.Clear();
-                    //    break;
+                    case TokenType.Pipe:
+                        _parsedElements.Add(new List<ICommandElement>(_elements));
+                        _parsedElements.Add(new List<ICommandElement>() { new PipeCommandElement() });
+                        _elements.Clear();
+                        break;
                 }
             }
             //Copy left-over command elements to the list.

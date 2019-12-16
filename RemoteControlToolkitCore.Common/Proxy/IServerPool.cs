@@ -11,5 +11,6 @@ namespace RemoteControlToolkitCore.Common.Proxy
         void RemoveServer(IInstanceSession server);
         IReadOnlyDictionary<int, string> GetServersInt();
         void SetSelectedClient(int id);
+        void Clean();
     }
 }

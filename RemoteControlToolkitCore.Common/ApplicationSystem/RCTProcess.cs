@@ -33,6 +33,9 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public RCTProcess Child { get; set; }
         public event EventHandler<Exception> ThreadError;
         public event EventHandler<ControlCEventArgs> ControlC;
+        public event EventHandler StandardOutDisposed;
+        public event EventHandler StandardInDisposed;
+        public event EventHandler StandardErrorDisposed;
         private Thread _workingThread;
         private CancellationTokenSource cts;
         private ProcessDelegate _threadStart;
@@ -58,13 +61,15 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 In = Parent.In;
                 Error = Parent.Error;
                 ClientContext = Parent.ClientContext;
+                DisposeIn = Parent.DisposeIn;
+                DisposeError = Parent.DisposeError;
+                DisposeOut = Parent.DisposeOut;
+                StandardOutDisposed += Parent.StandardOutDisposed;
+                StandardInDisposed += Parent.StandardInDisposed;
+                StandardErrorDisposed += Parent.StandardErrorDisposed;
                 IExtension<RCTProcess>[] buffer = new IExtension<RCTProcess>[Parent.Extensions.Count];
                 Parent.Extensions.CopyTo(buffer, 0);
                 Extensions = new ExtensionCollection<RCTProcess>(this);
-                foreach (IExtension<RCTProcess> extension in buffer)
-                {
-                    Extensions.Add(extension);
-                }
                 EnvironmentVariables = new Dictionary<string, string>(Parent.EnvironmentVariables);
             }
 
@@ -154,9 +159,22 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                     cts?.Cancel();
                 }
                 cts?.Dispose();
-                if (DisposeIn) In?.Close();
-                if (DisposeOut) Out?.Close();
-                if(DisposeError) Error?.Close();
+                if (DisposeIn)
+                {
+                    In?.Close();
+                    StandardInDisposed?.Invoke(this, EventArgs.Empty);
+                }
+                if (DisposeOut)
+                {
+                    Out?.Close();
+                    StandardOutDisposed?.Invoke(this, EventArgs.Empty);
+                }
+
+                if (DisposeError)
+                {
+                    Error?.Close();
+                    StandardErrorDisposed?.Invoke(this, EventArgs.Empty);
+                }
                 Child?.Dispose();
                 _table.RemoveProcess(Pid);
                 Disposed = true;

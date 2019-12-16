@@ -7,7 +7,7 @@ namespace RemoteControlToolkitCore.Common.Plugin
 {
     public abstract class BasePluginSubsystem<TSystem, TModule> : IPluginSubsystem<TModule>
          where TSystem : IPluginSubsystem<TModule>
-         where TModule : IPluginModule
+         where TModule : class, IPluginModule
     {
 
         protected IPluginLibraryLoader PluginLoader { get; private set; }

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline;
+using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Proxy;
 
@@ -17,6 +18,7 @@ namespace RemoteControlToolkitCore.Common.Networking
     public class ProxyNetworkInstance : IInstanceSession
     {
         public IExtensionCollection<IInstanceSession> Extensions { get; }
+        private readonly ILogger<ProxyNetworkInstance> _logger;
         public Guid ClientUniqueID { get; }
         public string Username { get; }
         private readonly IServerPool _pool;
@@ -25,47 +27,36 @@ namespace RemoteControlToolkitCore.Common.Networking
         private readonly RCTProcess _proxyProcess;
         private StreamReader _sr;
         private StreamWriter _sw;
+        private RCTProcess _commandShell;
 
-        public ProxyNetworkInstance(TcpClient client, ILogger<ProxyNetworkInstance> logger, IApplicationSubsystem appSubsystem, IServerPool pool)
+        public ProxyNetworkInstance(TcpClient client, ILogger<ProxyNetworkInstance> logger, IServerPool pool)
         {
+            _logger = logger;
+            ClientUniqueID = Guid.NewGuid();
             Extensions = new ExtensionCollection<IInstanceSession>(this);
             _pool = pool;
             ProcessTable = new ProcessTable();
             _client = client;
-            _proxyProcess = ProcessTable.Factory.Create(this, "Proxy Client", (current, token) =>
-            {
-                try
-                {
-                    _networkStream = _client.GetStream();
-                    _sw = new StreamWriter(_networkStream);
-                    _sr = new StreamReader(_networkStream);
-                    while (true)
-                    {
-                        Task.Delay(-1).Wait();
-                    }
-                }
-                finally
-                {
-                    _sw.Close();
-                    _sr.Close();
-                    //_sslStream.Close();
-                    _networkStream.Close();
-                    _pool.RemoveServer(this);
-                }
-                return new CommandResponse(CommandResponse.CODE_SUCCESS);
-            }, null);
+            _networkStream = _client.GetStream();
+            _sr = new StreamReader(_networkStream);
+            _sw = new StreamWriter(_networkStream);
+            _sw.AutoFlush = true;
         }
 
-        public StreamReader GetClientReader()
+        public TextReader GetClientReader()
         {
             return _sr;
         }
 
-        public StreamWriter GetClientWriter()
+        public TextWriter GetClientWriter()
         {
             return _sw;
         }
 
+        public void Start()
+        {
+            _proxyProcess.Start();
+        }
         public IProcessTable ProcessTable { get; }
         public T GetExtension<T>() where T : IExtension<IInstanceSession>
         {
@@ -75,6 +66,32 @@ namespace RemoteControlToolkitCore.Common.Networking
         public void AddExtension<T>(T extension) where T : IExtension<IInstanceSession>
         {
             Extensions.Add(extension);
+        }
+
+        public void Close()
+        {
+            _sw.Close();
+            _sr.Close();
+            //_sslStream.Close();
+            _networkStream.Close();
+            _pool.RemoveServer(this);
+        }
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Stream SocketStream { get; set; }
+        public Socket ClientSocket { get; set; }
+        public void Process()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Reject()
+        {
+            throw new NotImplementedException();
         }
     }
 }

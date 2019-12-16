@@ -8,7 +8,7 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem
         public static IServiceCollection AddVFS(this IServiceCollection services)
         {
             services.AddSingleton<IInstanceExtensionProvider, VFSInstanceExtensionProvider>();
-            return services.AddSingleton<IPluginSubsystem<IFileSystemPluginModule>, FileSystemSubsystem>();
+            return services.AddSingleton<IFileSystemSubsystem, FileSystemSubsystem>();
         }
     }
 }

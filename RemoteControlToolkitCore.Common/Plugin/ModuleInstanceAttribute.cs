@@ -2,7 +2,7 @@
 
 namespace RemoteControlToolkitCore.Common.Plugin
 {
-    [AttributeUsage(AttributeTargets.Class)]
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Interface)]
     public class ModuleInstanceAttribute : Attribute
     {
         /// <summary>

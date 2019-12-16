@@ -28,6 +28,7 @@ namespace RemoteControlToolkitCore.Common.Networking
         private StreamReader _streamReader;
         private StreamWriter _streamWriter;
         private RCTProcess _commandShell;
+        private IInstanceExtensionProvider[] _providers;
 
         public IExtensionCollection<IInstanceSession> Extensions { get; }
         public Guid ClientUniqueID { get; }
@@ -35,6 +36,8 @@ namespace RemoteControlToolkitCore.Common.Networking
         public IProcessTable ProcessTable { get; }
         public NetworkInstance(TcpClient client, ILogger<NetworkInstance> logger, IApplicationSubsystem appSubsystem, IInstanceExtensionProvider[] providers)
         {
+            _providers = providers;
+            ClientUniqueID = Guid.NewGuid();
             Extensions = new ExtensionCollection<IInstanceSession>(this);
             _client = client;
             _logger = logger;
@@ -71,15 +74,7 @@ namespace RemoteControlToolkitCore.Common.Networking
                 }
                 finally
                 {
-                    _streamWriter.Close();
-                    _streamReader.Close();
-                    //_sslStream.Close();
-                    _networkStream.Close();
-                    foreach (IInstanceExtensionProvider provider in providers)
-                    {
-                        provider.RemoveExtension(this);
-                    }
-                    _logger.LogInformation("Channel closed.");
+                    Close();
                 }
             }, null);
             initializeEnvironmentVariables(_workingThread);
@@ -90,6 +85,7 @@ namespace RemoteControlToolkitCore.Common.Networking
             _logger.LogInformation("Initializing environment variables.");
             process.EnvironmentVariables.Add("TERMINAL_ROWS", "36");
             process.EnvironmentVariables.Add("TERMINAL_COLUMNS", "130");
+            process.EnvironmentVariables.Add("PROXY_MODE", "false");
             process.EnvironmentVariables.Add(".", "0");
         }
 
@@ -102,12 +98,12 @@ namespace RemoteControlToolkitCore.Common.Networking
         {
             _workingThread.Close();
         }
-        public StreamReader GetClientReader()
+        public TextReader GetClientReader()
         {
             return _streamReader;
         }
 
-        public StreamWriter GetClientWriter()
+        public TextWriter GetClientWriter()
         {
             return _streamWriter;
         }
@@ -120,6 +116,36 @@ namespace RemoteControlToolkitCore.Common.Networking
         public void AddExtension<T>(T extension) where T : IExtension<IInstanceSession>
         {
             Extensions.Add(extension);
+        }
+
+        public void Close()
+        {
+            _streamWriter.Close();
+            _streamReader.Close();
+            //_sslStream.Close();
+            _networkStream.Close();
+            foreach (IInstanceExtensionProvider provider in _providers)
+            {
+                provider.RemoveExtension(this);
+            }
+            _logger.LogInformation("Channel closed.");
+        }
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Stream SocketStream { get; set; }
+        public Socket ClientSocket { get; set; }
+        public void Process()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Reject()
+        {
+            throw new NotImplementedException();
         }
     }
 }

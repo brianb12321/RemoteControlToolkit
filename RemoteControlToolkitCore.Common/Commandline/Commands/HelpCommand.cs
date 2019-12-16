@@ -43,7 +43,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
 
         public override void InitializeServices(IServiceProvider kernel)
         {
-            _appSubsystem = (IApplicationSubsystem)kernel.GetService<IPluginSubsystem<IApplication>>();
+            _appSubsystem = kernel.GetService<IApplicationSubsystem>();
             _nodeApplication = kernel.GetService<IHostApplication>();
         }
     }

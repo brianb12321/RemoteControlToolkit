@@ -8,7 +8,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
     {
         public static IServiceCollection AddCommandLine(this IServiceCollection services)
         {
-            return services.AddSingleton<IPluginSubsystem<IApplication>, ApplicationSubsystem>();
+            return services.AddSingleton<IApplicationSubsystem, ApplicationSubsystem>();
         }
     }
 }

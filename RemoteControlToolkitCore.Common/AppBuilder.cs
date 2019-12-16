@@ -1,27 +1,72 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using RemoteControlToolkitCore.Common.Networking;
+using RemoteControlToolkitCore.Common.NSsh.Configuration;
+using RemoteControlToolkitCore.Common.NSsh.Services;
+using RemoteControlToolkitCore.Common.Plugin;
+using RemoteControlToolkitCore.Common.Proxy;
 
 namespace RemoteControlToolkitCore.Common
 {
     public class AppBuilder : IAppBuilder
     {
-        private IApplicationStartup startup;
+        private List<IApplicationStartup> _startups;
+        private IServiceCollection _services;
+        public NetworkSide ExecutingSide => NetworkSide.Server;
+
+        public AppBuilder()
+        {
+            _startups = new List<IApplicationStartup>();
+        }
+
         public IHostApplication Build()
         {
-            ServiceCollection collection = new ServiceCollection();
-            startup.ConfigureServices(collection);
-            collection.AddSingleton<IHostApplication, Application>();
-            var serviceProvider = collection.BuildServiceProvider();
+            _services = new ServiceCollection();
+            _startups.ForEach(s => s.ConfigureServices(_services, this));
+            _services.AddSingleton<IHostApplication, Application>((provider) =>
+            {
+                return new Application(provider.GetService<ILogger<Application>>(),
+                    provider.GetService<ILogger<ProxyNetworkInstance>>(),
+                    provider.GetService<ILogger<NetworkInstance>>(),
+                    provider.GetService<ILogger<ProxyClient>>(),
+                    provider, provider.GetService<IServerPool>(), ExecutingSide, this, 
+                    provider.GetService<IKeySetupService>(), 
+                    provider.GetService<NSshServiceConfiguration>());
+            });
+            
+            var serviceProvider = _services.BuildServiceProvider();
             var hostApplication = serviceProvider.GetService<IHostApplication>();
-            startup.PostConfigureServices(serviceProvider, hostApplication);
+            _startups.ForEach(s => s.PostConfigureServices(serviceProvider, hostApplication));
+            _services.BuildServiceProvider();
             return hostApplication;
         }
 
-        public IAppBuilder UseStartup<TStartup>() where TStartup : IApplicationStartup
+        public IAppBuilder AddStartup<TStartup>() where TStartup : IApplicationStartup
         {
-            startup = (IApplicationStartup)Activator.CreateInstance(typeof(TStartup));
+            _startups.Add((IApplicationStartup)Activator.CreateInstance(typeof(TStartup)));
+            return this;
+        }
+
+        public IAppBuilder ScanForAppStartup(string folder)
+        {
+            if (Directory.Exists(folder))
+            {
+                foreach (string file in Directory.GetFiles(folder, "*.dll", SearchOption.AllDirectories))
+                {
+                    Assembly assembly = Assembly.LoadFrom(file);
+                    var startupAttrib = assembly.GetCustomAttribute<ApplicationStartupAttribute>();
+                    if (startupAttrib != null)
+                    {
+                        _startups.Add((IApplicationStartup)Activator.CreateInstance(startupAttrib.Startup));
+                    }
+                }
+            }
+
             return this;
         }
     }

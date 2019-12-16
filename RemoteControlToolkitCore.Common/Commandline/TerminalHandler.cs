@@ -31,16 +31,16 @@ namespace RemoteControlToolkitCore.Common.Commandline
             int HistoryPosition = History.Count;
             int originalCol = int.Parse(GetCursorPosition().column);
             int originalRow = int.Parse(GetCursorPosition().row);
-            string c;
+            char[] c = new char[1024];
             int cursorPosition = 0;
             //Read from the terminal
-            while ((c = char.ConvertFromUtf32(tr.Read())) != "\n" && c != "\r")
+            while ((char.ConvertFromUtf32(tr.Read(c, 0, c.Length)) != "\n" && c[0] != '\r'))
             {
                 //Check conditions
-                switch (c)
+                switch (c[0])
                 {
                     //Handle backspace
-                    case "\u007f":
+                    case '\u007f':
                         if (sb.Length > 0)
                         {
                             sb.Remove(cursorPosition - 1, 1);
@@ -48,10 +48,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
                         }
 
                         break;
-                    case "\u001b":
-                        char[] chars = new char[4];
-                        tr.Read(chars, 0, chars.Length);
-                        string charString = new string(chars).Replace("\0", string.Empty);
+                    case '\u001b':
+                        string charString = new string(c.Skip(1).ToArray()).Replace("\0", string.Empty);
                         switch (charString)
                         {
                             //Cursor left
@@ -109,8 +107,9 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
                         break;
                     default:
-                        sb.Insert(cursorPosition, c);
-                        cursorPosition++;
+                        string newString = new string(c).Replace("\0", string.Empty);
+                        sb.Insert(cursorPosition, newString);
+                        cursorPosition += newString.Length;
                         break;
                 }
 

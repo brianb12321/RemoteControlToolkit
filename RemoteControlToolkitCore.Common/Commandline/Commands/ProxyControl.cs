@@ -11,7 +11,7 @@ using RemoteControlToolkitCore.Common.Utilities;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
-    [PluginModule(Name = "proxyControl", ExecutingSide = NetworkSide.Proxy)]
+    [PluginModule(Name = "proxyControl", ExecutingSide = NetworkSide.Server)]
     [CommandHelp("Manages the connected servers on the proxy.")]
     public class ProxyControl : RCTApplication
     {
@@ -23,12 +23,18 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             string mode = string.Empty;
             OptionSet options = new OptionSet()
                 .Add("viewServers", "Views all the servers connected to the proxy server.", v => mode = "viewServers")
+                .Add("closeAll", "Closes all proxy connections and clears the proxy list.", v => mode = "closeAll")
                 .Add("help|?", "Displays the help screen.", v => mode = "help");
 
             options.Parse(args.Arguments.Select(a => a.ToString()));
             if (mode == "help")
             {
                 options.WriteOptionDescriptions(currentProc.Out);
+                return new CommandResponse(CommandResponse.CODE_SUCCESS);
+            }
+            else if (mode == "closeAll")
+            {
+                _pool.Clean();
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }
             else if (mode == "viewServers")

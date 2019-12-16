@@ -17,6 +17,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.0.1" />
+    <PackageReference Include="Mono.Math.Port" Version="1.0.0" />
     <PackageReference Include="NAudio" Version="1.9.0" />
     <PackageReference Include="NDesk.Options.Core" Version="1.2.5" />
     <PackageReference Include="System.ServiceModel.Primitives" Version="4.6.0" />
@@ -26,12 +27,17 @@
   <ItemGroup>
     <Folder Include="Scripting\" />
     <Folder Include="Proxy\" />
-    <Folder Include="Plugin\" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Dynamic" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="NSsh\Types\DsaKeyPair.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
 
 </Project>

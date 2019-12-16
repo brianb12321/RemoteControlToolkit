@@ -12,16 +12,20 @@ namespace RemoteControlToolkitCore.Common.Plugin
     {
         List<PluginLibrary> _libs = new List<PluginLibrary>();
         ILogger<DefaultPluginLoader> _logger;
-        public DefaultPluginLoader(ILogger<DefaultPluginLoader> logger)
+        private IHostApplication _application;
+        private IServiceProvider _provider;
+        public DefaultPluginLoader(ILogger<DefaultPluginLoader> logger, IHostApplication application, IServiceProvider provider)
         {
             _logger = logger;
+            _application = application;
+            _provider = provider;
         }
 
         public int Count => _libs.Count;
 
         public event EventHandler<PluginLibrary> LibraryAdded;
 
-        public Type[] GetModuleTypes<TModuleType>() where TModuleType : IPluginModule
+        public Type[] GetModuleTypes<TModuleType>() where TModuleType : class, IPluginModule
         {
             List<Type> result = new List<Type>();
             foreach (PluginLibrary libs in _libs)
@@ -34,7 +38,13 @@ namespace RemoteControlToolkitCore.Common.Plugin
             return result.ToArray();
         }
 
-        public void UnloadModule<TModule>(TModule module) where TModule : IPluginModule
+        public Type GetModuleTypeByName<TModuleType>(string name) where TModuleType : class, IPluginModule
+        {
+            return GetModuleTypes<TModuleType>()
+                .FirstOrDefault(t => t.GetCustomAttribute<PluginModuleAttribute>() != null && t.GetCustomAttribute<PluginModuleAttribute>().Name == name && t.GetCustomAttribute<PluginModuleAttribute>().ExecutingSide.HasFlag(_application.ExecutingSide));
+        }
+
+        public void UnloadModule<TModule>(TModule module) where TModule : class, IPluginModule
         {
             bool moduleDeleted = false;
             foreach (var library in _libs)
@@ -56,7 +66,45 @@ namespace RemoteControlToolkitCore.Common.Plugin
             return _libs.ToArray();
         }
 
-        public TModuleType[] GetAllModules<TModuleType>() where TModuleType : IPluginModule
+        public PluginModuleAttribute GetModuleAttributeByName<TModuleType>(string name) where TModuleType : class, IPluginModule
+        {
+            var type = GetModuleTypes<TModuleType>().FirstOrDefault(app =>
+                app.GetCustomAttribute<PluginModuleAttribute>() != null
+                && app.GetCustomAttribute<PluginModuleAttribute>().Name == name
+                && app.GetCustomAttribute<PluginModuleAttribute>().ExecutingSide.HasFlag(_application.ExecutingSide));
+            if (type != null) return type.GetCustomAttribute<PluginModuleAttribute>();
+            else return null;
+        }
+
+        public PluginModuleAttribute[] GetAllModuleAttribute<TModuleType>() where TModuleType : class, IPluginModule
+        {
+            return GetModuleTypes<TModuleType>()
+                .Select(t => t.GetCustomAttribute<PluginModuleAttribute>())
+                .Where(a => a.ExecutingSide.HasFlag(_application.ExecutingSide))
+                .ToArray();
+        }
+
+        public TModuleType ActivateModuleByName<TModuleType>(string name) where TModuleType : class, IPluginModule
+        {
+            bool pluginExists = HasPluginModule<TModuleType>(name);
+            Type pluginType = GetModuleTypeByName<TModuleType>(name);
+            //Check if an external IApplication object can execute the command.
+            if (!pluginExists)
+            {
+                return null;
+            }
+
+            var app = (TModuleType)Activator.CreateInstance(pluginType);
+            app.InitializeServices(_provider);
+            return app;
+        }
+
+        public bool HasPluginModule<TModuleType>(string name) where TModuleType : class, IPluginModule
+        {
+            return GetModuleAttributeByName<TModuleType>(name) != null;
+        }
+
+        public TModuleType[] GetAllModules<TModuleType>() where TModuleType : class, IPluginModule
         {
             List<TModuleType> result = new List<TModuleType>();
             foreach (PluginLibrary libs in _libs)
@@ -76,10 +124,15 @@ namespace RemoteControlToolkitCore.Common.Plugin
         {
             try
             {
-                PluginLibrary loadedLib = PluginLibrary.LoadFromAssembly(assembly, side);
-                LibraryAdded?.Invoke(this, loadedLib);
-                _libs.Add(loadedLib);
-                return loadedLib;
+                if (_libs.Count(l => l.GetAssembly() == assembly) == 0)
+                {
+                    PluginLibrary loadedLib = PluginLibrary.LoadFromAssembly(assembly, side);
+                    LibraryAdded?.Invoke(this, loadedLib);
+                    _libs.Add(loadedLib);
+                    return loadedLib;
+                }
+
+                return null;
             }
             catch (InvalidPluginLibraryException ex)
             {
@@ -102,14 +155,9 @@ namespace RemoteControlToolkitCore.Common.Plugin
             }
             else
             {
-                _logger.LogWarning($"{folder} does not exist.");
+                _logger.LogWarning($"{folder} folder does not exist.");
                 return null;
             }
-        }
-
-        public void RunPostInit()
-        {
-            _libs.ForEach(l => l.RunPostInit());
         }
     }
 }

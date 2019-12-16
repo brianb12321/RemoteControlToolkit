@@ -17,7 +17,7 @@ using RemoteControlToolkitCore.Common.VirtualFileSystem;
 using VideoLibrary;
 using Zio;
 
-[assembly: PluginLibrary(null, "AudioSubsystem", FriendlyName = "Audio Subsystem", LibraryType = NetworkSide.Proxy | NetworkSide.Server)]
+[assembly: PluginLibrary("AudioSubsystem", FriendlyName = "Audio Subsystem", LibraryType = NetworkSide.Proxy | NetworkSide.Server)]
 namespace RemoteControlToolkitCore.Subsystem.Audio
 {
     [PluginModule(Name = "audio", ExecutingSide = NetworkSide.Server)]

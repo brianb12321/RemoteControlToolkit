@@ -101,6 +101,23 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }
 
+            if (currentProc.EnvironmentVariables["PROXY_MODE"] == "true")
+            {
+                while (true)
+                {
+                    string newCommand = currentProc.In.ReadLine();
+                    if (string.IsNullOrWhiteSpace(newCommand))
+                    {
+                        currentProc.Out.WriteLine("\u001b]e");
+                        continue;
+                    }
+                    _shellExt.History.Add(newCommand);
+                    currentProc.EnvironmentVariables["."] = executeCommand(newCommand, currentProc, token).Code.ToString();
+                    currentProc.Out.WriteLine("\u001b]e");
+                }
+                return new CommandResponse(CommandResponse.CODE_SUCCESS);
+            }
+
             if (string.IsNullOrWhiteSpace(command))
             {
                 StringBuilder sb = new StringBuilder();
@@ -266,6 +283,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 if (parser.ErrorRedirected == RedirectionMode.None) _process.DisposeError = false;
                 if (parser.OutputRedirected == RedirectionMode.None) _process.DisposeOut = false;
                 if (parser.InputRedirected == RedirectionMode.None) _process.DisposeIn = false;
+                _process.Extensions.Add(new TerminalHandler());
                 _process.Start();
                 _process.WaitForExit();
                 return _process.ExitCode;
@@ -288,7 +306,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             _logger.LogInformation("Shell initialized.");
             _builtInCommands = new Dictionary<string, Func<CommandRequest, CommandResponse>>();
             _engine = kernel.GetService<IScriptingEngine>();
-            _appSubsystem = (IApplicationSubsystem)kernel.GetService<IPluginSubsystem<IApplication>>();
+            _appSubsystem = kernel.GetService<IApplicationSubsystem>();
             _services = kernel;
         }
 

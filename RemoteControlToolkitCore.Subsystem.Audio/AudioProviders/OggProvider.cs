@@ -1,19 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.Remoting.Messaging;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using NAudio.Vorbis;
 using NAudio.Wave;
-using NVorbis;
 using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.Plugin;
-using RemoteControlToolkitCore.Subsystem.Audio;
 
-namespace RemoteControlToolkitLibrary.Subsystem.Audio.AudioProviders
+namespace RemoteControlToolkitCore.Subsystem.Audio.AudioProviders
 {
     [PluginModule]
     public class OggProvider : IAudioProviderModule

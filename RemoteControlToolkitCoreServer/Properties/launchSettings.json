@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "RemoteControlToolkitCoreServer": {
+      "commandName": "Project"
+    },
+    "Debug Proxy": {
+      "commandName": "Project",
+      "commandLineArgs": "-p -a 127.0.0.1 -o 8080"
+    }
+  }
+}

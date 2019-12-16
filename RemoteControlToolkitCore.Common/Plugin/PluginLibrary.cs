@@ -14,9 +14,8 @@ namespace RemoteControlToolkitCore.Common.Plugin
         public Version Version { get; private set; }
         public Guid UniqueID { get; private set; }
         public IPluginModule[] Modules { get; private set; }
-        private ILibraryStartup _startup;
         private Assembly _assembly;
-        private PluginLibrary(string name, string friendlyName, Version version, Guid id, NetworkSide type, IPluginModule[] modules, ILibraryStartup startup, Assembly assembly)
+        private PluginLibrary(string name, string friendlyName, Version version, Guid id, NetworkSide type, IPluginModule[] modules, Assembly assembly)
         {
             Name = name;
             FriendlyName = friendlyName;
@@ -24,12 +23,7 @@ namespace RemoteControlToolkitCore.Common.Plugin
             UniqueID = id;
             LibraryType = type;
             Modules = modules;
-            _startup = startup;
             _assembly = assembly;
-        }
-        public void RunPostInit()
-        {
-            _startup?.PostInit();
         }
 
         public Assembly GetAssembly()
@@ -60,11 +54,6 @@ namespace RemoteControlToolkitCore.Common.Plugin
                 {
                     throw new InvalidPluginLibraryException($"Assembly: \"{a.GetName().FullName}\" could not be loaded: Extension \"{attrib.FriendlyName}\" requires a network side of {attrib.LibraryType.ToString()}");
                 }
-                ILibraryStartup startup = null;
-                if (attrib.Startup != null)
-                {
-                    startup = (ILibraryStartup)Activator.CreateInstance(attrib.Startup);
-                }
                 List<IPluginModule> _modules = new List<IPluginModule>();
                 foreach (IPluginModule module in a.GetTypes().Where(
                     t => t.IsClass && !t.IsAbstract
@@ -76,7 +65,7 @@ namespace RemoteControlToolkitCore.Common.Plugin
                     if (module.GetType().GetCustomAttribute<PluginModuleAttribute>().ExecutingSide.HasFlag(side))
                         _modules.Add(module);
                 }
-                return new PluginLibrary(attrib.Name, attrib.FriendlyName, a.GetName().Version, Guid.TryParse(attrib.Guid, out Guid value) ? value : Guid.NewGuid(), attrib.LibraryType, _modules.ToArray(), startup, a);
+                return new PluginLibrary(attrib.Name, attrib.FriendlyName, a.GetName().Version, Guid.TryParse(attrib.Guid, out Guid value) ? value : Guid.NewGuid(), attrib.LibraryType, _modules.ToArray(), a);
             }
             else
             {

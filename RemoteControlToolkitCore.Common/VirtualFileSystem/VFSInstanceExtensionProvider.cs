@@ -16,7 +16,7 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem
         }
         public void GetExtension(IInstanceSession context)
         {
-            IFileSystemSubsystem subsystem = (IFileSystemSubsystem)_services.GetService<IPluginSubsystem<IFileSystemPluginModule>>();
+            IFileSystemSubsystem subsystem = _services.GetService<IFileSystemSubsystem>();
             var fileSystem = new ExtensionFileSystem(subsystem.NewFileSystem());
             fileSystem.FileSystem.WriteAllText("/vfs/README.txt", "This is a test");
             context.Extensions.Add(fileSystem);

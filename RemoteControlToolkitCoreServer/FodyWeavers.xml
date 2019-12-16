@@ -1,0 +1,13 @@
+﻿<Weavers xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="FodyWeavers.xsd">
+  <Costura>
+    <Unmanaged32Assemblies>
+      Win32
+      Kernel32
+      advapi32
+      userenv
+      advapi32
+      user32
+      secur32
+    </Unmanaged32Assemblies>
+  </Costura>
+</Weavers>

@@ -9,7 +9,6 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
 {
     public class ApplicationSubsystem : BasePluginSubsystem<IApplicationSubsystem, IApplication>, IApplicationSubsystem
     {
-        private readonly IServiceProvider _services;
         private readonly ProcessTable _table;
         private readonly IHostApplication _application;
         private readonly ILogger<ApplicationSubsystem> _logger;
@@ -19,7 +18,6 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public ApplicationSubsystem(IPluginLibraryLoader loader, IServiceProvider services) : base(loader, services)
         {
             _table = new ProcessTable();
-            _services = services;
             Factory = new RCTProcess.RCTPRocessFactory(_table);
             _application = services.GetService<IHostApplication>();
             _logger = services.GetService<ILogger<ApplicationSubsystem>>();
@@ -32,38 +30,24 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
 
         public IApplication GetApplication(string name)
         {
-            bool appExists = ApplicationExists(name);
-            Type applicationType = GetApplicationType(name);
-            //Check if an external IApplication object can execute the command.
-            if (!appExists)
-            {
-                throw new RctProcessException("No such application, script");
-            }
-
-            var app = (IApplication) Activator.CreateInstance(applicationType);
-            app.InitializeServices(_services);
+            IApplication app = PluginLoader.ActivateModuleByName<IApplication>(name);
+            if(app == null) throw new RctProcessException("No such application, script");
             return app;
         }
 
         public Type GetApplicationType(string name)
         {
-            return PluginLoader.GetModuleTypes<IApplication>()
-                .FirstOrDefault(t => t.GetCustomAttribute<PluginModuleAttribute>() != null && t.GetCustomAttribute<PluginModuleAttribute>().Name == name && t.GetCustomAttribute<PluginModuleAttribute>().ExecutingSide.HasFlag(_application.ExecutingSide));
+            return PluginLoader.GetModuleTypeByName<IApplication>(name);
         }
 
         public PluginModuleAttribute[] GetAllInstalledApplications()
         {
-            return PluginLoader.GetModuleTypes<IApplication>()
-                .Select(t => t.GetCustomAttribute<PluginModuleAttribute>())
-                .Where(a => a.ExecutingSide.HasFlag(_application.ExecutingSide))
-                .ToArray();
+            return PluginLoader.GetAllModuleAttribute<IApplication>();
         }
 
         public bool ApplicationExists(string name)
         {
-            return PluginLoader.GetModuleTypes<IApplication>().Count(app => app.GetCustomAttribute<PluginModuleAttribute>() != null
-                                                                            && app.GetCustomAttribute<PluginModuleAttribute>().Name == name
-                                                                            && app.GetCustomAttribute<PluginModuleAttribute>().ExecutingSide.HasFlag(_application.ExecutingSide)) > 0;
+            return PluginLoader.HasPluginModule<IApplication>(name);
         }
 
         public void AddProcess(RCTProcess process)
