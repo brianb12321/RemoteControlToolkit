@@ -72,55 +72,43 @@ namespace RemoteControlToolkitCore.Common
         public void Run(string[] args)
         {
             _shutdown = false;
-            handleConnections(_config.ListenEndPoints[0]);
-            //OptionSet options = new OptionSet()
-            //    .Add("p|proxy", "Connect to a proxy server.", v => proxyMode = true)
-            //    .Add("proxyAddress|a=", "The address to connect to.", v => proxyAddress = v)
-            //    .Add("proxyPort|o=", "The port to connect to.", v => proxyPort = int.Parse(v));
+            OptionSet options = new OptionSet()
+                .Add("p|proxy", "Connect to a proxy server.", v => proxyMode = true)
+                .Add("proxyAddress|a=", "The address to connect to.", v => proxyAddress = v)
+                .Add("proxyPort|o=", "The port to connect to.", v => proxyPort = int.Parse(v));
 
-            //options.Parse(args);
-            //if (proxyMode)
-            //{
-            //    TcpClient client = new TcpClient();
-            //    client.Connect(proxyAddress, proxyPort);
-            //    ProxyClient instance = new ProxyClient(client, _proxyClientLogger, _provider.GetService<IApplicationSubsystem>(), _provider.GetServices<IInstanceExtensionProvider>().ToArray());
-            //    _proxyLogger.LogInformation("Connected to proxy server.");
-            //    instance.Start();
-            //}
-            //else
-            //{
-            //    _clientThread = new Thread(() =>
-            //    {
-            //        _listener = new TcpListener(IPAddress.Any, 8081);
-            //        _logger.LogInformation("Starting listener.");
-            //        _listener.Start();
-            //        while (true)
-            //        {
-            //            _logger.LogInformation("Waiting for client connection.");
-            //            TcpClient client = _listener.AcceptTcpClient();
-            //            _logger.LogInformation("A client established a connection.");
-            //            NetworkInstance instance = new NetworkInstance(client, _instanceLogger, _provider.GetService<IApplicationSubsystem>(), _provider.GetServices<IInstanceExtensionProvider>().ToArray());
-            //            _clients.Add(instance);
-            //            instance.Start();
-            //        }
-            //    });
-            //    _proxyThread = new Thread(() =>
-            //    {
-            //        _proxyListener = new TcpListener(IPAddress.Any, 8080);
-            //        _logger.LogInformation("Starting proxy listener.");
-            //        _proxyListener.Start();
-            //        while (true)
-            //        {
-            //            TcpClient client = _proxyListener.AcceptTcpClient();
-            //            _logger.LogInformation("A proxy client established a connection.");
-            //            ProxyNetworkInstance instance = new ProxyNetworkInstance(client, _proxyLogger, _proxyClients);
-            //            _proxyClients.AddServer(instance);
-            //        }
-            //    });
-            //    _proxyThread.Start();
-            //    _clientThread.Start();
-            //    _clientThread.Join();
-            //}
+            options.Parse(args);
+            if (proxyMode)
+            {
+                TcpClient client = new TcpClient();
+                client.Connect(proxyAddress, proxyPort);
+                ProxyClient instance = new ProxyClient(client, _proxyClientLogger, _provider.GetService<IApplicationSubsystem>(), _provider.GetServices<IInstanceExtensionProvider>().ToArray());
+                _proxyLogger.LogInformation("Connected to proxy server.");
+                instance.Start();
+            }
+            else
+            {
+                _clientThread = new Thread(() =>
+                {
+                    handleConnections(_config.ListenEndPoints[0]);
+                });
+                _proxyThread = new Thread(() =>
+                {
+                    _proxyListener = new TcpListener(IPAddress.Any, 8080);
+                    _logger.LogInformation("Starting proxy listener.");
+                    _proxyListener.Start();
+                    while (true)
+                    {
+                        TcpClient client = _proxyListener.AcceptTcpClient();
+                        _logger.LogInformation("A proxy client established a connection.");
+                        ProxyNetworkInstance instance = new ProxyNetworkInstance(client, _proxyLogger, _proxyClients);
+                        _proxyClients.AddServer(instance);
+                    }
+                });
+                _proxyThread.Start();
+                _clientThread.Start();
+                _clientThread.Join();
+            }
         }
         private void handleConnections(object endPointObject)
         {

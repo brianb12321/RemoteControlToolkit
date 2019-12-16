@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
+using RemoteControlToolkitCore.Common.Networking;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {
@@ -13,179 +14,33 @@ namespace RemoteControlToolkitCore.Common.Commandline
     /// </summary>
     public class TerminalHandler : ITerminalHandler
     {
-        private RCTProcess _process;
         public List<string> History { get; }
+        public int TerminalRows { get; set; } = 36;
+        public int TerminalColumns { get; set; } = 130;
+        private TextReader _textIn;
+        private TextWriter _textOut;
 
-        public TerminalHandler()
+        public TerminalHandler(TextReader textIn, TextWriter textOut)
         {
+            _textIn = textIn;
+            _textOut = textOut;
             History = new List<string>();
-        }
-
-        public string ReadLine()
-        {
-            StringBuilder sb = new StringBuilder();
-            TextReader tr = _process.In;
-            TextWriter tw = _process.Out;
-            int col = int.Parse(_process.EnvironmentVariables["TERMINAL_COLUMNS"]);
-            int row = int.Parse(_process.EnvironmentVariables["TERMINAL_ROWS"]);
-            int HistoryPosition = History.Count;
-            int originalCol = int.Parse(GetCursorPosition().column);
-            int originalRow = int.Parse(GetCursorPosition().row);
-            char[] c = new char[1024];
-            int cursorPosition = 0;
-            //Read from the terminal
-            while ((char.ConvertFromUtf32(tr.Read(c, 0, c.Length)) != "\n" && c[0] != '\r'))
-            {
-                //Check conditions
-                switch (c[0])
-                {
-                    //Handle backspace
-                    case '\u007f':
-                        if (sb.Length > 0)
-                        {
-                            sb.Remove(cursorPosition - 1, 1);
-                            cursorPosition--;
-                        }
-
-                        break;
-                    case '\u001b':
-                        string charString = new string(c.Skip(1).ToArray()).Replace("\0", string.Empty);
-                        switch (charString)
-                        {
-                            //Cursor left
-                            case "[D":
-                                if (cursorPosition > 0)
-                                {
-                                    cursorPosition = Math.Max(0, cursorPosition - 1);
-                                }
-
-                                break;
-                            //Cursor Right
-                            case "[C":
-                                cursorPosition = Math.Min(sb.Length, cursorPosition + 1);
-                                break;
-                            //Up Arrow
-                            case "[A":
-                                if (History.Count > 0 && HistoryPosition > 0)
-                                {
-                                    HistoryPosition--;
-                                    sb.Clear();
-                                    cursorPosition = 0;
-                                    string HistoryCommand = History[HistoryPosition];
-                                    sb.Append(HistoryCommand);
-                                    cursorPosition = HistoryCommand.Length;
-                                }
-
-                                break;
-                            //Down Arrow
-                            case "[B":
-                                if (History.Count > 0 && HistoryPosition < History.Count - 1)
-                                {
-                                    HistoryPosition++;
-                                    sb.Clear();
-                                    cursorPosition = 0;
-                                    string HistoryCommand = History[HistoryPosition];
-                                    sb.Append(HistoryCommand);
-                                    cursorPosition = HistoryCommand.Length;
-                                }
-
-                                break;
-                            //Home
-                            case "[1~":
-                                cursorPosition = 0;
-                                break;
-                            //End
-                            case "[4~":
-                                cursorPosition = sb.Length;
-                                break;
-                            //F1
-                            case "[11~":
-                                sb.Clear();
-                                cursorPosition = 0;
-                                break;
-                        }
-
-                        break;
-                    default:
-                        string newString = new string(c).Replace("\0", string.Empty);
-                        sb.Insert(cursorPosition, newString);
-                        cursorPosition += newString.Length;
-                        break;
-                }
-
-                int realStringLength = sb.Length + originalCol;
-                int realCursorPosition = (cursorPosition + originalCol);
-                int rowsToMove = realStringLength / col;
-                int cursorRowsToMove = realCursorPosition / col;
-                int cellsToMove = (realCursorPosition % col) - 1;
-                //The cursor position is a multiple of the column
-                if (cellsToMove == -1)
-                {
-                    cursorRowsToMove--;
-                    cellsToMove = col;
-                }
-                //Restore saved cursor position.
-                tw.Write($"\u001b[{originalRow};{originalCol}H");
-                //Clear lines
-                if (rowsToMove > 0)
-                {
-                    for (int i = 0; i <= rowsToMove; i++)
-                    {
-                        tw.Write("\u001b[0K");
-                        tw.Write("\u001b[B");
-                        tw.Write("\u001b[10000000000D");
-                    }
-                }
-                else
-                {
-                    tw.Write("\u001b[0K");
-                }
-
-                tw.Write($"\u001b[{originalRow};{originalCol}H");
-                //Print data
-                tw.Write(sb.ToString());
-                tw.Write($"\u001b[{originalRow};{originalCol}H");
-                //Reposition cursor
-                if (cursorPosition > 0)
-                {
-                    if (realCursorPosition > col)
-                    {
-                        for (int i = 0; i < cursorRowsToMove; i++)
-                        {
-                            tw.Write("\u001b[E");
-
-                        }
-
-                        if (cellsToMove > 0)
-                        {
-                            tw.Write($"\u001b[{cellsToMove}C");
-                        }
-                    }
-                    else
-                    {
-                        tw.Write("\u001b[" + cursorPosition + "C");
-                    }
-                }
-            }
-
-            tw.WriteLine();
-            return sb.ToString();
         }
 
         public void Clear()
         {
-            _process.Out.WriteLine("\u001b[2J\u001b[;H\u001b[0m");
+            _textOut.WriteLine("\u001b[2J\u001b[;H\u001b[0m");
         }
 
         public void Bell()
         {
-            _process.Out.Write("\a");
+            _textOut.Write("\a");
         }
 
         public (string row, string column) GetCursorPosition()
         {
-            TextWriter tw = _process.Out;
-            TextReader tr = _process.In;
+            TextWriter tw = _textOut;
+            TextReader tr = _textIn;
             //Send code for cursor position.
             tw.Write("\u001b[6n");
             char[] buffer = new char[8];
@@ -202,12 +57,14 @@ namespace RemoteControlToolkitCore.Common.Commandline
             return (position[0], position[1]);
         }
 
-        public void Attach(RCTProcess owner)
+        
+
+        public void Attach(IInstanceSession owner)
         {
-            _process = owner;
+            
         }
 
-        public void Detach(RCTProcess owner)
+        public void Detach(IInstanceSession owner)
         {
             
         }

@@ -30,6 +30,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         public IExtensionCollection<IInstanceSession> Extensions { get; }
         private RCTProcess _shellProcess;
         private ChannelWriter _channelStream;
+        private TerminalHandler _terminalHandler;
 
         public BaseProcessConsole(ILogger<BaseProcessConsole> logger, IApplicationSubsystem subsystem, IInstanceExtensionProvider[] providers, IChannelProducer producer, ILogger<ChannelWriter> channelLogger)
         {
@@ -44,20 +45,22 @@ namespace RemoteControlToolkitCore.Common.Commandline
             }
 
             _channelStream = new ChannelWriter(Producer, channelLogger);
+            var outStream = GetClientWriter();
+            var inStream = GetClientReader();
+            _terminalHandler = new TerminalHandler(inStream, outStream);
+            var consoleInStream = new ConsoleTextReader(_terminalHandler, inStream, outStream);
             _shellProcess = ProcessTable.Factory.CreateOnApplication(this, subsystem.GetApplication("shell"),
                 null, new CommandRequest(new ICommandElement[] {new StringCommandElement("shell") }));
-            _shellProcess.Extensions.Add(new TerminalHandler());
-            _shellProcess.SetOut(new ChannelTextWriter(_channelStream));
-            _shellProcess.SetError(new ChannelTextWriter(_channelStream));
-            _shellProcess.SetIn(new ChannelTextReader(_channelStream));
+            _shellProcess.SetOut(outStream);
+            _shellProcess.SetError(outStream);
+            _shellProcess.SetIn(consoleInStream);
             initializeEnvironmentVariables(_shellProcess);
+            Extensions.Add(_terminalHandler);
         }
 
         private void initializeEnvironmentVariables(RCTProcess process)
         {
             _logger.LogInformation("Initializing environment variables.");
-            process.EnvironmentVariables.Add("TERMINAL_ROWS", "36");
-            process.EnvironmentVariables.Add("TERMINAL_COLUMNS", "130");
             process.EnvironmentVariables.Add("PROXY_MODE", "false");
             process.EnvironmentVariables.Add(".", "0");
         }

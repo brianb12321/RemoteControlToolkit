@@ -29,7 +29,7 @@ namespace RemoteControlToolkitCore.Common.Networking
         private StreamWriter _streamWriter;
         private RCTProcess _commandShell;
         private IInstanceExtensionProvider[] _providers;
-
+        private TerminalHandler _terminalHandler;
         public IExtensionCollection<IInstanceSession> Extensions { get; }
         public Guid ClientUniqueID { get; }
         public string Username { get; }
@@ -42,6 +42,7 @@ namespace RemoteControlToolkitCore.Common.Networking
             _client = client;
             _logger = logger;
             _networkStream = _client.GetStream();
+            _terminalHandler = new TerminalHandler(GetClientReader(), GetClientWriter());
             //X509Certificate2 certificate = new X509Certificate2(File.ReadAllBytes("bcscert.pfx"), "abc123");
             //_sslStream = new SslStream(_networkStream, false);
             //_sslStream.AuthenticateAsServer(certificate, false, true);
@@ -78,13 +79,11 @@ namespace RemoteControlToolkitCore.Common.Networking
                 }
             }, null);
             initializeEnvironmentVariables(_workingThread);
-            _workingThread.Extensions.Add(new TerminalHandler());
+            Extensions.Add(_terminalHandler);
         }
         private void initializeEnvironmentVariables(RCTProcess process)
         {
             _logger.LogInformation("Initializing environment variables.");
-            process.EnvironmentVariables.Add("TERMINAL_ROWS", "36");
-            process.EnvironmentVariables.Add("TERMINAL_COLUMNS", "130");
             process.EnvironmentVariables.Add("PROXY_MODE", "false");
             process.EnvironmentVariables.Add(".", "0");
         }

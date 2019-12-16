@@ -40,7 +40,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public override CommandResponse Execute(CommandRequest args, RCTProcess currentProc, CancellationToken token)
         {
-            _shellExt = currentProc.Extensions.Find<ITerminalHandler>();
+            _shellExt = currentProc.ClientContext.GetExtension<ITerminalHandler>();
             currentProc.ControlC += CurrentProc_ControlC;
             _builtInCommands.Add("cls", (args2) =>
             {
@@ -136,7 +136,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                         currentProc.Out.Write($"[{Environment.MachineName}]> ");
                     }
 
-                    string newCommand = _shellExt.ReadLine();
+                    string newCommand = currentProc.In.ReadLine();
                     if (newCommand.StartsWith("`"))
                     {
                         handleMultipleCommands(token, currentProc, sb);
@@ -158,7 +158,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             {
                 sb.Clear();
                 currentProc.Out.Write("> ");
-                string batchCommand = _shellExt.ReadLine();
+                string batchCommand = currentProc.In.ReadLine();
                 if (string.IsNullOrWhiteSpace(batchCommand)) continue;
                 if (batchCommand.Contains("`"))
                 {
@@ -283,7 +283,6 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 if (parser.ErrorRedirected == RedirectionMode.None) _process.DisposeError = false;
                 if (parser.OutputRedirected == RedirectionMode.None) _process.DisposeOut = false;
                 if (parser.InputRedirected == RedirectionMode.None) _process.DisposeIn = false;
-                _process.Extensions.Add(new TerminalHandler());
                 _process.Start();
                 _process.WaitForExit();
                 return _process.ExitCode;

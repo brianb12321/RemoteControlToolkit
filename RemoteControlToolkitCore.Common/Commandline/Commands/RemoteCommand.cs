@@ -20,7 +20,6 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         public override string ProcessName => "Remote Command";
         public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
         {
-            ITerminalHandler terminalHandler = context.Extensions.Find<ITerminalHandler>();
             int serverId = 0;
             bool showHelp = false;
             string command = string.Empty;
@@ -50,7 +49,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                     while (true)
                     {
                         context.Out.Write($"remote [{id}]> ");
-                        string newCommand = terminalHandler.ReadLine();
+                        string newCommand = context.In.ReadLine();
                         if (string.IsNullOrWhiteSpace(newCommand)) continue;
                         //Do not send exit to server
                         if (newCommand == "exit") break;

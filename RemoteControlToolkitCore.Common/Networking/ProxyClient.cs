@@ -27,6 +27,7 @@ namespace RemoteControlToolkitCore.Common.Networking
         private NetworkStream _networkStream;
         private StreamReader _sr;
         private StreamWriter _sw;
+        private TerminalHandler _terminalHandler;
 
         public ProxyClient(TcpClient client, ILogger<ProxyClient> logger, IApplicationSubsystem appSubsystem, IInstanceExtensionProvider[] providers)
         {
@@ -68,13 +69,12 @@ namespace RemoteControlToolkitCore.Common.Networking
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }, null);
             initializeEnvironmentVariables(_proxyProcess);
-            _proxyProcess.Extensions.Add(new TerminalHandler());
+            _terminalHandler = new TerminalHandler(GetClientReader(), GetClientWriter());
+            Extensions.Add(_terminalHandler);
         }
         private void initializeEnvironmentVariables(RCTProcess process)
         {
             _logger.LogInformation("Initializing environment variables.");
-            process.EnvironmentVariables.Add("TERMINAL_ROWS", "36");
-            process.EnvironmentVariables.Add("TERMINAL_COLUMNS", "130");
             process.EnvironmentVariables.Add("PROXY_MODE", "true");
             process.EnvironmentVariables.Add(".", "0");
         }

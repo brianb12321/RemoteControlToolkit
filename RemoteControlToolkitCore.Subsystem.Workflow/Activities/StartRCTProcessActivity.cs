@@ -29,7 +29,7 @@ namespace RemoteControlToolkitCore.Subsystem.Workflow.Activities
             RCTProcess newProc = currentProc.ClientContext.ProcessTable.Factory.CreateOnApplication(
                 currentProc.ClientContext, subsystem.GetApplication(request.Arguments[0].ToString()), currentProc,
                 request);
-            newProc.Extensions.Add(new TerminalHandler());
+
             newProc.DisposeIn = false;
             newProc.DisposeOut = false;
             newProc.DisposeError = false;

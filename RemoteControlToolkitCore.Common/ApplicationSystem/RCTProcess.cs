@@ -232,7 +232,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                         while (!extProcess.HasExited)
                         {
                             sb.Clear();
-                            string text = proc.Extensions.Find<ITerminalHandler>().ReadLine();
+                            string text = proc.In.ReadLine();
                             extProcess.StandardInput.WriteLine(text);
                         }
 
