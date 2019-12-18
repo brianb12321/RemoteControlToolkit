@@ -7,34 +7,47 @@ namespace RemoteControlToolkitCore.Common.NSsh.Utility
 {
     public class MacFactory : IMacFactory
     {
+        private MacAlgorithm _macAlgorithm;
+        private BigInteger _key;
+        private byte[] _hash;
+        private byte[] _sessionId;
         #region IMacFactory Members
 
-        public HashAlgorithm CreateMac(MacAlgorithm macAlgorithm, BigInteger key, byte[] hash, byte[] sessionId, char c)
+        public void Initialize(MacAlgorithm macAlgorithm, BigInteger key, byte[] hash, byte[] sessionId)
         {
+            _macAlgorithm = macAlgorithm;
+            _key = key;
+            _hash = hash;
+            _sessionId = sessionId;
+        }
+
+        public HashAlgorithm CreateMac(char c)
+        {
+            if (c == 0) return null;
             // Key size in bytes (not bits!)
             int keySize;
 
-            if (macAlgorithm == MacAlgorithm.HmacSha1)
+            if (_macAlgorithm == MacAlgorithm.HmacSha1)
             {
                 keySize = 20;
             }
             else
             {
-                throw new ArgumentException("Invalid algorithm: " + macAlgorithm, "algorithm");
+                throw new ArgumentException("Invalid algorithm: " + _macAlgorithm, "algorithm");
             }
 
-            byte[] keyData = CipherFactory.DeriveKey(key, hash, sessionId, c, keySize);
+            byte[] keyData = CipherFactory.DeriveKey(_key, _hash, _sessionId, c, keySize);
 
             HashAlgorithm result = null;
 
-            switch (macAlgorithm)
+            switch (_macAlgorithm)
             {
                 case MacAlgorithm.HmacSha1:
                     result = new HMACSHA1(keyData);
                     break;
 
                 default:
-                    throw new ArgumentException("Unsupported algorithm: " + macAlgorithm, "algorithm");
+                    throw new ArgumentException("Unsupported algorithm: " + _macAlgorithm, "algorithm");
             }
 
             return result;

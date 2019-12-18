@@ -57,10 +57,11 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
 
         private IPacketFactory _packetFactory;
         private ISecureRandom _random;
+        private IMacFactory _macFactory;
         private NSshServiceConfiguration _config;
         private StateManager _stateManager;
 
-        public TransportLayerManager(ILogger<TransportLayerManager> logger, IPacketFactory factory, ISecureRandom random, NSshServiceConfiguration config, StateManager stateManager)
+        public TransportLayerManager(ILogger<TransportLayerManager> logger, IPacketFactory factory, ISecureRandom random, NSshServiceConfiguration config, StateManager stateManager, IMacFactory macFactory)
         {
             _logger = logger;
             _stateManager = stateManager;
@@ -68,6 +69,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
             _packetFactory = factory;
             _random = random;
             _config = config;
+            _macFactory = macFactory;
         }
 
         ~TransportLayerManager()
@@ -244,7 +246,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
             try
             {
                 //log.Debug("WRITE PACKET: " + packet);
-                _stream.Write(packet.ToByteArray(_transmitTransform, TransmitMac, TransmitSequenceNumber++, _random));
+                _stream.Write(packet.ToByteArray(_transmitTransform, _macFactory.CreateMac(TransmitMac), TransmitSequenceNumber++, _random));
                 _stream.Flush();
             }
             catch (Exception excp)
@@ -258,7 +260,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
             try
             {
                 Packet result;
-                result = _packetFactory.ReadFrom(_stream, _receiveTransform, ReceiveMac, ReceiveSequenceNumber++);
+                result = _packetFactory.ReadFrom(_stream, _receiveTransform, _macFactory.CreateMac(ReceiveMac), ReceiveSequenceNumber++);
                 //log.Debug("READ PACKET: " + result);
 
                 if (AuthenticatedIdentity != null && Connected)
@@ -279,12 +281,11 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
         {
             if (excp is ObjectDisposedException)
             {
-                _logger.LogInformation("Stream was disconnected with ObjectDisposedException.");
+                _logger.LogInformation($"Stream was disconnected with ObjectDisposedException: {excp.ToString()}");
                 if (Connected)
                 {
                     Disconnect();
                 }
-                return;
             }
             else if (excp is EndOfStreamException)
             {
@@ -382,9 +383,9 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
             }
         }
 
-        public HashAlgorithm TransmitMac { get; set; }
+        public char TransmitMac { get; set; }
 
-        public HashAlgorithm ReceiveMac { get; set; }
+        public char ReceiveMac { get; set; }
 
         public IIdentity AuthenticatedIdentity { get; set; }
 

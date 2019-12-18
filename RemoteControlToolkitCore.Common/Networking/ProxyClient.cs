@@ -69,7 +69,7 @@ namespace RemoteControlToolkitCore.Common.Networking
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }, null);
             initializeEnvironmentVariables(_proxyProcess);
-            _terminalHandler = new TerminalHandler(GetClientReader(), GetClientWriter());
+            _terminalHandler = new TerminalHandler(GetClientReader(), GetClientWriter(), null);
             Extensions.Add(_terminalHandler);
         }
         private void initializeEnvironmentVariables(RCTProcess process)

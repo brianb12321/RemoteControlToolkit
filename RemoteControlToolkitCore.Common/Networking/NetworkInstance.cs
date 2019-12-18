@@ -42,7 +42,7 @@ namespace RemoteControlToolkitCore.Common.Networking
             _client = client;
             _logger = logger;
             _networkStream = _client.GetStream();
-            _terminalHandler = new TerminalHandler(GetClientReader(), GetClientWriter());
+            _terminalHandler = new TerminalHandler(GetClientReader(), GetClientWriter(), null);
             //X509Certificate2 certificate = new X509Certificate2(File.ReadAllBytes("bcscert.pfx"), "abc123");
             //_sslStream = new SslStream(_networkStream, false);
             //_sslStream.AuthenticateAsServer(certificate, false, true);

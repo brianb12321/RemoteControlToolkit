@@ -25,6 +25,7 @@ namespace RemoteControlToolkitCore.Common.NSsh
             services.AddSingleton<IPublicKeyAuthenticationService, PublicKeyAuthenticationService>();
             services.AddTransient<IChannel, Channel>();
             services.AddTransient<IChannelConsumer, CommandChannelConsumer>();
+            services.AddTransient<IChannelCommandConsumer, CommandChannelConsumer>();
             //services.AddSingleton<IImpersonationProvider, ImpersonationProvider>("ImpersonationProvider");
             services.AddSingleton<IImpersonationProvider, BasicImpersonationProvider>();
             services.AddSingleton<IPacketFactory, PacketFactory>();

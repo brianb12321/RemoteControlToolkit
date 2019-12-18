@@ -73,9 +73,9 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
 
         SymmetricAlgorithm ReceiveCipher { get; set; }
 
-        HashAlgorithm TransmitMac { get; set; }
+        char TransmitMac { get; set; }
 
-        HashAlgorithm ReceiveMac { get; set; }
+        char ReceiveMac { get; set; }
 
         IIdentity AuthenticatedIdentity { get; set; }
 

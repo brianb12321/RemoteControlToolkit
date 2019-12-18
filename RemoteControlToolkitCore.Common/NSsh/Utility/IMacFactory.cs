@@ -6,6 +6,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.Utility
 {
     public interface IMacFactory
     {
-        HashAlgorithm CreateMac(MacAlgorithm macAlgorithm, BigInteger key, byte[] hash, byte[] sessionId, char c);
+        void Initialize(MacAlgorithm macAlgorithm, BigInteger key, byte[] hash, byte[] sessionId);
+        HashAlgorithm CreateMac(char c);
     }
 }

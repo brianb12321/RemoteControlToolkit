@@ -5,36 +5,51 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh.ChannelLayer;
 using RemoteControlToolkitCore.Common.NSsh.Packets;
 using RemoteControlToolkitCore.Common.NSsh.Types;
 
 namespace RemoteControlToolkitCore.Common.Utilities
 {
-    public class ChannelWriter : Stream
+    public class ChannelTextWriter : TextWriter
+    {
+        public override Encoding Encoding => Encoding.UTF8;
+        private IChannelProducer _channel;
+
+        public ChannelTextWriter(IChannelProducer channel)
+        {
+            _channel = channel;
+        }
+
+        public override void Write(string value)
+        {
+            _channel.SendData(Encoding.GetBytes(value));
+        }
+        public override void WriteLine(string value)
+        {
+            _channel.SendData(Encoding.GetBytes(value + "\r\n"));
+        }
+
+        public override void WriteLine()
+        {
+            _channel.SendData(Encoding.GetBytes("\r\n"));
+        }
+    }
+    public class ChannelTextReader : TextReader
     {
         private IChannelProducer _channel;
-        private ILogger<ChannelWriter> _logger;
-        public ChannelWriter(IChannelProducer channel, ILogger<ChannelWriter> logger)
+        private ILogger<ChannelTextReader> _logger;
+        private IInstanceSession _context;
+
+        public ChannelTextReader(IChannelProducer channel, ILogger<ChannelTextReader> logger, IInstanceSession context)
         {
             _channel = channel;
             _logger = logger;
-        }
-        public override void Flush()
-        {
-            
+            _context = context;
         }
 
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            return 0;
-        }
-
-        public override void SetLength(long value)
-        {
-            
-        }
-        public override int Read(byte[] buffer, int offset, int count)
+        public override string ReadLine()
         {
             Packet packet;
 
@@ -46,17 +61,18 @@ namespace RemoteControlToolkitCore.Common.Utilities
             catch (IOException e)
             {
                 _logger.LogError("Error reading packet from channel.", e);
-                return -1;
+                return null;
             }
             catch (ObjectDisposedException e)
             {
                 _logger.LogError("Error reading packet from channel.", e);
-                return -1;
+                return null;
             }
             catch (TransportDisconnectException e)
             {
-                _logger.LogError("The channel consumer had an unexpected transport layer disconnection.", e);
-                return -1;
+                _logger.LogError($"The channel consumer had an unexpected transport layer disconnection: {e.Message}");
+                _context.Close();
+                return null;
             }
 
             try
@@ -64,17 +80,16 @@ namespace RemoteControlToolkitCore.Common.Utilities
                 switch (packet.PacketType)
                 {
                     case PacketType.ChannelData:
-                        string debug = Encoding.UTF8.GetString(((ChannelDataPacket) packet).Data);
-                        Encoding.UTF8.GetBytes(debug).CopyTo(buffer, 0);
-                        return 0;
+                        string text = Encoding.UTF8.GetString(((ChannelDataPacket)packet).Data);
+                        return text;
 
                     case PacketType.ChannelEof:
                         _channel.Close();
-                        return 0;
+                        return null;
 
                     case PacketType.ChannelClose:
                         _channel.Close();
-                        return 0;
+                        return null;
 
                     default:
                         throw new NotSupportedException("Packet type is not supported by channel: " + packet.PacketType);
@@ -83,70 +98,8 @@ namespace RemoteControlToolkitCore.Common.Utilities
             catch (IOException e)
             {
                 _logger.LogError("Error handling packet.", e);
-                return -1;
+                return null;
             }
-        }
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            _channel.SendData(buffer);
-        }
-
-        public override bool CanRead => true;
-        public override bool CanSeek => false;
-        public override bool CanWrite => true;
-        public override long Length { get; }
-        public override long Position { get; set; }
-    }
-
-    public class ChannelTextWriter : TextWriter
-    {
-        public override Encoding Encoding => Encoding.UTF8;
-        private ChannelWriter _writer;
-
-        public ChannelTextWriter(ChannelWriter writer)
-        {
-            _writer = writer;
-        }
-
-        public override void Write(string value)
-        {
-            _writer.Write(Encoding.GetBytes(value), 0, 0);
-        }
-        public override void WriteLine(string value)
-        {
-            _writer.Write(Encoding.GetBytes(value + "\r\n"), 0, 0);
-        }
-
-        public override void WriteLine()
-        {
-            _writer.Write(Encoding.GetBytes("\r\n"), 0, 0);
-        }
-    }
-    public class ChannelTextReader : TextReader
-    {
-        public ChannelWriter _writer;
-        public ChannelTextReader(ChannelWriter writer)
-        {
-            _writer = writer;
-        }
-
-        public override int Read(char[] buffer, int index, int count)
-        {
-            byte[] tempBuffer = new byte[count];
-            int num = _writer.Read(tempBuffer, index, tempBuffer.Length);
-            Encoding.UTF8.GetChars(tempBuffer).CopyTo(buffer, index);
-            if (num != -1)
-            {
-                return buffer[0];
-            }
-
-            return -1;
-        }
-
-        public override int Read()
-        {
-            throw new NotImplementedException();
         }
     }
 }

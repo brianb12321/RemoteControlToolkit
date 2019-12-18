@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Networking;
+using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {
@@ -15,10 +16,12 @@ namespace RemoteControlToolkitCore.Common.Commandline
     /// </summary>
     public interface ITerminalHandler : IExtension<IInstanceSession>
     {
+        event EventHandler TerminalDimensionsChanged;
         List<string> History { get; }
         (string row, string column) GetCursorPosition();
-        int TerminalRows { get; set; }
-        int TerminalColumns { get; set; }
+        uint TerminalRows { get; set; }
+        uint TerminalColumns { get; set; }
+        PseudoTerminalPayload InitialTerminalConfig { get; }
         void Clear();
         void Bell();
     }

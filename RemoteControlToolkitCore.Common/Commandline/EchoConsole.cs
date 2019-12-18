@@ -6,15 +6,21 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Scripting.Hosting.Shell;
 using RemoteControlToolkitCore.Common.NSsh.ChannelLayer;
+using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
 using RemoteControlToolkitCore.Common.NSsh.Utility;
 using IConsole = RemoteControlToolkitCore.Common.NSsh.ChannelLayer.Console.IConsole;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {
-    public class EchoConsole : NSsh.ChannelLayer.Console.IConsole
+    public class EchoConsole : IConsole
     {
         private EchoStream m_echoStream = new EchoStream();
         private EchoStream m_errorStream = new EchoStream();
+
+        public void SignalWindowChange(WindowChangePayload args)
+        {
+            
+        }
 
         public IChannelProducer Producer { get; }
         public TextWriter StandardInput { get; private set; }

@@ -14,12 +14,21 @@ namespace RemoteControlToolkitCore.Common.Utilities
         private ITerminalHandler _terminalHandler;
         private TextReader _textIn;
         private TextWriter _textOut;
+        private int _col;
+        private int _row;
 
         public ConsoleTextReader(ITerminalHandler handler, TextReader textIn, TextWriter textOut)
         {
             _terminalHandler = handler;
             _textIn = textIn;
             _textOut = textOut;
+            handler.TerminalDimensionsChanged += Handler_TerminalDimensionsChanged;
+        }
+
+        private void Handler_TerminalDimensionsChanged(object sender, EventArgs e)
+        {
+            _col = (int)_terminalHandler.TerminalColumns;
+            _row = (int) _terminalHandler.TerminalRows;
         }
 
         public override string ReadLine()
@@ -27,21 +36,21 @@ namespace RemoteControlToolkitCore.Common.Utilities
             StringBuilder sb = new StringBuilder();
             TextReader tr = _textIn;
             TextWriter tw = _textOut;
-            int col = _terminalHandler.TerminalColumns;
-            int row = _terminalHandler.TerminalRows;
+            _col = (int)_terminalHandler.TerminalColumns;
+            _row = (int)_terminalHandler.TerminalRows;
             int HistoryPosition = _terminalHandler.History.Count;
             int originalCol = int.Parse(_terminalHandler.GetCursorPosition().column);
             int originalRow = int.Parse(_terminalHandler.GetCursorPosition().row);
-            char[] c = new char[1024];
+            string text = string.Empty;
             int cursorPosition = 0;
             //Read from the terminal
-            while ((char.ConvertFromUtf32(tr.Read(c, 0, c.Length)) != "\n" && c[0] != '\r'))
+            while ((text = tr.ReadLine()) != "\n" && text != "\r")
             {
                 //Check conditions
-                switch (c[0])
+                switch (text)
                 {
                     //Handle backspace
-                    case '\u007f':
+                    case "\u007f":
                         if (sb.Length > 0)
                         {
                             sb.Remove(cursorPosition - 1, 1);
@@ -49,81 +58,70 @@ namespace RemoteControlToolkitCore.Common.Utilities
                         }
 
                         break;
-                    case '\u001b':
-                        string charString = new string(c.Skip(1).ToArray()).Replace("\0", string.Empty);
-                        switch (charString)
+                    //Cursor Right
+                    case "\u001b[C":
+                        cursorPosition = Math.Min(sb.Length, cursorPosition + 1);
+                        break;
+                    //Cursor Up
+                    case "\u001b[A":
+                        if (_terminalHandler.History.Count > 0 && HistoryPosition > 0)
                         {
-                            //Cursor left
-                            case "[D":
-                                if (cursorPosition > 0)
-                                {
-                                    cursorPosition = Math.Max(0, cursorPosition - 1);
-                                }
-
-                                break;
-                            //Cursor Right
-                            case "[C":
-                                cursorPosition = Math.Min(sb.Length, cursorPosition + 1);
-                                break;
-                            //Up Arrow
-                            case "[A":
-                                if (_terminalHandler.History.Count > 0 && HistoryPosition > 0)
-                                {
-                                    HistoryPosition--;
-                                    sb.Clear();
-                                    cursorPosition = 0;
-                                    string HistoryCommand = _terminalHandler.History[HistoryPosition];
-                                    sb.Append(HistoryCommand);
-                                    cursorPosition = HistoryCommand.Length;
-                                }
-
-                                break;
-                            //Down Arrow
-                            case "[B":
-                                if (_terminalHandler.History.Count > 0 && HistoryPosition < _terminalHandler.History.Count - 1)
-                                {
-                                    HistoryPosition++;
-                                    sb.Clear();
-                                    cursorPosition = 0;
-                                    string HistoryCommand = _terminalHandler.History[HistoryPosition];
-                                    sb.Append(HistoryCommand);
-                                    cursorPosition = HistoryCommand.Length;
-                                }
-
-                                break;
-                            //Home
-                            case "[1~":
-                                cursorPosition = 0;
-                                break;
-                            //End
-                            case "[4~":
-                                cursorPosition = sb.Length;
-                                break;
-                            //F1
-                            case "[11~":
-                                sb.Clear();
-                                cursorPosition = 0;
-                                break;
+                            HistoryPosition--;
+                            sb.Clear();
+                            cursorPosition = 0;
+                            string HistoryCommand = _terminalHandler.History[HistoryPosition];
+                            sb.Append(HistoryCommand);
+                            cursorPosition = HistoryCommand.Length;
                         }
+                        break;
+                    //Cursor Down
+                    case "\u001b[B":
+                        if (_terminalHandler.History.Count > 0 && HistoryPosition < _terminalHandler.History.Count - 1)
+                        {
+                            HistoryPosition++;
+                            sb.Clear();
+                            cursorPosition = 0;
+                            string HistoryCommand = _terminalHandler.History[HistoryPosition];
+                            sb.Append(HistoryCommand);
+                            cursorPosition = HistoryCommand.Length;
+                        }
+                        break;
+                    //Home
+                    case "\u001b[1~":
+                        cursorPosition = 0;
+                        break;
+                    //End
+                    case "\u001b[4~":
+                        cursorPosition = sb.Length;
+                        break;
+                    case "\u001b[11~":
+                        sb.Clear();
+                        cursorPosition = 0;
+                        break;
 
+                    //Cursor Left
+                    case "\u001b[D":
+                        if (cursorPosition > 0)
+                        {
+                            cursorPosition = Math.Max(0, cursorPosition - 1);
+                        }
                         break;
                     default:
-                        string newString = new string(c).Replace("\0", string.Empty);
-                        sb.Insert(cursorPosition, newString);
-                        cursorPosition += newString.Length;
+                        sb.Insert(cursorPosition, text);
+                        cursorPosition += text.Length;
                         break;
                 }
 
                 int realStringLength = sb.Length + originalCol;
                 int realCursorPosition = (cursorPosition + originalCol);
-                int rowsToMove = realStringLength / col;
-                int cursorRowsToMove = realCursorPosition / col;
-                int cellsToMove = (realCursorPosition % col) - 1;
+                int rowsToMove = realStringLength / _col;
+                int cursorRowsToMove = realCursorPosition / _col;
+                int cellsToMove = (realCursorPosition % _col) - 1;
                 //The cursor position is a multiple of the column
                 if (cellsToMove == -1)
                 {
                     cursorRowsToMove--;
-                    cellsToMove = col;
+                    cellsToMove = _col;
                 }
                 //Restore saved cursor position.
                 tw.Write($"\u001b[{originalRow};{originalCol}H");
@@ -149,7 +147,7 @@ namespace RemoteControlToolkitCore.Common.Utilities
                 //Reposition cursor
                 if (cursorPosition > 0)
                 {
-                    if (realCursorPosition > col)
+                    if (realCursorPosition > _col)
                     {
                         for (int i = 0; i < cursorRowsToMove; i++)
                         {

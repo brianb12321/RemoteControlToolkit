@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Networking;
+using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {
@@ -14,17 +15,44 @@ namespace RemoteControlToolkitCore.Common.Commandline
     /// </summary>
     public class TerminalHandler : ITerminalHandler
     {
+        public PseudoTerminalPayload InitialTerminalConfig { get; }
+        public event EventHandler TerminalDimensionsChanged;
+        private uint _terminalRows = 36;
+        private uint _terminalColumns = 130;
         public List<string> History { get; }
-        public int TerminalRows { get; set; } = 36;
-        public int TerminalColumns { get; set; } = 130;
+
+        public uint TerminalRows
+        {
+            get => _terminalRows;
+            set
+            {
+                _terminalRows = value;
+                TerminalDimensionsChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+        public uint TerminalColumns
+        {
+            get => _terminalColumns;
+            set
+            {
+                _terminalColumns = value;
+                TerminalDimensionsChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
         private TextReader _textIn;
         private TextWriter _textOut;
 
-        public TerminalHandler(TextReader textIn, TextWriter textOut)
+        public TerminalHandler(TextReader textIn, TextWriter textOut, PseudoTerminalPayload terminalConfig)
         {
             _textIn = textIn;
             _textOut = textOut;
             History = new List<string>();
+            InitialTerminalConfig = terminalConfig;
+            if (InitialTerminalConfig != null)
+            {
+                _terminalRows = InitialTerminalConfig.TerminalHeight;
+                _terminalColumns = InitialTerminalConfig.TerminalWidth;
+            }
         }
 
         public void Clear()
@@ -43,9 +71,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             TextReader tr = _textIn;
             //Send code for cursor position.
             tw.Write("\u001b[6n");
-            char[] buffer = new char[8];
-            tr.Read(buffer, 0, buffer.Length);
-            string newString = new string(buffer);
+            string newString = tr.ReadLine();
             //Get rid of \0
             newString = newString.Replace("\0", string.Empty);
             //Get rid of ANSI escape code.

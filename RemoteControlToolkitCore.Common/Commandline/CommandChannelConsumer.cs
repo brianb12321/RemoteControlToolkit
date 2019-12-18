@@ -12,14 +12,14 @@ using RemoteControlToolkitCore.Common.Utilities;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {
-    public class CommandChannelConsumer : BaseConsoleChannelConsumer
+    public class CommandChannelConsumer : BaseConsoleChannelConsumer, IChannelCommandConsumer
     {
         private readonly IImpersonationProvider _provider;
         private ILogger<BaseProcessConsole> _logger;
-        private ILogger<ChannelWriter> _channelLogger;
+        private ILogger<ChannelTextReader> _channelLogger;
         private IApplicationSubsystem _subsystem;
         private IInstanceExtensionProvider[] _providers;
-        public CommandChannelConsumer(ILogger<BaseConsoleChannelConsumer> logger, ILogger<ChannelWriter> channelLogger, IImpersonationProvider provider, ILogger<BaseProcessConsole> consoleLogger, IApplicationSubsystem subsystem, IServiceProvider serviceProvider) : base(logger)
+        public CommandChannelConsumer(ILogger<BaseConsoleChannelConsumer> logger, ILogger<ChannelTextReader> channelLogger, IImpersonationProvider provider, ILogger<BaseProcessConsole> consoleLogger, IApplicationSubsystem subsystem, IServiceProvider serviceProvider) : base(logger)
         {
             _provider = provider;
             _logger = consoleLogger;
@@ -30,7 +30,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         }
         protected override IConsole CreateConsole()
         {
-            return new BaseProcessConsole(_logger, _subsystem, _providers, Channel, _channelLogger);
+            return new BaseProcessConsole(_logger, _subsystem, _providers, Channel, _channelLogger, InitialTerminalConfiguration, InitialEnvironmentVariables);
         }
 
         public string Command { get; set; }

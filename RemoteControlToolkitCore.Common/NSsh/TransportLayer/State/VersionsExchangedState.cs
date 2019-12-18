@@ -180,26 +180,18 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer.State
                 'A',
                 'C');
 
-            HashAlgorithm transmitMac = _macFactory.CreateMac(
+            _macFactory.Initialize(
                 manager.Parameters.ServerToClientMac,
                 manager.Key,
                 manager.Hash,
-                manager.SessionId,
-                'F');
-
-            HashAlgorithm receiveMac = _macFactory.CreateMac(
-                manager.Parameters.ClientToServerMac,
-                manager.Key,
-                manager.Hash,
-                manager.SessionId,
-                'E');
+                manager.SessionId);
 
             lock (manager.CommunicationLock)
             {
                 manager.TransmitCipher = transmitCipher;
                 manager.ReceiveCipher = receiveCipher;
-                manager.TransmitMac = transmitMac;
-                manager.ReceiveMac = receiveMac;
+                manager.TransmitMac = 'F';
+                manager.ReceiveMac = 'E';
             }
 
             _newKeysPacketRecevied = true;

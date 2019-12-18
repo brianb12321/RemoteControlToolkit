@@ -131,7 +131,6 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public void Close()
         {
             Child?.Close();
-            cts.Cancel();
             Dispose();
         }
 

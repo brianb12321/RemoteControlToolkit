@@ -20,6 +20,7 @@
 using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Threading;
 using RemoteControlToolkitCore.Common.NSsh.Utility;
 
 namespace RemoteControlToolkitCore.Common.NSsh.Packets
@@ -37,6 +38,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.Packets
     /// </summary>
     public abstract class Packet
     {
+        private readonly object lockObj = new object();
         public Packet(PacketType packetType)
         {
             this.PacketType = packetType;
@@ -73,7 +75,11 @@ namespace RemoteControlToolkitCore.Common.NSsh.Packets
                 macWriter.Write(RandomPadding);
 
                 context.ReceiveMac.Initialize();
-                byte[] expectedMacData = context.ReceiveMac.ComputeHash(macBuffer.ToArray());
+                byte[] expectedMacData;
+                lock (lockObj)
+                {
+                    expectedMacData = context.ReceiveMac.ComputeHash(macBuffer.ToArray());
+                }
 
                 for (int i = 0; i < expectedMacData.Length; i++)
                 {
@@ -106,7 +112,6 @@ namespace RemoteControlToolkitCore.Common.NSsh.Packets
 
         public byte[] ToByteArray(ICryptoTransform transmitCipher, HashAlgorithm transmitMac, uint sequenceNumber, ISecureRandom secureRandom)
         {
-
             byte[] payloadData = GetPayloadData();
 
             // Determine the length of the padding
@@ -157,7 +162,10 @@ namespace RemoteControlToolkitCore.Common.NSsh.Packets
                 macWriter.Write(unencryptedBuffer.ToArray());
 
                 transmitMac.Initialize();
-                macData = transmitMac.ComputeHash(macBuffer.ToArray());
+                lock (lockObj)
+                {
+                    macData = transmitMac.ComputeHash(macBuffer.ToArray());
+                }
             }
 
             // Encrypted the packet if required

@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Networking;
+using RemoteControlToolkitCore.Common.NSsh.ChannelLayer.Console;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.NSsh.Packets;
 using RemoteControlToolkitCore.Common.NSsh.Packets.Channel;
@@ -24,6 +25,9 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
         /// Logging support for this class.
         /// </summary>
         private readonly ILogger<Channel> _logger;
+
+        private PseudoTerminalPayload _terminalPayload;
+        private List<EnvironmentPayload> _environmentPayloads;
 
         private uint _transmitWindowSize;
 
@@ -53,6 +57,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
             _provider = provider;
             _receiveWindowSize = config.ReceiveWindowSize;
             _receiveMaximumPacketSize = config.ReceiveMaximumPacketSize;
+            _environmentPayloads = new List<EnvironmentPayload>();
         }
 
         ~Channel()
@@ -151,14 +156,17 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
             switch (packet.RequestType)
             {
                 case ChannelRequestType.PseudoTerminal:
-                    // ToDo: Extract the terminal modes so they can be used by the server side class running the shell.
+
                     _consumerType = packet.RequestType;
+                    _terminalPayload = (PseudoTerminalPayload) packet.ChannelRequestPayload;
                     break;
 
                 case ChannelRequestType.Shell:
                     _consumerType = packet.RequestType;
                     _channelConsumer = _provider.GetService<IChannelConsumer>();
                     _channelConsumer.ChannelType = _consumerType;
+                    _channelConsumer.InitialTerminalConfiguration = _terminalPayload;
+                    _channelConsumer.InitialEnvironmentVariables.AddRange(_environmentPayloads);
                     TransportLayerManager.Disconnected += (s, e) => { Close(); _channelConsumer.Close(); };
                     _channelConsumer.AuthenticatedIdentity = TransportLayerManager.AuthenticatedIdentity;
                     _channelConsumer.Password = TransportLayerManager.Password;
@@ -171,6 +179,8 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
                     _channelConsumer = _provider.GetService<IChannelCommandConsumer>();
                     _channelConsumer.ChannelType = _consumerType;
                     TransportLayerManager.Disconnected += (s, e) => { Close();  _channelConsumer.Close(); };
+                    _channelConsumer.InitialTerminalConfiguration = _terminalPayload;
+                    _channelConsumer.InitialEnvironmentVariables.AddRange(_environmentPayloads);
                     ((IChannelCommandConsumer)_channelConsumer).Command = ((ExecuteCommandPayload)packet.ChannelRequestPayload).Command;
                     _channelConsumer.AuthenticatedIdentity = TransportLayerManager.AuthenticatedIdentity;
                     _channelConsumer.Password = TransportLayerManager.Password;
@@ -179,12 +189,13 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
                     break;
 
                 case ChannelRequestType.WindowChange:
-                    // Ignore
                     _logger.LogInformation("Window change request.");
+                    _channelConsumer.SignalWindowChange((WindowChangePayload)packet.ChannelRequestPayload);
                     break;
 
                 case ChannelRequestType.Environment:
-                    // Ignore
+                    EnvironmentPayload environmentPayload = (EnvironmentPayload) packet.ChannelRequestPayload;
+                    _environmentPayloads.Add(environmentPayload);
                     _logger.LogInformation("Environment request.");
                     break;
 
@@ -325,29 +336,6 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
             });
         }
 
-        public Guid ClientUniqueID { get; }
-        public string Username { get; }
-        public StreamReader GetClientReader()
-        {
-            throw new NotImplementedException();
-        }
-
-        public StreamWriter GetClientWriter()
-        {
-            throw new NotImplementedException();
-        }
-
-        public IProcessTable ProcessTable { get; }
-        public T GetExtension<T>() where T : IExtension<IInstanceSession>
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddExtension<T>(T extension) where T : IExtension<IInstanceSession>
-        {
-            throw new NotImplementedException();
-        }
-
         public void Close()
         {
             if (TransportLayerManager.Connected)
@@ -384,6 +372,5 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
 
         #endregion
 
-        public IExtensionCollection<IInstanceSession> Extensions { get; }
     }
 }
