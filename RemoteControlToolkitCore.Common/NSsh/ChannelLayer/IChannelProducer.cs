@@ -1,4 +1,5 @@
-﻿using RemoteControlToolkitCore.Common.NSsh.Packets;
+﻿using System;
+using RemoteControlToolkitCore.Common.NSsh.Packets;
 
 namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
 {

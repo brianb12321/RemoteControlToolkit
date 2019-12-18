@@ -180,18 +180,23 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer.State
                 'A',
                 'C');
 
-            _macFactory.Initialize(
+           var transmitMac = _macFactory.Initialize(
                 manager.Parameters.ServerToClientMac,
                 manager.Key,
                 manager.Hash,
-                manager.SessionId);
+                manager.SessionId, 'F');
+           var receiveMac = _macFactory.Initialize(
+               manager.Parameters.ServerToClientMac,
+               manager.Key,
+               manager.Hash,
+               manager.SessionId, 'E');
 
             lock (manager.CommunicationLock)
             {
                 manager.TransmitCipher = transmitCipher;
                 manager.ReceiveCipher = receiveCipher;
-                manager.TransmitMac = 'F';
-                manager.ReceiveMac = 'E';
+                manager.TransmitMac = transmitMac;
+                manager.ReceiveMac = receiveMac;
             }
 
             _newKeysPacketRecevied = true;

@@ -2,6 +2,7 @@
 using System.IO;
 using System.IO.Pipes;
 using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
+using RemoteControlToolkitCore.Common.NSsh.Utility;
 
 namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer.Console
 {
@@ -9,7 +10,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer.Console
     {
         void SignalWindowChange(WindowChangePayload args);
         IChannelProducer Producer { get; } 
-        AnonymousPipeServerStream Pipe { get; }
+        BlockingMemoryStream Pipe { get; }
         void Close();
         void Start();
         bool HasClosed { get; }

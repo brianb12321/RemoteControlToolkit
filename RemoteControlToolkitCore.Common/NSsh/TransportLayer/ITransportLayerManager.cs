@@ -6,6 +6,7 @@ using System.Security.Principal;
 using RemoteControlToolkitCore.Common.NSsh.Packets;
 using RemoteControlToolkitCore.Common.NSsh.TransportLayer.State;
 using RemoteControlToolkitCore.Common.NSsh.Types;
+using RemoteControlToolkitCore.Common.NSsh.Utility;
 using BigInteger = Mono.Math.BigInteger;
 
 namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
@@ -73,9 +74,9 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
 
         SymmetricAlgorithm ReceiveCipher { get; set; }
 
-        char TransmitMac { get; set; }
+        HashAlgorithmCreator TransmitMac { get; set; }
 
-        char ReceiveMac { get; set; }
+        HashAlgorithmCreator ReceiveMac { get; set; }
 
         IIdentity AuthenticatedIdentity { get; set; }
 

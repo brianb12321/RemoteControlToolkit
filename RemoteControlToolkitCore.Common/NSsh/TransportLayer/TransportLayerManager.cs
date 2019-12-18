@@ -246,7 +246,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
             try
             {
                 //log.Debug("WRITE PACKET: " + packet);
-                _stream.Write(packet.ToByteArray(_transmitTransform, _macFactory.CreateMac(TransmitMac), TransmitSequenceNumber++, _random));
+                _stream.Write(packet.ToByteArray(_transmitTransform, TransmitMac?.CreateMac(), TransmitSequenceNumber++, _random));
                 _stream.Flush();
             }
             catch (Exception excp)
@@ -260,7 +260,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
             try
             {
                 Packet result;
-                result = _packetFactory.ReadFrom(_stream, _receiveTransform, _macFactory.CreateMac(ReceiveMac), ReceiveSequenceNumber++);
+                result = _packetFactory.ReadFrom(_stream, _receiveTransform, ReceiveMac?.CreateMac(), ReceiveSequenceNumber++);
                 //log.Debug("READ PACKET: " + result);
 
                 if (AuthenticatedIdentity != null && Connected)
@@ -383,9 +383,9 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
             }
         }
 
-        public char TransmitMac { get; set; }
+        public HashAlgorithmCreator TransmitMac { get; set; }
 
-        public char ReceiveMac { get; set; }
+        public HashAlgorithmCreator ReceiveMac { get; set; }
 
         public IIdentity AuthenticatedIdentity { get; set; }
 

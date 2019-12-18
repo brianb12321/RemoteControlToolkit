@@ -41,7 +41,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
             PseudoTerminalPayload terminalConfig,
             List<EnvironmentPayload> environmentPayloads)
         {
-            Pipe = new AnonymousPipeServerStream();
+            ClientUniqueID = Guid.NewGuid();
+            Pipe = new BlockingMemoryStream();
             Producer = producer;
             Extensions = new ExtensionCollection<IInstanceSession>(this);
             _logger = logger;
@@ -84,11 +85,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
         }
 
         public IChannelProducer Producer { get; private set; }
-        public AnonymousPipeServerStream Pipe { get; private set; }
+        public BlockingMemoryStream Pipe { get; private set; }
 
         public TextReader GetClientReader()
         {
-            return new StreamReader(new AnonymousPipeClientStream(Pipe.GetClientHandleAsString()));
+            return new StreamReader(Pipe);
         }
 
         public TextWriter GetClientWriter()

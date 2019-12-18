@@ -28,6 +28,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
 
         private PseudoTerminalPayload _terminalPayload;
         private List<EnvironmentPayload> _environmentPayloads;
+        public Guid ChannelGuid { get; private set; }
 
         private uint _transmitWindowSize;
 
@@ -279,7 +280,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
         }
 
         #region IChannelProducer Members
-        
+
         public Packet GetIncomingPacket()
         {
             lock (this)
