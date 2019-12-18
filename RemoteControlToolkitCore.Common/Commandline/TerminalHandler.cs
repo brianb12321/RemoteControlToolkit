@@ -71,7 +71,9 @@ namespace RemoteControlToolkitCore.Common.Commandline
             TextReader tr = _textIn;
             //Send code for cursor position.
             tw.Write("\u001b[6n");
-            string newString = tr.ReadLine();
+            char[] buffer = new char[8];
+            tr.Read(buffer, 0, buffer.Length);
+            string newString = new string(buffer);
             //Get rid of \0
             newString = newString.Replace("\0", string.Empty);
             //Get rid of ANSI escape code.

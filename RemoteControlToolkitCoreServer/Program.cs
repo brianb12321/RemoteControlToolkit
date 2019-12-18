@@ -51,7 +51,8 @@ namespace RemoteControlToolkitCoreServer
             {
                 ListenEndPoints = { new IPEndPoint(IPAddress.Any, 8081)},
                 IdleTimeout = TimeSpan.FromHours(2),
-                MaximumClientConnections = 10
+                MaximumClientConnections = 10,
+                UserAuthenticationBanner = "You are about to connect to a RemoteControlToolkit server. Any damages caused by the use of this software will be held against the user. Please refer to the user manual before proceeding."
             });
             //Test
 

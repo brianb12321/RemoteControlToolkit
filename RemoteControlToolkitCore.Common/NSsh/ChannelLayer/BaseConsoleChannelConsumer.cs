@@ -1,10 +1,15 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Security.Principal;
+using System.Text;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.NSsh.ChannelLayer.Console;
+using RemoteControlToolkitCore.Common.NSsh.Packets;
 using RemoteControlToolkitCore.Common.NSsh.Packets.Channel;
 using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
+using RemoteControlToolkitCore.Common.NSsh.Types;
 
 namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
 {
@@ -74,14 +79,61 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
             console = CreateConsole();
             console.Closed += delegate { Channel.Close(); };
             Thread.CurrentThread.Name = THREAD_NAME_CONSUMER_CHANNEL;
-            //Thread stdnInThread = new Thread(() =>
-            //{
-            //    while (!console.HasClosed)
-            //    {
-                    
-            //    }
-            //});
-            //stdnInThread.Start();
+            Thread stdnInThread = new Thread(() =>
+            {
+                while (!console.HasClosed)
+                {
+                    Packet packet = null;
+
+                    try
+                    {
+                        packet = Channel.GetIncomingPacket();
+                        //log.Debug(packet.PacketType);
+                    }
+                    catch (IOException e)
+                    {
+                        _logger.LogError("Error reading packet from channel.", e);
+                    }
+                    catch (ObjectDisposedException e)
+                    {
+                        _logger.LogError("Error reading packet from channel.", e);
+                    }
+                    catch (TransportDisconnectException e)
+                    {
+                        _logger.LogError($"The channel consumer had an unexpected transport layer disconnection: {e.Message}");
+                        Close();
+                    }
+
+                    try
+                    {
+                        if (packet != null)
+                        {
+                            switch (packet.PacketType)
+                            {
+                                case PacketType.ChannelData:
+                                    byte[] data = ((ChannelDataPacket) packet).Data;
+                                    console.Pipe.Write(data, 0, data.Length);
+                                    console.Pipe.Flush();
+                                    break;
+
+                                case PacketType.ChannelEof:
+                                    Close();
+                                    break;
+                                case PacketType.ChannelClose:
+                                    Close();
+                                    break;
+                                default:
+                                    throw new NotSupportedException("Packet type is not supported by channel: " + packet.PacketType);
+                            }
+                        }
+                    }
+                    catch (IOException e)
+                    {
+                        _logger.LogError("Error handling packet.", e);
+                    }
+                }
+            });
+            stdnInThread.Start();
             console.Start();
 
             //Thread stdOutThread = new Thread(ProcessStandardOutput);

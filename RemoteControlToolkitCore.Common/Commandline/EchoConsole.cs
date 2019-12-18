@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,6 +24,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         }
 
         public IChannelProducer Producer { get; }
+        public AnonymousPipeServerStream Pipe { get; }
         public TextWriter StandardInput { get; private set; }
         public TextReader StandardOutput { get; private set; }
         public TextReader StandardError { get; private set; }

@@ -16,21 +16,19 @@ namespace RemoteControlToolkitCore.Common.Commandline
     {
         private readonly IImpersonationProvider _provider;
         private ILogger<BaseProcessConsole> _logger;
-        private ILogger<ChannelTextReader> _channelLogger;
         private IApplicationSubsystem _subsystem;
         private IInstanceExtensionProvider[] _providers;
-        public CommandChannelConsumer(ILogger<BaseConsoleChannelConsumer> logger, ILogger<ChannelTextReader> channelLogger, IImpersonationProvider provider, ILogger<BaseProcessConsole> consoleLogger, IApplicationSubsystem subsystem, IServiceProvider serviceProvider) : base(logger)
+        public CommandChannelConsumer(ILogger<BaseConsoleChannelConsumer> logger, IImpersonationProvider provider, ILogger<BaseProcessConsole> consoleLogger, IApplicationSubsystem subsystem, IServiceProvider serviceProvider) : base(logger)
         {
             _provider = provider;
             _logger = consoleLogger;
-            _channelLogger = channelLogger;
             _subsystem = subsystem;
             _provider = provider;
             _providers = serviceProvider.GetServices<IInstanceExtensionProvider>().ToArray();
         }
         protected override IConsole CreateConsole()
         {
-            return new BaseProcessConsole(_logger, _subsystem, _providers, Channel, _channelLogger, InitialTerminalConfiguration, InitialEnvironmentVariables);
+            return new BaseProcessConsole(_logger, _subsystem, _providers, Channel, InitialTerminalConfiguration, InitialEnvironmentVariables);
         }
 
         public string Command { get; set; }

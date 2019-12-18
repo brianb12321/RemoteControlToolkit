@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipes;
 using System.Security.Principal;
 using System.ServiceModel;
 using System.Text;
@@ -24,25 +25,24 @@ namespace RemoteControlToolkitCore.Common.Commandline
         /// </summary>
         private ILogger<BaseProcessConsole> _logger;
 
-        private ILogger<ChannelTextReader> _channelLogger;
-
         public IProcessTable ProcessTable { get; }
         public Guid ClientUniqueID { get; }
         public string Username { get; }
         public IExtensionCollection<IInstanceSession> Extensions { get; }
         private RCTProcess _shellProcess;
         private TerminalHandler _terminalHandler;
+        private StreamReader _sr;
+        private StreamWriter _sw;
 
         public BaseProcessConsole(ILogger<BaseProcessConsole> logger,
             IApplicationSubsystem subsystem,
             IInstanceExtensionProvider[] providers,
             IChannelProducer producer,
-            ILogger<ChannelTextReader> channelLogger,
             PseudoTerminalPayload terminalConfig,
             List<EnvironmentPayload> environmentPayloads)
         {
+            Pipe = new AnonymousPipeServerStream();
             Producer = producer;
-            _channelLogger = channelLogger;
             Extensions = new ExtensionCollection<IInstanceSession>(this);
             _logger = logger;
             ProcessTable = new ProcessTable();
@@ -84,25 +84,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
         }
 
         public IChannelProducer Producer { get; private set; }
-
-        public virtual TextWriter StandardInput
-        {
-            get { return TextWriter.Null; }
-        }
-
-        public virtual TextReader StandardOutput
-        {
-            get { return TextReader.Null; }
-        }
-
-        public virtual TextReader StandardError
-        {
-            get { return TextReader.Null; }
-        }
+        public AnonymousPipeServerStream Pipe { get; private set; }
 
         public TextReader GetClientReader()
         {
-            return new ChannelTextReader(Producer, _channelLogger, this);
+            return new StreamReader(new AnonymousPipeClientStream(Pipe.GetClientHandleAsString()));
         }
 
         public TextWriter GetClientWriter()
@@ -122,7 +108,6 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public void Close()
         {
-            _shellProcess.Close();
             Closed?.Invoke(this, EventArgs.Empty);
         }
 
@@ -130,14 +115,10 @@ namespace RemoteControlToolkitCore.Common.Commandline
         {
             _shellProcess.Start();
             _shellProcess.WaitForExit();
-            _shellProcess.Dispose();
             Close();
         }
 
-        public bool HasClosed
-        {
-            get => _shellProcess.Running;
-        }
+        public bool HasClosed => _shellProcess.Disposed;
 
         public event EventHandler Closed;
 

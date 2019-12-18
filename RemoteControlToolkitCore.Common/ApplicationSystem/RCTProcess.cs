@@ -155,7 +155,14 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             {
                 if (_workingThread.IsAlive)
                 {
-                    cts?.Cancel();
+                    try
+                    {
+                        cts?.Cancel();
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        
+                    }
                 }
                 cts?.Dispose();
                 if (DisposeIn)

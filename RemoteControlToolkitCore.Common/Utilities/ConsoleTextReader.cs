@@ -39,18 +39,19 @@ namespace RemoteControlToolkitCore.Common.Utilities
             _col = (int)_terminalHandler.TerminalColumns;
             _row = (int)_terminalHandler.TerminalRows;
             int HistoryPosition = _terminalHandler.History.Count;
-            int originalCol = int.Parse(_terminalHandler.GetCursorPosition().column);
-            int originalRow = int.Parse(_terminalHandler.GetCursorPosition().row);
-            string text = string.Empty;
+            var cursorDimensions = _terminalHandler.GetCursorPosition();
+            int originalCol = int.Parse(cursorDimensions.column);
+            int originalRow = int.Parse(cursorDimensions.row);
+            char text;
             int cursorPosition = 0;
             //Read from the terminal
-            while ((text = tr.ReadLine()) != "\n" && text != "\r")
+            while ((text = (char)tr.Read()) != '\n' && text != '\r')
             {
                 //Check conditions
                 switch (text)
                 {
                     //Handle backspace
-                    case "\u007f":
+                    case '\u007f':
                         if (sb.Length > 0)
                         {
                             sb.Remove(cursorPosition - 1, 1);
@@ -58,57 +59,66 @@ namespace RemoteControlToolkitCore.Common.Utilities
                         }
 
                         break;
-                    //Cursor Right
-                    case "\u001b[C":
-                        cursorPosition = Math.Min(sb.Length, cursorPosition + 1);
-                        break;
-                    //Cursor Up
-                    case "\u001b[A":
-                        if (_terminalHandler.History.Count > 0 && HistoryPosition > 0)
+                    case '\u001b':
+                        char[] buffer = new char[8];
+                        tr.Read(buffer, 0, buffer.Length);
+                        string code = new string(buffer).Replace("\0", string.Empty);
+                        switch (code)
                         {
-                            HistoryPosition--;
-                            sb.Clear();
-                            cursorPosition = 0;
-                            string HistoryCommand = _terminalHandler.History[HistoryPosition];
-                            sb.Append(HistoryCommand);
-                            cursorPosition = HistoryCommand.Length;
-                        }
-                        break;
-                    //Cursor Down
-                    case "\u001b[B":
-                        if (_terminalHandler.History.Count > 0 && HistoryPosition < _terminalHandler.History.Count - 1)
-                        {
-                            HistoryPosition++;
-                            sb.Clear();
-                            cursorPosition = 0;
-                            string HistoryCommand = _terminalHandler.History[HistoryPosition];
-                            sb.Append(HistoryCommand);
-                            cursorPosition = HistoryCommand.Length;
-                        }
-                        break;
-                    //Home
-                    case "\u001b[1~":
-                        cursorPosition = 0;
-                        break;
-                    //End
-                    case "\u001b[4~":
-                        cursorPosition = sb.Length;
-                        break;
-                    case "\u001b[11~":
-                        sb.Clear();
-                        cursorPosition = 0;
-                        break;
+                            //Cursor Right
+                            case "[C":
+                                cursorPosition = Math.Min(sb.Length, cursorPosition + 1);
+                                break;
+                            //Cursor Up
+                            case "[A":
+                                if (_terminalHandler.History.Count > 0 && HistoryPosition > 0)
+                                {
+                                    HistoryPosition--;
+                                    sb.Clear();
+                                    cursorPosition = 0;
+                                    string HistoryCommand = _terminalHandler.History[HistoryPosition];
+                                    sb.Append(HistoryCommand);
+                                    cursorPosition = HistoryCommand.Length;
+                                }
+                                break;
+                            //Cursor Down
+                            case "[B":
+                                if (_terminalHandler.History.Count > 0 && HistoryPosition < _terminalHandler.History.Count - 1)
+                                {
+                                    HistoryPosition++;
+                                    sb.Clear();
+                                    cursorPosition = 0;
+                                    string HistoryCommand = _terminalHandler.History[HistoryPosition];
+                                    sb.Append(HistoryCommand);
+                                    cursorPosition = HistoryCommand.Length;
+                                }
+                                break;
+                            //Home
+                            case "[1~":
+                                cursorPosition = 0;
+                                break;
+                            //End
+                            case "[4~":
+                                cursorPosition = sb.Length;
+                                break;
+                            case "[11~":
+                                sb.Clear();
+                                cursorPosition = 0;
+                                break;
 
-                    //Cursor Left
-                    case "\u001b[D":
-                        if (cursorPosition > 0)
-                        {
-                            cursorPosition = Math.Max(0, cursorPosition - 1);
+                            //Cursor Left
+                            case "[D":
+                                if (cursorPosition > 0)
+                                {
+                                    cursorPosition = Math.Max(0, cursorPosition - 1);
+                                }
+                                break;
                         }
                         break;
+                    
                     default:
                         sb.Insert(cursorPosition, text);
-                        cursorPosition += text.Length;
+                        cursorPosition++;
                         break;
                 }
 
