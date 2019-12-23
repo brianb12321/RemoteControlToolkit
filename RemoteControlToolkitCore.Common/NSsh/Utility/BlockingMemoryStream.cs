@@ -33,6 +33,8 @@ namespace RemoteControlToolkitCore.Common.NSsh.Utility {
 
         private ManualResetEvent m_dataReady = new ManualResetEvent(false);
         private List<byte> m_buffer = new List<byte>();
+        public override bool CanTimeout => true;
+        public override int ReadTimeout { get; set; }
 
         public void Write(byte[] buffer) {
             m_buffer.AddRange(buffer);
@@ -42,6 +44,14 @@ namespace RemoteControlToolkitCore.Common.NSsh.Utility {
         public override void Write(byte[] buffer, int offset, int count) {
             m_buffer.AddRange(buffer.ToList().Skip(offset).Take(count));
             m_dataReady.Set();
+        }
+
+        public override byte[] GetBuffer()
+        {
+            var buffer = m_buffer.ToArray();
+            m_buffer.Clear();
+            m_dataReady.Set();
+            return buffer;
         }
 
         public override void WriteByte(byte value) {
@@ -67,14 +77,15 @@ namespace RemoteControlToolkitCore.Common.NSsh.Utility {
                 m_dataReady.Reset();
                 m_dataReady.WaitOne();
             }
-
-            if (m_buffer.Count >= count) {
+            if (m_buffer.Count >= count)
+            {
                 // More bytes available than were requested.
                 Array.Copy(m_buffer.ToArray(), 0, buffer, offset, count);
                 m_buffer = m_buffer.Skip(count).ToList();
                 return count;
             }
-            else {
+            else
+            {
                 int length = m_buffer.Count;
                 Array.Copy(m_buffer.ToArray(), 0, buffer, offset, length);
                 m_buffer.Clear();

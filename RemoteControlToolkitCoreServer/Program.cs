@@ -8,6 +8,7 @@ using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
 using RemoteControlToolkitCore.Common.Scripting;
 using RemoteControlToolkitCore.Common.Commandline;
+using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.Plugin;
@@ -47,6 +48,7 @@ namespace RemoteControlToolkitCoreServer
             services.AddAudio();
             services.AddCommandLine();
             services.AddSingleton<IServerPool, ServerPool>();
+            services.AddSingleton<IPipeService, PipeService>();
             services.AddSSH(new NSshServiceConfiguration()
             {
                 ListenEndPoints = { new IPEndPoint(IPAddress.Any, 8081)},

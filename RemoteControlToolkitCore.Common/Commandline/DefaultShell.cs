@@ -40,6 +40,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public override CommandResponse Execute(CommandRequest args, RCTProcess currentProc, CancellationToken token)
         {
+            bool printNewLine = false;
             _shellExt = currentProc.ClientContext.GetExtension<ITerminalHandler>();
             currentProc.ControlC += CurrentProc_ControlC;
             _builtInCommands.Add("cls", (args2) =>
@@ -92,7 +93,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
             bool showHelp = false;
             OptionSet options = new OptionSet()
                 .Add("command|c=", "The command to execute.", v => command = v)
-                .Add("help|?", "Displays the help screen.", v => showHelp = true);
+                .Add("help|?", "Displays the help screen.", v => showHelp = true)
+                .Add("newLine|n", "Prints a new-line when finsihed reading from StdIn.", v => printNewLine = true);
 
             options.Parse(args.Arguments.Select(a => a.ToString()));
             if (showHelp)
@@ -137,6 +139,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                     }
 
                     string newCommand = currentProc.In.ReadLine();
+                    if(printNewLine) currentProc.Out.WriteLine();
                     if (newCommand.StartsWith("`"))
                     {
                         handleMultipleCommands(token, currentProc, sb);

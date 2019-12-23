@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -7,6 +8,7 @@ using Crayon;
 using Microsoft.Extensions.DependencyInjection;
 using NAudio.Wave;
 using NDesk.Options;
+using NReco.VideoConverter;
 using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline;
@@ -14,7 +16,8 @@ using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Utilities;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
-using VideoLibrary;
+using YoutubeExplode;
+using YoutubeExplode.Models.MediaStreams;
 using Zio;
 
 [assembly: PluginLibrary("AudioSubsystem", FriendlyName = "Audio Subsystem", LibraryType = NetworkSide.Proxy | NetworkSide.Server)]
@@ -150,11 +153,40 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                         fileStream = new FileStream(Path.GetFullPath(path), FileMode.Open, FileAccess.Read);
                         break;
                     case "REMOTE_YOUTUBE":
-                        var youtube = YouTube.Default;
-                        var vid = youtube.GetVideo(path);
+                        try
+                        {
+                            var client = new YoutubeClient();
+                            string parsedPath = YoutubeClient.ParseVideoId(path);
+                            var video = client.GetVideoAsync(parsedPath).Result;
+                            var streamInfoSet = client.GetVideoMediaStreamInfosAsync(parsedPath).Result;
+                            // Get the best muxed stream
+                            var streamInfo = streamInfoSet.Muxed.WithHighestVideoQuality();
+                            var format = streamInfo.Container.GetFileExtension();
+                            // Download video
+                            currentProc.Out.WriteLine($"Downloading Video ({streamInfo.Container}) please wait ... ");
 
-                        fileStream = new MemoryStream(vid.GetBytes(), false);
-                        currentProc.Out.WriteLine($"Loaded file with audio {vid.AudioFormat.ToString()}");
+                            //using (var progress = new ProgressBar())
+                            var stream = client.GetMediaStreamAsync(streamInfo).Result;
+                            var convert = new FFMpegConverter();
+                            MemoryStream audioStream = new MemoryStream();
+                            var task = convert.ConvertLiveMedia(stream, format, audioStream, "mp3", new ConvertSettings());
+                            task.Start();
+                            currentProc.Out.WriteLine("Converting audio...");
+                            task.Wait();
+                            audioStream.Seek(0, SeekOrigin.Begin);
+                            fileStream = audioStream;
+                            currentProc.Out.WriteLine($"Loaded file with audio {video.Title}");
+                        }
+                        catch (AggregateException e)
+                        {
+                            currentProc.Out.WriteLine(Output.Red("Error downloading youtube video: "));
+                            currentProc.Out.WriteLine();
+                            foreach (Exception inner in e.InnerExceptions)
+                            {
+                                currentProc.Out.WriteLine(Output.Red($"Exception: {inner.Message}"));
+                            }
+                            throw;
+                        }
                         break;
                     default:
                         throw new ArgumentException("Path mode must be VFS or PHYS.");

@@ -69,8 +69,6 @@ namespace RemoteControlToolkitCore.Common.Networking
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }, null);
             initializeEnvironmentVariables(_proxyProcess);
-            _terminalHandler = new TerminalHandler(GetClientReader(), GetClientWriter(), null);
-            Extensions.Add(_terminalHandler);
         }
         private void initializeEnvironmentVariables(RCTProcess process)
         {
@@ -83,7 +81,7 @@ namespace RemoteControlToolkitCore.Common.Networking
         {
             _proxyProcess.Start();
         }
-        public TextReader GetClientReader()
+        public StreamReader GetClientReader()
         {
             return _sr;
         }

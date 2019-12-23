@@ -32,7 +32,6 @@ namespace RemoteControlToolkitCore.Common
             {
                 return new Application(provider.GetService<ILogger<Application>>(),
                     provider.GetService<ILogger<ProxyNetworkInstance>>(),
-                    provider.GetService<ILogger<NetworkInstance>>(),
                     provider.GetService<ILogger<ProxyClient>>(),
                     provider, provider.GetService<IServerPool>(), ExecutingSide, this, 
                     provider.GetService<IKeySetupService>(), 

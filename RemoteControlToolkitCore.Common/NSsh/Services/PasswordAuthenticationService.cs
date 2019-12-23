@@ -12,21 +12,14 @@ namespace RemoteControlToolkitCore.Common.NSsh.Services
 
         public IIdentity CreateIdentity(string userName, string password)
         {
-            SafeFileHandle token;
-
-            string domain = Environment.MachineName;
-
-            bool successful = Win32Native.LogonUser(
-                userName,
-                domain,
-                password,
-                LogonSessionType.Interactive,
-                LogonProvider.Default,
-                out token);
-            
-            return (successful) ? new SafeWindowsIdentity(token) : null;
+            //Basic authentication.
+            if (userName == "admin" && password == "password")
+            {
+                return new GenericIdentity(userName);
+            }
+            else return null;
         }
 
-        #endregion        
+        #endregion
     }
 }

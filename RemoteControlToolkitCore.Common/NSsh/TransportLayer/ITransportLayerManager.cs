@@ -81,11 +81,5 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
         IIdentity AuthenticatedIdentity { get; set; }
 
         AbstractTransportState State { get; }
-
-        /// <summary>
-        /// The password the user authenticated with. Ideally this would not be required and the AuthenticatedIdentity would suffice.
-        /// TODO: Get rid of this ASAP.
-        /// </summary>
-        string Password { get; set; }
     }
 }

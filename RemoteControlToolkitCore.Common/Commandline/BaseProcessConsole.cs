@@ -53,9 +53,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
             }
 
             var outStream = GetClientWriter();
-            var inStream = GetClientReader();
-            _terminalHandler = new TerminalHandler(inStream, outStream, terminalConfig);
-            var consoleInStream = new ConsoleTextReader(_terminalHandler, inStream, outStream);
+            _terminalHandler = new TerminalHandler(Pipe, (ChannelTextWriter)outStream, terminalConfig);
+            var consoleInStream = new ConsoleTextReader(_terminalHandler);
             _shellProcess = ProcessTable.Factory.CreateOnApplication(this, subsystem.GetApplication("shell"),
                 null, new CommandRequest(new ICommandElement[] {new StringCommandElement("shell") }));
             _shellProcess.SetOut(outStream);
@@ -87,7 +86,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         public IChannelProducer Producer { get; private set; }
         public BlockingMemoryStream Pipe { get; private set; }
 
-        public TextReader GetClientReader()
+        public StreamReader GetClientReader()
         {
             return new StreamReader(Pipe);
         }
@@ -109,6 +108,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public void Close()
         {
+            _shellProcess.Close();
             Closed?.Invoke(this, EventArgs.Empty);
         }
 
@@ -117,6 +117,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
             _shellProcess.Start();
             _shellProcess.WaitForExit();
             Close();
+        }
+
+        public void CancellationRequested()
+        {
+            _shellProcess.InvokeControlC();
         }
 
         public bool HasClosed => _shellProcess.Disposed;

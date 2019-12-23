@@ -170,7 +170,6 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
                     _channelConsumer.InitialEnvironmentVariables.AddRange(_environmentPayloads);
                     TransportLayerManager.Disconnected += (s, e) => { Close(); _channelConsumer.Close(); };
                     _channelConsumer.AuthenticatedIdentity = TransportLayerManager.AuthenticatedIdentity;
-                    _channelConsumer.Password = TransportLayerManager.Password;
                     _channelConsumer.Channel = this;
                     _channelConsumer.Initialise();
                     break;
@@ -184,7 +183,6 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
                     _channelConsumer.InitialEnvironmentVariables.AddRange(_environmentPayloads);
                     ((IChannelCommandConsumer)_channelConsumer).Command = ((ExecuteCommandPayload)packet.ChannelRequestPayload).Command;
                     _channelConsumer.AuthenticatedIdentity = TransportLayerManager.AuthenticatedIdentity;
-                    _channelConsumer.Password = TransportLayerManager.Password;
                     _channelConsumer.Channel = this;
                     _channelConsumer.Initialise();
                     break;

@@ -50,9 +50,6 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
         public IChannelProducer Channel { get; set; }
 
         public IIdentity AuthenticatedIdentity { get; set; }
-
-        public string Password { get; set; }
-
         public void Close()
         {
             if (console != null)
@@ -112,8 +109,16 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
                             {
                                 case PacketType.ChannelData:
                                     byte[] data = ((ChannelDataPacket) packet).Data;
-                                    console.Pipe.Write(data, 0, data.Length);
-                                    console.Pipe.Flush();
+                                    string debug = Encoding.UTF8.GetString(data);
+                                    if (debug == "\u0003")
+                                    {
+                                        console.CancellationRequested();
+                                    }
+                                    else
+                                    {
+                                        console.Pipe.Write(data, 0, data.Length);
+                                        console.Pipe.Flush();
+                                    }
                                     break;
 
                                 case PacketType.ChannelEof:

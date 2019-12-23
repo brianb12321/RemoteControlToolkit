@@ -18,8 +18,6 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
         IChannelProducer Channel { get; set; }
 
         IIdentity AuthenticatedIdentity { get; set; }
-                
-        string Password { get; set; }
 
         void Close();
     }

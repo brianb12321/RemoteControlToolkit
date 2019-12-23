@@ -26,9 +26,7 @@ namespace RemoteControlToolkitCore.Common
         private TcpListener _listener;
         private TcpListener _proxyListener;
         private ILogger<Application> _logger;
-        private List<NetworkInstance> _clients;
         private IServerPool _proxyClients;
-        private ILogger<NetworkInstance> _instanceLogger;
         private ILogger<ProxyNetworkInstance> _proxyLogger;
         private ILogger<ProxyClient> _proxyClientLogger;
         private IServiceProvider _provider;
@@ -48,7 +46,6 @@ namespace RemoteControlToolkitCore.Common
 
         public Application(ILogger<Application> logger,
             ILogger<ProxyNetworkInstance> proxyLogger,
-            ILogger<NetworkInstance> instanceLogger,
             ILogger<ProxyClient> proxyClientLogger,
             IServiceProvider provider,
             IServerPool pool,
@@ -58,8 +55,6 @@ namespace RemoteControlToolkitCore.Common
             NSshServiceConfiguration config)
         {
             _logger = logger;
-            _clients = new List<NetworkInstance>();
-            _instanceLogger = instanceLogger;
             _proxyClientLogger = proxyClientLogger;
             _proxyLogger = proxyLogger;
             _provider = provider;

@@ -22,7 +22,10 @@ namespace RemoteControlToolkitCore.Common.Commandline
         uint TerminalRows { get; set; }
         uint TerminalColumns { get; set; }
         PseudoTerminalPayload InitialTerminalConfig { get; }
+        PseudoTerminalMode TerminalModes { get; }
         void Clear();
         void Bell();
+        string ReadLine();
+        char Read();
     }
 }

@@ -13,6 +13,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer.Console
         BlockingMemoryStream Pipe { get; }
         void Close();
         void Start();
+        void CancellationRequested();
         bool HasClosed { get; }
         event EventHandler Closed;
     }

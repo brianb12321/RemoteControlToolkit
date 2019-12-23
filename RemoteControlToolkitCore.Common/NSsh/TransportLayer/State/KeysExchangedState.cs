@@ -95,11 +95,6 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer.State
 
             if (packet.AuthMethod == AuthenticationMethod.Password)
             {
-                manager.WritePacket(new UserAuthSuccessPacket());
-                manager.AuthenticatedIdentity = new GenericIdentity("Bob");
-                manager.Password = "abc123";
-                manager.ChangeState(TransportLayerState.Authenticated);
-                return;
                 IPasswordAuthenticationService passwordAuthService = _provider.GetService<IPasswordAuthenticationService>();
                 UserAuthPasswordPayload passwordPayload = (UserAuthPasswordPayload) packet.AuthPayload;
 
@@ -107,7 +102,10 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer.State
 
                 if (identity != null)
                 {
-                    
+                    manager.WritePacket(new UserAuthSuccessPacket());
+                    manager.AuthenticatedIdentity = identity;
+                    manager.ChangeState(TransportLayerState.Authenticated);
+                    return;
                 }
                 else
                 {

@@ -43,7 +43,7 @@ namespace RemoteControlToolkitCore.Common.Networking
             _sw.AutoFlush = true;
         }
 
-        public TextReader GetClientReader()
+        public StreamReader GetClientReader()
         {
             return _sr;
         }
