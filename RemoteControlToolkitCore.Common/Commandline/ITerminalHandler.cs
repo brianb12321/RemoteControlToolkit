@@ -26,6 +26,9 @@ namespace RemoteControlToolkitCore.Common.Commandline
         void Clear();
         void Bell();
         string ReadLine();
+        string ReadToEnd();
         char Read();
+        void UpdateHomePosition(int col, int row);
+        void UpdateCursorPosition(int col, int row);
     }
 }

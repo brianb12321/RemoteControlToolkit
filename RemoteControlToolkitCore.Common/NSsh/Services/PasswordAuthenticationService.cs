@@ -1,8 +1,4 @@
-﻿using System;
-using System.Security.Principal;
-using Microsoft.Win32.SafeHandles;
-using RemoteControlToolkitCore.Common.NSsh.Types;
-using RemoteControlToolkitCore.Common.NSsh.Utility;
+﻿using System.Security.Principal;
 
 namespace RemoteControlToolkitCore.Common.NSsh.Services
 {

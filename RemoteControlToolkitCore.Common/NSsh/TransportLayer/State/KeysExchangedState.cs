@@ -87,7 +87,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer.State
                 manager.WritePacket(new UserAuthBanner()
                 {
                     Message = config.UserAuthenticationBanner,
-                    LanguageTag = CultureInfo.CurrentCulture.IetfLanguageTag
+                    LanguageTag = CultureInfo.CurrentCulture.Name
                 });
 
                 _sentAuthBanner = true;

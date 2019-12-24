@@ -29,5 +29,10 @@ namespace RemoteControlToolkitCore.Common.Utilities
         {
             return _terminalHandler.ReadLine();
         }
+
+        public override string ReadToEnd()
+        {
+            return _terminalHandler.ReadToEnd();
+        }
     }
 }

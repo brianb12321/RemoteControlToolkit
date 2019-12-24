@@ -47,6 +47,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
         private Stream _stdOut;
         private ChannelTextWriter _textOut;
         private StreamReader _textIn;
+        private int _originalCol;
+        private int _originalRow;
 
         public TerminalHandler(MemoryStream stdIn, ChannelTextWriter stdOut, PseudoTerminalPayload terminalConfig)
         {
@@ -73,10 +75,10 @@ namespace RemoteControlToolkitCore.Common.Commandline
             _textOut.Write("\a");
         }
 
-        private void updateTerminal(StringBuilder sb, int originalCol, int originalRow, int cursorPosition)
+        private void updateTerminal(StringBuilder sb, int cursorPosition)
         {
-            int realStringLength = sb.Length + originalCol;
-            int realCursorPosition = (cursorPosition + originalCol);
+            int realStringLength = sb.Length + _originalCol;
+            int realCursorPosition = (cursorPosition + _originalCol);
             int rowsToMove = realStringLength / (int)TerminalColumns;
             int cursorRowsToMove = realCursorPosition / (int)TerminalColumns;
             int cellsToMove = (realCursorPosition % (int)TerminalColumns) - 1;
@@ -89,7 +91,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             if (TerminalModes.ECHO)
             {
                 //Restore saved cursor position.
-                _textOut.Write($"\u001b[{originalRow};{originalCol}H");
+                _textOut.Write($"\u001b[{_originalRow};{_originalCol}H");
                 //Clear lines
                 if (rowsToMove > 0)
                 {
@@ -104,10 +106,10 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 {
                     _textOut.Write("\u001b[0K");
                 }
-                _textOut.Write($"\u001b[{originalRow};{originalCol}H");
+                UpdateCursorPosition(_originalCol, _originalRow);
                 //Print data
                 _textOut.Write(sb.ToString());
-                _textOut.Write($"\u001b[{originalRow};{originalCol}H");
+                UpdateCursorPosition(_originalCol, _originalRow);
                 //Reposition cursor
                 if (cursorPosition > 0)
                 {
@@ -138,11 +140,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
             sb.Insert(0, Encoding.UTF8.GetString(_stdIn.GetBuffer()));
             int HistoryPosition = History.Count;
             var cursorDimensions = GetCursorPosition();
-            int originalCol = int.Parse(cursorDimensions.column);
-            int originalRow = int.Parse(cursorDimensions.row);
+            _originalCol = int.Parse(cursorDimensions.column);
+            _originalRow = int.Parse(cursorDimensions.row);
             char text;
             int cursorPosition = sb.Length;
-            updateTerminal(sb, originalCol, originalRow, cursorPosition);
+            updateTerminal(sb, cursorPosition);
             bool quit = false;
             //Read from the terminal
             while (true)
@@ -235,10 +237,22 @@ namespace RemoteControlToolkitCore.Common.Commandline
                         cursorPosition++;
                         break;
                 }
-                updateTerminal(sb, originalCol, originalRow, cursorPosition);
+                updateTerminal(sb, cursorPosition);
                 if (quit) break;
             }
             _textOut.WriteLine();
+            return sb.ToString();
+        }
+
+        public string ReadToEnd()
+        {
+            StringBuilder sb = new StringBuilder();
+            string text = string.Empty;
+            while ((text = ReadLine()) != ((char) 26).ToString())
+            {
+                sb.AppendLine(text);
+            }
+
             return sb.ToString();
         }
 
@@ -252,6 +266,18 @@ namespace RemoteControlToolkitCore.Common.Commandline
             }
 
             return (char)character;
+        }
+
+        public void UpdateHomePosition(int col, int row)
+        {
+            _originalCol = col;
+            _originalRow = row;
+            UpdateCursorPosition(col, row);
+        }
+
+        public void UpdateCursorPosition(int col, int row)
+        {
+            _textOut.Write($"\u001b[{row};{col}H");
         }
 
         public (string row, string column) GetCursorPosition()

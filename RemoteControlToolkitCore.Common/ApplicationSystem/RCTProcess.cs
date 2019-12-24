@@ -7,6 +7,7 @@ using System.ServiceModel;
 using System.Text;
 using System.Threading;
 using Crayon;
+using IronPython.Modules;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Networking;
 using ThreadState = System.Threading.ThreadState;
@@ -17,6 +18,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
     public class RCTProcess : IExtensibleObject<RCTProcess>
     {
         public uint Pid { get; set; }
+        public bool IsBackground { get; set; }
         public bool DisposeIn { get; set; } = true;
         public bool DisposeOut { get; set; } = true;
         public bool DisposeError { get; set; } = true;
@@ -67,6 +69,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 StandardOutDisposed += Parent.StandardOutDisposed;
                 StandardInDisposed += Parent.StandardInDisposed;
                 StandardErrorDisposed += Parent.StandardErrorDisposed;
+                IsBackground = Parent.IsBackground;
                 IExtension<RCTProcess>[] buffer = new IExtension<RCTProcess>[Parent.Extensions.Count];
                 Parent.Extensions.CopyTo(buffer, 0);
                 Extensions = new ExtensionCollection<RCTProcess>(this);
@@ -80,6 +83,12 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
 
         public void Start()
         {
+            if (IsBackground)
+            {
+                SetIn(TextReader.Null);
+                SetOut(TextWriter.Null);
+                SetError(TextWriter.Null);
+            }
             _table.AddProcess(this);
             _workingThread.Start(this);
         }
@@ -212,6 +221,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 {
                     try
                     {
+                        string data = proc.In.ReadToEnd();
                         Process extProcess = new Process();
                         extProcess.StartInfo.UseShellExecute = false;
                         extProcess.StartInfo.FileName = args.Arguments[0].ToString().Substring(2);
@@ -225,7 +235,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                         };
                         extProcess.ErrorDataReceived += (sender, e) =>
                         {
-                            proc.Error.WriteLine(e.Data);
+                            proc.Out.WriteLine(e.Data);
                         };
                         token.Register(() =>
                         {
@@ -234,14 +244,8 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                         extProcess.Start();
                         extProcess.BeginOutputReadLine();
                         extProcess.BeginErrorReadLine();
-                        StringBuilder sb = new StringBuilder();
-                        while (!extProcess.HasExited)
-                        {
-                            sb.Clear();
-                            string text = proc.In.ReadLine();
-                            extProcess.StandardInput.WriteLine(text);
-                        }
-
+                        extProcess.StandardInput.WriteLine(data);
+                        extProcess.WaitForExit();
                         return new CommandResponse(extProcess.ExitCode);
                     }
                     catch (Exception e)
