@@ -1,7 +1,8 @@
-﻿using System;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,13 +18,16 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
     [CommandHelp("Manages all external processes on the server.")]
     public class EpsCommand : RCTApplication
     {
+        [DllImport("ntdll.dll", SetLastError = true)]
+        private static extern int NtSetInformationProcess(IntPtr hProcess, int processInformationClass, ref int processInformation, int processInformationLength);
+
         public override string ProcessName => "External Process";
         public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
         {
             string mode = "showAll";
             string name = string.Empty;
             string processArgs = string.Empty;
-            bool useShellExecute = true;
+            bool useShellExecute = false;
             bool redirectStandardIn = false;
             bool redirectStandardOut = false;
             bool redirectStandardError = false;
@@ -40,14 +44,24 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 })
                 .Add("debugMode", "Enters the server into OS debug mode.", v => mode = "debugMode")
                 .Add("exitDebugMode", "Exits the server from OS debug mode.", v => mode = "exitDebugMode")
+                .Add("setProcAsCritical=", "(Windows Only) Sets the specified PID to critical state. Must be in debug mode.", v =>
+                {
+                    mode = "setProcAsCritical";
+                    name = v;
+                })
+                .Add("getPID=", "Gets the pid of the specified process name.", v =>
+                {
+                    mode = "getPID";
+                    name = v;
+                })
                 .Add("arguments|a=", "The arguments to send to a process.", v => processArgs = v)
                 .Add("shellExecute|s", "Executes a new process using the OS shell.", v => useShellExecute = true)
                 .Add("createNoWindow|n", "Do not create a window when executing a process from the OS shell.", v => createNoWindow = true)
-                .Add("redirectStdIn|i", "Redirects standard to RCT standard in. ShellExecute must be false.", v => redirectStandardIn = true)
+                .Add("redirectStdIn|i", "Redirects standard in to RCT standard in. ShellExecute must be false.", v => redirectStandardIn = true)
                 .Add("redirectStdOut|o", "Redirects standard out to RCT standard out. ShellExecute must be false.", v => redirectStandardOut = true)
                 .Add("redirectStdError|e", "Redirects standard error to RCT standard error. ShellExecute must be false.", v => redirectStandardError = true)
                 .Add("runAsAdmin|r", "Runs the process as an administrator.", v => runAsAdministrator = true)
-                .Add("runAsRCTProcess|p", "Creates a new RCT process and register it into the connection table.", v => runAsRCTProcess = true)
+                .Add("runAsRCTProcess|p", "Creates a new RCT process and register it into the process table.", v => runAsRCTProcess = true)
                 .Add("waitForExit|w", "Waits for the process to exit.", v => waitForExit = true)
                 .Add("kill=", "Kills the specified PID.", v =>
                 {
@@ -120,6 +134,11 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                     return new CommandResponse((p.HasExited) ? p.ExitCode : 0);
                 }
             }
+            else if (mode == "getPID")
+            {
+                context.Out.WriteLine(Process.GetProcessesByName(name)[0].Id);
+                return new CommandResponse(CommandResponse.CODE_SUCCESS);
+            }
             else if (mode == "debugMode")
             {
                 Process.EnterDebugMode();
@@ -128,6 +147,12 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             else if (mode == "exitDebugMode")
             {
                 Process.LeaveDebugMode();
+                return new CommandResponse(CommandResponse.CODE_SUCCESS);
+            }
+            else if (mode == "setProcAsCritical")
+            {
+                int isCritical = 1;
+                NtSetInformationProcess(Process.GetProcessById(int.Parse(name)).Handle, 0x1D, ref isCritical, sizeof(int));
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }
             else if (mode == "kill")
@@ -148,4 +173,4 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             
         }
     }
-}
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
