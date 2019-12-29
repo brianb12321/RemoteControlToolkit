@@ -110,7 +110,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
                                 case PacketType.ChannelData:
                                     byte[] data = ((ChannelDataPacket) packet).Data;
                                     string debug = Encoding.UTF8.GetString(data);
-                                    if (debug == "\u0003")
+                                    if (debug == "\u0003" && console.TerminalHandler.TerminalModes.SIGINT)
                                     {
                                         console.CancellationRequested();
                                     }

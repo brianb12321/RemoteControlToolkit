@@ -22,5 +22,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
         /// </summary>
         public TimeSpan VTIME { get; set; } = TimeSpan.Zero;
 
+        public bool SIGINT { get; set; } = true;
+        public bool SIGTSTP { get; set; } = true;
+
     }
 }

@@ -21,8 +21,11 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
         {
             IFileSystem fileSystem = context.ClientContext.GetExtension<IExtensionFileSystem>().FileSystem;
-            StreamReader sr = new StreamReader(fileSystem.OpenFile(args.Arguments[1].ToString(), FileMode.Open, FileAccess.Read));fileSystem.OpenFile(args.Arguments[1].ToString(), FileMode.Open, FileAccess.Read);
-            context.Out.WriteLine(sr.ReadToEnd());
+            StreamReader sr = new StreamReader(fileSystem.OpenFile(args.Arguments[1].ToString(), FileMode.Open, FileAccess.Read, FileShare.Read));
+            while (!sr.EndOfStream)
+            {
+                context.Out.WriteLine(sr.ReadLine());
+            }
             sr.Close();
             return new CommandResponse(CommandResponse.CODE_SUCCESS);
         }

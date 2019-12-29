@@ -28,6 +28,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         string ReadLine();
         string ReadToEnd();
         char Read();
+        int ReadFromPipe(char[] buffer, int offset, int count);
         void UpdateHomePosition(int col, int row);
         void UpdateCursorPosition(int col, int row);
     }

@@ -45,12 +45,12 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         private MemoryStream _stdIn;
         private Stream _stdOut;
-        private ChannelTextWriter _textOut;
+        private TextWriter _textOut;
         private StreamReader _textIn;
         private int _originalCol;
         private int _originalRow;
 
-        public TerminalHandler(MemoryStream stdIn, ChannelTextWriter stdOut, PseudoTerminalPayload terminalConfig)
+        public TerminalHandler(MemoryStream stdIn, TextWriter stdOut, PseudoTerminalPayload terminalConfig)
         {
             _stdIn = stdIn;
             _textOut = stdOut;
@@ -266,6 +266,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
             }
 
             return (char)character;
+        }
+
+        public int ReadFromPipe(char[] buffer, int offset, int length)
+        {
+            return _textIn.Read(buffer, offset, length);
         }
 
         public void UpdateHomePosition(int col, int row)

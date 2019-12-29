@@ -23,16 +23,15 @@ namespace RemoteControlToolkitCore.Common.Commandline
         /// <summary>
         /// Logging support for this class.
         /// </summary>
-        private ILogger<BaseProcessConsole> _logger;
+        private readonly ILogger<BaseProcessConsole> _logger;
 
         public IProcessTable ProcessTable { get; }
         public Guid ClientUniqueID { get; }
         public string Username { get; }
+        public ITerminalHandler TerminalHandler { get; }
         public IExtensionCollection<IInstanceSession> Extensions { get; }
-        private RCTProcess _shellProcess;
-        private TerminalHandler _terminalHandler;
-        private StreamReader _sr;
-        private StreamWriter _sw;
+        private readonly RCTProcess _shellProcess;
+        private readonly TerminalHandler _terminalHandler;
 
         public BaseProcessConsole(ILogger<BaseProcessConsole> logger,
             IApplicationSubsystem subsystem,
@@ -53,7 +52,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
             }
 
             var outStream = GetClientWriter();
-            _terminalHandler = new TerminalHandler(Pipe, (ChannelTextWriter)outStream, terminalConfig);
+            _terminalHandler = new TerminalHandler(Pipe, outStream, terminalConfig);
+            TerminalHandler = _terminalHandler;
             var consoleInStream = new ConsoleTextReader(_terminalHandler);
             _shellProcess = ProcessTable.Factory.CreateOnApplication(this, subsystem.GetApplication("shell"),
                 null, new CommandRequest(new ICommandElement[] {new StringCommandElement("shell") }));
@@ -92,7 +92,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         }
 
         public TextWriter GetClientWriter()
-        {
+        { 
             return new ChannelTextWriter(Producer);
         }
 

@@ -25,6 +25,11 @@ namespace RemoteControlToolkitCore.Common.Utilities
             return _terminalHandler.Read();
         }
 
+        public override int Read(char[] buffer, int index, int count)
+        {
+            return _terminalHandler.ReadFromPipe(buffer, index, count);
+        }
+
         public override string ReadLine()
         {
             return _terminalHandler.ReadLine();
