@@ -22,7 +22,23 @@ namespace RemoteControlToolkitCore.Common.Commandline
         public event EventHandler TerminalDimensionsChanged;
         private uint _terminalRows = 36;
         private uint _terminalColumns = 130;
+        private uint _scrollOffset = 0;
         public List<string> History { get; }
+
+        public string TerminalName
+        {
+            get
+            {
+                try
+                {
+                    return InitialTerminalConfig.TerminalType;
+                }
+                catch (NullReferenceException)
+                {
+                    return "vt100";
+                }
+            }
+        }
 
         public uint TerminalRows
         {
@@ -48,8 +64,14 @@ namespace RemoteControlToolkitCore.Common.Commandline
         private TextWriter _textOut;
         private StreamReader _textIn;
         private int _originalCol;
-        private int _originalRow;
 
+        private int originalRow
+        {
+            get => _originalRow - (int)_scrollOffset;
+            set => _originalRow = value;
+        }
+
+        private int _originalRow;
         public TerminalHandler(MemoryStream stdIn, TextWriter stdOut, PseudoTerminalPayload terminalConfig)
         {
             _stdIn = stdIn;
@@ -67,7 +89,12 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public void Clear()
         {
-            _textOut.WriteLine("\u001b[2J\u001b[;H\u001b[0m");
+            _textOut.Write("\u001b[2J\u001b[;H\u001b[0m");
+        }
+
+        public void ClearScreenCursorDown()
+        {
+            _textOut.Write("\u001b[J");
         }
 
         public void Bell()
@@ -77,9 +104,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         private void updateTerminal(StringBuilder sb, int cursorPosition)
         {
-            int realStringLength = sb.Length + _originalCol;
             int realCursorPosition = (cursorPosition + _originalCol);
-            int rowsToMove = realStringLength / (int)TerminalColumns;
             int cursorRowsToMove = realCursorPosition / (int)TerminalColumns;
             int cellsToMove = (realCursorPosition % (int)TerminalColumns) - 1;
             //The cursor position is a multiple of the column
@@ -91,33 +116,25 @@ namespace RemoteControlToolkitCore.Common.Commandline
             if (TerminalModes.ECHO)
             {
                 //Restore saved cursor position.
-                _textOut.Write($"\u001b[{_originalRow};{_originalCol}H");
+                UpdateCursorPosition(_originalCol, originalRow);
                 //Clear lines
-                if (rowsToMove > 0)
-                {
-                    for (int i = 0; i <= rowsToMove; i++)
-                    {
-                        _textOut.Write("\u001b[0K");
-                        _textOut.Write("\u001b[B");
-                        _textOut.Write("\u001b[10000000000D");
-                    }
-                }
-                else
-                {
-                    _textOut.Write("\u001b[0K");
-                }
-                UpdateCursorPosition(_originalCol, _originalRow);
+                ClearScreenCursorDown();
+                UpdateCursorPosition(_originalCol, originalRow);
                 //Print data
                 _textOut.Write(sb.ToString());
-                UpdateCursorPosition(_originalCol, _originalRow);
+                UpdateCursorPosition(_originalCol, originalRow);
                 //Reposition cursor
+                int newRow = -1;
                 if (cursorPosition > 0)
                 {
                     if (realCursorPosition > (int)TerminalColumns)
                     {
                         for (int i = 0; i < cursorRowsToMove; i++)
                         {
-                            _textOut.Write("\u001b[E");
+                            _textOut.Write("\r\n");
+                            //Check if cursor is at the end of the row and must count the new scrolled coordinates.
+                            if ((newRow = int.Parse(GetCursorPosition().row)) != -1 && newRow == TerminalRows)
+                                _scrollOffset++;
                         }
 
                         if (cellsToMove > 0)
@@ -132,15 +149,21 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 }
             }
         }
+
+        private void cleanOutBuffers(StringBuilder sb)
+        {
+            sb.Insert(0, Encoding.UTF8.GetString(_stdIn.GetBuffer()));
+        }
         public string ReadLine()
         {
             StringBuilder sb = new StringBuilder();
 
             //Clean out memory pipe's buffer
-            sb.Insert(0, Encoding.UTF8.GetString(_stdIn.GetBuffer()));
+            cleanOutBuffers(sb);
             int HistoryPosition = History.Count;
             var cursorDimensions = GetCursorPosition();
             _originalCol = int.Parse(cursorDimensions.column);
+            _scrollOffset = 0;
             _originalRow = int.Parse(cursorDimensions.row);
             char text;
             int cursorPosition = sb.Length;
@@ -285,25 +308,67 @@ namespace RemoteControlToolkitCore.Common.Commandline
             _textOut.Write($"\u001b[{row};{col}H");
         }
 
+        public void MoveCursorLeft(int count = 1)
+        {
+            if(count > 0) _textOut.Write($"\u001b[{count}D");
+        }
+
+        public void MoveCursorRight(int count = 1)
+        {
+            _textOut.Write($"\u001b[{count}C");
+        }
+
+        public void MoveCursorUp(int count = 1)
+        {
+            _textOut.Write($"\u001b[{count}A");
+        }
+
+        public void MoveCursorDown(int count = 1)
+        {
+            _textOut.Write($"\u001b[{count}B");
+        }
+
+        public void SetDisplayMode(int code)
+        {
+            _textOut.Write($"\u001b[{code}m");
+        }
+
+        public void Reset()
+        {
+            _textOut.Write("\u001b[c");
+        }
+
+        public void ScrollDown()
+        {
+            _textOut.Write("\u001b[M");
+        }
+
+        public void SetTitle(string title)
+        {
+            _textOut.Write($"\u001b]0;{title}\x7");
+        }
+
         public (string row, string column) GetCursorPosition()
         {
             //Send code for cursor position.
             _textOut.Write("\u001b[6n");
             char[] buffer = new char[8];
             _textIn.Read(buffer, 0, buffer.Length);
-            string newString = new string(buffer);
-            //Get rid of \0
-            newString = newString.Replace("\0", string.Empty);
-            //Get rid of ANSI escape code.
-            newString = newString.Replace("\u001b", string.Empty);
-            //Get rid of brackets
-            newString = newString.Replace("[", string.Empty);
-            //Split between the semicolon and R.
-            string[] position = newString.Split(';', 'R');
-            return (position[0], position[1]);
+            if (buffer.Length > 0 && buffer[0] == '\u001b')
+            {
+                string newString = new string(buffer);
+                //Get rid of \0
+                newString = newString.Replace("\0", string.Empty);
+                //Get rid of ANSI escape code.
+                newString = newString.Replace("\u001b", string.Empty);
+                //Get rid of brackets
+                newString = newString.Replace("[", string.Empty);
+                //Split between the semicolon and R.
+                string[] position = newString.Split(';', 'R');
+                return (position[0], position[1]);
+            }
+            else return ("-1", "-1");
         }
-
-        
 
         public void Attach(IInstanceSession owner)
         {

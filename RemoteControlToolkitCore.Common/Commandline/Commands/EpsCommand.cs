@@ -110,7 +110,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                                 p.WaitForExit();
                             }
                             return new CommandResponse((p.HasExited) ? p.ExitCode : 0);
-                        }, context);
+                        }, context, context.Identity);
                     proc.Start();
                     proc.WaitForExit();
                     return proc.ExitCode;

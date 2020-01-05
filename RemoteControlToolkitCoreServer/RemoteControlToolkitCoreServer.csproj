@@ -16,11 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Costura.Fody" Version="4.1.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\RemoteControlToolkitCore.Common\RemoteControlToolkitCore.Common.csproj" />
+    <ProjectReference Include="..\RemoteControlToolkitCore.Common\RemoteControlToolkitCore.Common.csproj">
+      <Private>true</Private>
+    </ProjectReference>
     <ProjectReference Include="..\RemoteControlToolkitCore.Subsystem.Audio\RemoteControlToolkitCore.Subsystem.Audio.csproj" />
     <ProjectReference Include="..\RemoteControlToolkitCore.Subsystem.Workflow\RemoteControlToolkitCore.Subsystem.Workflow.csproj" />
   </ItemGroup>

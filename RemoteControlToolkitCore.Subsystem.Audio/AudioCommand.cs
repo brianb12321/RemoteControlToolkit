@@ -146,7 +146,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                 switch (pathMode.ToUpper())
                 {
                     case "VFS":
-                        IFileSystem fileSystem = currentProc.ClientContext.GetExtension<IExtensionFileSystem>().FileSystem;
+                        IFileSystem fileSystem = currentProc.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
                         fileStream = fileSystem.OpenFile(path, FileMode.Open, FileAccess.Read);
                         break;
                     case "PHYS":

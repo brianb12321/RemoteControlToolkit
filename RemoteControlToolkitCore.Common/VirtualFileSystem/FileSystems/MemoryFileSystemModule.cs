@@ -19,6 +19,7 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
         private IFileSystem internalMount(UPath mountPoint, IReadOnlyDictionary<string, string> options)
         {
             MemoryFileSystem mfs = new MemoryFileSystem();
+            mfs.AppendAllText("/README.txt", "Awesome stuff!!!!");
             return mfs;
         }
 

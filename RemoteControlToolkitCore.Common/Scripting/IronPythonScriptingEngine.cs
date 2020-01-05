@@ -52,8 +52,9 @@ namespace RemoteControlToolkitCore.Common.Scripting
                 ironPythonContext = (IronPythonScriptExecutionContext)context;
             }
             else throw new ScriptException("context must be an IronPython context.");
-            return ScriptingEngine.Execute<T>(content, ironPythonContext.CurrentScriptScope);
+            return ScriptingEngine.Execute(content, ironPythonContext.CurrentScriptScope);
         }
+
         public T ExecuteString<T>(string content)
         {
             return ExecuteString<T>(content, new IronPythonScriptExecutionContext(ScriptingEngine));

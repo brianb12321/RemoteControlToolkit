@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\RemoteControlToolkitCoreServer\bin\Debug\net47\Extensions\</OutputPath>
+    <OutputPath>..\..\RemoteControlToolkitCoreServer\bin\Debug\net47\Extensions\WindowsWorkflow\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -44,6 +44,7 @@
     </Reference>
     <Reference Include="NDesk.Options, Version=1.2.5.0, Culture=neutral, PublicKeyToken=11d31d3c6b89255c, processorArchitecture=MSIL">
       <HintPath>..\..\packages\NDesk.Options.Core.1.2.5\lib\net461\NDesk.Options.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Activities">
@@ -73,6 +74,7 @@
     <ProjectReference Include="..\..\RemoteControlToolkitCore.Subsystem.Workflow\RemoteControlToolkitCore.Subsystem.Workflow.csproj">
       <Project>{7b5dd69b-6c3d-4d97-b4ca-c5dbc6f2d0eb}</Project>
       <Name>RemoteControlToolkitCore.Subsystem.Workflow</Name>
+      <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

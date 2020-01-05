@@ -501,10 +501,12 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
 
             return builder.ToString();
         }
-        private void editorOpen(string file)
+        private void editorOpen(string file, RCTProcess currentProc)
         {
+            UPath path = new UPath(file);
+            if(!path.IsAbsolute) path = UPath.Combine(currentProc.WorkingDirectory, path);
             _rows = new List<TextRow>();
-            StreamReader sr = new StreamReader(_fileSystem.OpenFile(file, FileMode.OpenOrCreate, FileAccess.Read));
+            StreamReader sr = new StreamReader(_fileSystem.OpenFile(path, FileMode.OpenOrCreate, FileAccess.Read));
             while (!sr.EndOfStream)
             {
                 var text = new TextRow()
@@ -515,8 +517,8 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 editorUpdateRow(text);
             }
             sr.Close();
-            _fileName = _fileSystem.GetFileEntry(file).Name;
-            _filePath = file;
+            _fileName = _fileSystem.GetFileEntry(path).Name;
+            _filePath = path.FullName;
         }
         public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
         {
@@ -530,11 +532,11 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                     token.ThrowIfCancellationRequested();
                 }
                 _buffer = new StringBuilder();
-                _fileSystem = context.ClientContext.GetExtension<IExtensionFileSystem>().FileSystem;
+                _fileSystem = context.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
                 _handler.Clear();
                 _handler.UpdateCursorPosition(0, 0);
                 setupRawMode();
-                editorOpen(args.Arguments[1].ToString());
+                editorOpen(args.Arguments[1].ToString(), context);
                 editorSetStatusMessage("HELP: Ctrl-Q = quit, Ctrl-S = save");
                 while (!token.IsCancellationRequested)
                 {

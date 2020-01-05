@@ -28,7 +28,7 @@ namespace RemoteControlToolkitCore.Subsystem.Workflow.Activities
 
             RCTProcess newProc = currentProc.ClientContext.ProcessTable.Factory.CreateOnApplication(
                 currentProc.ClientContext, subsystem.GetApplication(request.Arguments[0].ToString()), currentProc,
-                request);
+                request, currentProc.Identity);
 
             newProc.DisposeIn = false;
             newProc.DisposeOut = false;

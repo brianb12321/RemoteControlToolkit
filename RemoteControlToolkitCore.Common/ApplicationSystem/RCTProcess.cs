@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Security.Principal;
 using System.ServiceModel;
 using System.Text;
 using System.Threading;
@@ -10,6 +11,7 @@ using Crayon;
 using IronPython.Modules;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Networking;
+using Zio;
 using ThreadState = System.Threading.ThreadState;
 
 namespace RemoteControlToolkitCore.Common.ApplicationSystem
@@ -22,11 +24,16 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public bool DisposeIn { get; set; } = true;
         public bool DisposeOut { get; set; } = true;
         public bool DisposeError { get; set; } = true;
+        public bool InRedirected { get; private set; }
+        public bool OutRedirected { get; private set; }
+        public bool ErrorRedirected { get; private set; }
+        public IPrincipal Identity { get; }
 
         public IInstanceSession ClientContext { get; set; }
         public TextWriter Out { get; private set; }
         public TextWriter Error { get; private set; }
         public TextReader In { get; private set; }
+        public UPath WorkingDirectory { get; set; }
         public IExtensionCollection<RCTProcess> Extensions { get; }
         public bool Running => State == ThreadState.Running;
         public ThreadState State => _workingThread.ThreadState;
@@ -46,8 +53,9 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public bool Disposed { get; private set; }
         private IProcessTable _table;
 
-        private RCTProcess(IProcessTable table, IInstanceSession session, string name, RCTProcess parent, ProcessDelegate threadStart)
+        private RCTProcess(IProcessTable table, IInstanceSession session, string name, RCTProcess parent, ProcessDelegate threadStart, IPrincipal identity)
         {
+            WorkingDirectory = "/";
             _table = table;
             Name = name;
             Parent = parent;
@@ -56,12 +64,14 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             Pid = _table.LatestProcess + 1;
             Extensions = new ExtensionCollection<RCTProcess>(this);
             EnvironmentVariables = new Dictionary<string, string>();
+            Identity = identity;
             if (Parent != null)
             {
                 Parent.Child = this;
                 Out = Parent.Out;
                 In = Parent.In;
                 Error = Parent.Error;
+                Identity = Parent.Identity;
                 ClientContext = Parent.ClientContext;
                 DisposeIn = Parent.DisposeIn;
                 DisposeError = Parent.DisposeError;
@@ -69,7 +79,11 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 StandardOutDisposed += Parent.StandardOutDisposed;
                 StandardInDisposed += Parent.StandardInDisposed;
                 StandardErrorDisposed += Parent.StandardErrorDisposed;
+                InRedirected = Parent.InRedirected;
+                OutRedirected = Parent.OutRedirected;
+                ErrorRedirected = Parent.ErrorRedirected;
                 IsBackground = Parent.IsBackground;
+                WorkingDirectory = Parent.WorkingDirectory;
                 IExtension<RCTProcess>[] buffer = new IExtension<RCTProcess>[Parent.Extensions.Count];
                 Parent.Extensions.CopyTo(buffer, 0);
                 Extensions = new ExtensionCollection<RCTProcess>(this);
@@ -145,16 +159,19 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
 
         public void SetOut(TextWriter outWriter)
         {
+            if (Out != null) OutRedirected = true;
             Out = outWriter;
         }
 
         public void SetError(TextWriter errorWriter)
         {
+            if (Error != null) ErrorRedirected = true;
             Error = errorWriter;
         }
 
         public void SetIn(TextReader inReader)
         {
+            if (In != null) InRedirected = true;
             In = inReader;
         }
 
@@ -204,18 +221,18 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             {
                 _table = table;
             }
-            public RCTProcess Create(IInstanceSession session, string name, ProcessDelegate processDelegate, RCTProcess parent)
+            public RCTProcess Create(IInstanceSession session, string name, ProcessDelegate processDelegate, RCTProcess parent, IPrincipal identity)
             {
-                RCTProcess process = new RCTProcess(_table, session, name, parent, processDelegate);
+                RCTProcess process = new RCTProcess(_table, session, name, parent, processDelegate, parent?.Identity ?? identity);
                 return process;
             }
-            public RCTProcess CreateOnApplication(IInstanceSession session, IApplication application, RCTProcess parent, CommandRequest request)
+            public RCTProcess CreateOnApplication(IInstanceSession session, IApplication application, RCTProcess parent, CommandRequest request, IPrincipal identity)
             {
-                RCTProcess process = new RCTProcess(_table, session, application.ProcessName, parent, (proc, token) => application.Execute(request, proc, token));
+                RCTProcess process = new RCTProcess(_table, session, application.ProcessName, parent, (proc, token) => application.Execute(request, proc, token), parent?.Identity ?? identity);
                 return process;
             }
 
-            public RCTProcess CreateOnExternalProcess(IInstanceSession session, CommandRequest args, RCTProcess parent)
+            public RCTProcess CreateOnExternalProcess(IInstanceSession session, CommandRequest args, RCTProcess parent, IPrincipal identity)
             {
                 RCTProcess process = new RCTProcess(_table, session, $"External process: {args.Arguments[0]}", parent, (proc, token) =>
                 {
@@ -253,7 +270,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                         proc.Error.WriteLine(Output.Red($"Error while executing external program: {e.Message}"));
                         return new CommandResponse(CommandResponse.CODE_FAILURE);
                     }
-                });
+                }, parent?.Identity ?? identity);
                 return process;
             }
         }

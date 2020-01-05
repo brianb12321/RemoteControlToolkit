@@ -24,25 +24,31 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         public override string ProcessName => "LS";
         public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
         {
-            MountFileSystem fileSystem = (MountFileSystem)context.ClientContext.GetExtension<IExtensionFileSystem>().FileSystem;
-            string directoryPath = args.Arguments[1].ToString();
+            IFileSystem fileSystem =
+                context.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
+            string directoryPath =
+                (args.Arguments.Length > 1) ? args.Arguments[1].ToString() : context.WorkingDirectory.ToString();
             if (fileSystem.DirectoryExists(directoryPath))
             {
                 var directories = fileSystem.EnumerateDirectoryEntries(directoryPath, "*", SearchOption.TopDirectoryOnly);
                 foreach (var directory in directories)
                 {
-                    context.Out.Write(Output.Blue(directory.Name) + new string(' ', TAB));
+                    context.Out.Write(directory.Name.Blue() + new string(' ', TAB));
                 }
                 var files = fileSystem.EnumerateFileEntries(directoryPath, "*", SearchOption.TopDirectoryOnly);
                 foreach (var file in files)
                 {
                     if (file.Attributes == FileAttributes.System)
                     {
-                        context.Out.Write(Output.Cyan(file.Name) + new string(' ', TAB));
+                        context.Out.Write(file.Name.Cyan() + new string(' ', TAB));
                     }
                     else if (file.Attributes == FileAttributes.Compressed)
                     {
-                        context.Out.WriteLine(Output.Red(file.Name) + new string(' ', TAB));
+                        context.Out.Write(file.Name.Red() + new string(' ', TAB));
+                    }
+                    else if (file.Attributes == FileAttributes.Device)
+                    {
+                        context.Out.Write(file.Name.BrightYellow() + new string(' ', TAB));
                     }
                     else
                     {

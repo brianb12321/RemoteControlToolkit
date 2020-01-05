@@ -22,11 +22,11 @@ namespace RemoteControlToolkitCore.Common
         public AppBuilder()
         {
             _startups = new List<IApplicationStartup>();
+            _services = new ServiceCollection();
         }
 
         public IHostApplication Build()
         {
-            _services = new ServiceCollection();
             _startups.ForEach(s => s.ConfigureServices(_services, this));
             _services.AddSingleton<IHostApplication, Application>((provider) =>
             {

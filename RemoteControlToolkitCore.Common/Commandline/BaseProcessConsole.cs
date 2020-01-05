@@ -15,6 +15,7 @@ using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
 using RemoteControlToolkitCore.Common.NSsh.Utility;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Utilities;
+using RemoteControlToolkitCore.Common.VirtualFileSystem;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {
@@ -36,9 +37,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
         public BaseProcessConsole(ILogger<BaseProcessConsole> logger,
             IApplicationSubsystem subsystem,
             IInstanceExtensionProvider[] providers,
+            IFileSystemSubsystem fileSystemSubsystem,
             IChannelProducer producer,
             PseudoTerminalPayload terminalConfig,
-            List<EnvironmentPayload> environmentPayloads)
+            List<EnvironmentPayload> environmentPayloads,
+            IPrincipal identity)
         {
             ClientUniqueID = Guid.NewGuid();
             Pipe = new BlockingMemoryStream();
@@ -50,16 +53,16 @@ namespace RemoteControlToolkitCore.Common.Commandline
             {
                 provider.GetExtension(this);
             }
-
             var outStream = GetClientWriter();
             _terminalHandler = new TerminalHandler(Pipe, outStream, terminalConfig);
             TerminalHandler = _terminalHandler;
             var consoleInStream = new ConsoleTextReader(_terminalHandler);
             _shellProcess = ProcessTable.Factory.CreateOnApplication(this, subsystem.GetApplication("shell"),
-                null, new CommandRequest(new ICommandElement[] {new StringCommandElement("shell") }));
+                null, new CommandRequest(new ICommandElement[] {new StringCommandElement("shell") }), identity);
             _shellProcess.SetOut(outStream);
             _shellProcess.SetError(outStream);
             _shellProcess.SetIn(consoleInStream);
+            _shellProcess.Extensions.Add(new ExtensionFileSystem(fileSystemSubsystem.GetFileSystem()));
             initializeEnvironmentVariables(_shellProcess, environmentPayloads);
             Extensions.Add(_terminalHandler);
         }
@@ -68,7 +71,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
         {
             _logger.LogInformation("Initializing environment variables.");
             process.EnvironmentVariables.Add("PROXY_MODE", "false");
-            process.EnvironmentVariables.Add(".", "0");
+            process.EnvironmentVariables.Add("?", "0");
+            process.EnvironmentVariables.Add("TERM", _terminalHandler.TerminalName);
             foreach (EnvironmentPayload payload in environmentPayloads)
             {
                 process.EnvironmentVariables.Add(payload.VariableName, payload.VariableValue);

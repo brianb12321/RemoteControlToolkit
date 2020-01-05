@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsWorkflow", "PluginLi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteControlToolkitCore.Subsystem.Workflow", "RemoteControlToolkitCore.Subsystem.Workflow\RemoteControlToolkitCore.Subsystem.Workflow.csproj", "{7B5DD69B-6C3D-4D97-B4CA-C5DBC6F2D0EB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NugetPackageManager", "PluginLibraries\NugetPackageManager\NugetPackageManager.csproj", "{1FE359FD-4F4B-42EA-A195-19CBFC31385B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,12 +49,17 @@ Global
 		{7B5DD69B-6C3D-4D97-B4CA-C5DBC6F2D0EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B5DD69B-6C3D-4D97-B4CA-C5DBC6F2D0EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B5DD69B-6C3D-4D97-B4CA-C5DBC6F2D0EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1FE359FD-4F4B-42EA-A195-19CBFC31385B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FE359FD-4F4B-42EA-A195-19CBFC31385B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FE359FD-4F4B-42EA-A195-19CBFC31385B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FE359FD-4F4B-42EA-A195-19CBFC31385B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{58180B6A-0013-4288-BCF6-1BA07859931D} = {D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}
+		{1FE359FD-4F4B-42EA-A195-19CBFC31385B} = {D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D6FE14CE-3C81-49CF-BB5E-798286159FC7}

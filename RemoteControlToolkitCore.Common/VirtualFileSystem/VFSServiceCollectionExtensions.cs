@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common.Plugin;
+using Zio;
+using Zio.FileSystems;
 
 namespace RemoteControlToolkitCore.Common.VirtualFileSystem
 {
@@ -7,7 +9,6 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem
     {
         public static IServiceCollection AddVFS(this IServiceCollection services)
         {
-            services.AddSingleton<IInstanceExtensionProvider, VFSInstanceExtensionProvider>();
             return services.AddSingleton<IFileSystemSubsystem, FileSystemSubsystem>();
         }
     }

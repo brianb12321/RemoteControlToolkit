@@ -22,7 +22,6 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
 
         public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
         {
-            _fileSystem = (MountFileSystem)context.ClientContext.GetExtension<IExtensionFileSystem>().FileSystem;
             string mode = "list";
             OptionSet set = new OptionSet()
                 .Add("help|?", "Displays the help screen.", v => mode = "help")
@@ -48,7 +47,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
 
         public override void InitializeServices(IServiceProvider kernel)
         {
-            
+            _fileSystem = (MountFileSystem)kernel.GetRequiredService<IFileSystemSubsystem>().GetFileSystem();
         }
     }
 }

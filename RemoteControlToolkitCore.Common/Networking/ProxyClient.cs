@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
+using System.Security.Claims;
+using System.Security.Principal;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
@@ -44,12 +46,11 @@ namespace RemoteControlToolkitCore.Common.Networking
             {
                 try
                 {
-
                     _sw = new StreamWriter(_networkStream);
                     _sr = new StreamReader(_networkStream);
                     _sw.AutoFlush = true;
                     _commandShell = ProcessTable.Factory.CreateOnApplication(this, appSubsystem.GetApplication("shell"),
-                        current, new CommandRequest(new ICommandElement[] { new StringCommandElement("shell"), }));
+                        current, new CommandRequest(new ICommandElement[] { new StringCommandElement("shell")}), current.Identity);
                     _commandShell.SetOut(GetClientWriter());
                     _commandShell.SetIn(GetClientReader());
                     _commandShell.SetError(GetClientWriter());
@@ -67,7 +68,7 @@ namespace RemoteControlToolkitCore.Common.Networking
                     Close();
                 }
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
-            }, null);
+            }, null, new ClaimsPrincipal(new GenericIdentity("bob")));
             initializeEnvironmentVariables(_proxyProcess);
         }
         private void initializeEnvironmentVariables(RCTProcess process)

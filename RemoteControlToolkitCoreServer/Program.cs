@@ -56,8 +56,6 @@ namespace RemoteControlToolkitCoreServer
                 MaximumClientConnections = 10,
                 UserAuthenticationBanner = "You are about to connect to a RemoteControlToolkit server. Any damages caused by the use of this software will be held against the user. Please refer to the user manual before proceeding."
             });
-            //Test
-
         }
 
         public void PostConfigureServices(IServiceProvider provider, IHostApplication application)
