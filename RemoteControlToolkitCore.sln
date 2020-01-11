@@ -3,21 +3,21 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29324.140
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCoreServer", "RemoteControlToolkitCoreServer\RemoteControlToolkitCoreServer.csproj", "{CB1675CA-0217-487A-8A0A-CF6ED4E4C901}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCoreServer", "Src\RemoteControlToolkitCoreServer\RemoteControlToolkitCoreServer.csproj", "{CB1675CA-0217-487A-8A0A-CF6ED4E4C901}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCore.Common", "RemoteControlToolkitCore.Common\RemoteControlToolkitCore.Common.csproj", "{D1634EF0-3D18-4A45-99DF-F5EC988EA5F4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCore.Common", "Src\RemoteControlToolkitCore.Common\RemoteControlToolkitCore.Common.csproj", "{D1634EF0-3D18-4A45-99DF-F5EC988EA5F4}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCore.Subsystem.Audio", "RemoteControlToolkitCore.Subsystem.Audio\RemoteControlToolkitCore.Subsystem.Audio.csproj", "{11AA0FAC-3700-4E37-A294-43E80CAC9598}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCore.Subsystem.Audio", "Src\RemoteControlToolkitCore.Subsystem.Audio\RemoteControlToolkitCore.Subsystem.Audio.csproj", "{11AA0FAC-3700-4E37-A294-43E80CAC9598}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCoreClient", "RemoteControlToolkitCoreClient\RemoteControlToolkitCoreClient.csproj", "{46881511-72EC-4E66-A985-CE09FA079B23}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCoreClient", "Src\RemoteControlToolkitCoreClient\RemoteControlToolkitCoreClient.csproj", "{46881511-72EC-4E66-A985-CE09FA079B23}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugin Libraries", "Plugin Libraries", "{D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugin Libraries", "Src\Plugin Libraries", "{D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsWorkflow", "PluginLibraries\WindowsWorkflow\WindowsWorkflow.csproj", "{58180B6A-0013-4288-BCF6-1BA07859931D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsWorkflow", "Src\PluginLibraries\WindowsWorkflow\WindowsWorkflow.csproj", "{58180B6A-0013-4288-BCF6-1BA07859931D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteControlToolkitCore.Subsystem.Workflow", "RemoteControlToolkitCore.Subsystem.Workflow\RemoteControlToolkitCore.Subsystem.Workflow.csproj", "{7B5DD69B-6C3D-4D97-B4CA-C5DBC6F2D0EB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteControlToolkitCore.Subsystem.Workflow", "Src\RemoteControlToolkitCore.Subsystem.Workflow\RemoteControlToolkitCore.Subsystem.Workflow.csproj", "{7B5DD69B-6C3D-4D97-B4CA-C5DBC6F2D0EB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NugetPackageManager", "PluginLibraries\NugetPackageManager\NugetPackageManager.csproj", "{1FE359FD-4F4B-42EA-A195-19CBFC31385B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NugetPackageManager", "Src\PluginLibraries\NugetPackageManager\NugetPackageManager.csproj", "{1FE359FD-4F4B-42EA-A195-19CBFC31385B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
