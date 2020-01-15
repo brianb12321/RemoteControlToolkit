@@ -26,6 +26,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         PseudoTerminalMode TerminalModes { get; }
         void Clear();
         void ClearScreenCursorDown();
+        void ClearRow();
         void Bell();
         string ReadLine();
         string ReadToEnd();

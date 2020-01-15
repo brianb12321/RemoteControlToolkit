@@ -11,13 +11,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCore.Su
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCoreClient", "Src\RemoteControlToolkitCoreClient\RemoteControlToolkitCoreClient.csproj", "{46881511-72EC-4E66-A985-CE09FA079B23}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugin Libraries", "Src\Plugin Libraries", "{D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugin Libraries", "Plugin Libraries", "{D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsWorkflow", "Src\PluginLibraries\WindowsWorkflow\WindowsWorkflow.csproj", "{58180B6A-0013-4288-BCF6-1BA07859931D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteControlToolkitCore.Subsystem.Workflow", "Src\RemoteControlToolkitCore.Subsystem.Workflow\RemoteControlToolkitCore.Subsystem.Workflow.csproj", "{7B5DD69B-6C3D-4D97-B4CA-C5DBC6F2D0EB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NugetPackageManager", "Src\PluginLibraries\NugetPackageManager\NugetPackageManager.csproj", "{1FE359FD-4F4B-42EA-A195-19CBFC31385B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteControlToolkitCore.Subsystem.Serial", "Src\RemoteControlToolkitCore.Subsystem.Serial\RemoteControlToolkitCore.Subsystem.Serial.csproj", "{C0E14124-C7FA-4EC5-872E-03BC985C83F9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,6 +55,10 @@ Global
 		{1FE359FD-4F4B-42EA-A195-19CBFC31385B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1FE359FD-4F4B-42EA-A195-19CBFC31385B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1FE359FD-4F4B-42EA-A195-19CBFC31385B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0E14124-C7FA-4EC5-872E-03BC985C83F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0E14124-C7FA-4EC5-872E-03BC985C83F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0E14124-C7FA-4EC5-872E-03BC985C83F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0E14124-C7FA-4EC5-872E-03BC985C83F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

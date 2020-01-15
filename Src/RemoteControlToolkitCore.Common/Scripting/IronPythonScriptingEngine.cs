@@ -4,8 +4,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using IronPython.Hosting;
+using Microsoft.Scripting;
 using Microsoft.Scripting.Hosting;
+using RemoteControlToolkitCore.Common.ApplicationSystem;
+using RemoteControlToolkitCore.Common.NSsh.Utility;
+using Zio;
 
 namespace RemoteControlToolkitCore.Common.Scripting
 {
@@ -13,6 +18,10 @@ namespace RemoteControlToolkitCore.Common.Scripting
     {
         private Dictionary<string, IScriptExecutionContext> _storedContexts = new Dictionary<string, IScriptExecutionContext>();
         public ScriptEngine ScriptingEngine { get; private set; }
+        public ScriptIO IO => ScriptingEngine.Runtime.IO;
+        public RCTProcess ParentProcess { get; set; }
+        public CancellationToken Token { get; set; }
+
         public IronPythonScriptingEngine()
         {
             ScriptingEngine = Python.CreateEngine();
@@ -29,6 +38,13 @@ namespace RemoteControlToolkitCore.Common.Scripting
         public IScriptExecutionContext ExecuteFile(string path)
         {
             return ExecuteFile(path, new IronPythonScriptExecutionContext(ScriptingEngine));
+        }
+
+        public int ExecuteProgram(string file, IFileSystem fileSystem)
+        {
+            var source = ScriptingEngine.CreateScriptSourceFromString(fileSystem.ReadAllText(file),
+                SourceCodeKind.File);
+            return source.ExecuteProgram();
         }
 
         public IScriptExecutionContext ExecuteFile(string path, IScriptExecutionContext context)
@@ -62,7 +78,7 @@ namespace RemoteControlToolkitCore.Common.Scripting
 
         public void SetIn(TextReader reader)
         {
-            ScriptingEngine.Runtime.IO.SetInput(new MemoryStream(), reader, Encoding.Default);
+            ScriptingEngine.Runtime.IO.SetInput(new MemoryStream(), reader, Encoding.UTF8);
         }
 
         public void SetOut(TextWriter writer)

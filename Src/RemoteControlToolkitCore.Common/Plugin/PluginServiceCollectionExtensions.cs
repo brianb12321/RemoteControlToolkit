@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
-using RemoteControlToolkitCore.Common.Plugin.Devices;
 
 namespace RemoteControlToolkitCore.Common.Plugin
 {
@@ -10,7 +9,6 @@ namespace RemoteControlToolkitCore.Common.Plugin
             where TLoader : class, IPluginLibraryLoader
         {
             services.AddSingleton<IPluginLibraryLoader, TLoader>();
-            services.AddSingleton<IDeviceSubsystem, DeviceSubsystem>();
             return services;
         }
     }

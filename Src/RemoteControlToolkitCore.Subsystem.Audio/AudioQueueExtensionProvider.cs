@@ -3,7 +3,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Subsystem.Audio
 {
-    public class AudioQueueExtensionProvider : IInstanceExtensionProvider
+    public class AudioQueueExtensionProvider : IExtensionProvider<IInstanceSession>
     {
         public void GetExtension(IInstanceSession context)
         {

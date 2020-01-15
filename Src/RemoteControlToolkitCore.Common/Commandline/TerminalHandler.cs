@@ -97,6 +97,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
             _textOut.Write("\u001b[J");
         }
 
+        public void ClearRow()
+        {
+            _textOut.Write("\u001b[K");
+        }
+
         public void Bell()
         {
             _textOut.Write("\a");

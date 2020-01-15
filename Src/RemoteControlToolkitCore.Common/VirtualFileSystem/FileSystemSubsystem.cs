@@ -11,6 +11,12 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem
         private IFileSystem _fileSystem;
         public FileSystemSubsystem(IPluginLibraryLoader loader, IServiceProvider services) : base(loader, services)
         {
+            
+        }
+
+        public override void Init()
+        {
+            base.Init();
             MountFileSystem mfs = new MountFileSystem(new MemoryFileSystem());
             foreach (var fileSystem in GetAllModules())
             {
@@ -23,6 +29,7 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem
 
             _fileSystem = mfs;
         }
+
         public IFileSystem GetFileSystem()
         {
             return _fileSystem;

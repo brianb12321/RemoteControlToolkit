@@ -36,11 +36,12 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public BaseProcessConsole(ILogger<BaseProcessConsole> logger,
             IApplicationSubsystem subsystem,
-            IInstanceExtensionProvider[] providers,
+            IExtensionProvider<IInstanceSession>[] providers,
             IFileSystemSubsystem fileSystemSubsystem,
             IChannelProducer producer,
             PseudoTerminalPayload terminalConfig,
             List<EnvironmentPayload> environmentPayloads,
+            IServiceProvider serviceProvider,
             IPrincipal identity)
         {
             ClientUniqueID = Guid.NewGuid();
@@ -48,8 +49,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
             Producer = producer;
             Extensions = new ExtensionCollection<IInstanceSession>(this);
             _logger = logger;
-            ProcessTable = new ProcessTable();
-            foreach (IInstanceExtensionProvider provider in providers)
+            ProcessTable = new ProcessTable(serviceProvider);
+            foreach (IExtensionProvider<IInstanceSession> provider in providers)
             {
                 provider.GetExtension(this);
             }
@@ -73,9 +74,17 @@ namespace RemoteControlToolkitCore.Common.Commandline
             process.EnvironmentVariables.Add("PROXY_MODE", "false");
             process.EnvironmentVariables.Add("?", "0");
             process.EnvironmentVariables.Add("TERM", _terminalHandler.TerminalName);
+            process.EnvironmentVariables.Add("WORKINGDIR", "/");
             foreach (EnvironmentPayload payload in environmentPayloads)
             {
-                process.EnvironmentVariables.Add(payload.VariableName, payload.VariableValue);
+                if (process.EnvironmentVariables.ContainsKey(payload.VariableName))
+                {
+                    process.EnvironmentVariables[payload.VariableName] = payload.VariableValue;
+                }
+                else
+                {
+                    process.EnvironmentVariables.Add(payload.VariableName, payload.VariableValue);
+                }
             }
         }
 

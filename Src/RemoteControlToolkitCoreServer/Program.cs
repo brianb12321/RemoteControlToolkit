@@ -8,12 +8,14 @@ using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
 using RemoteControlToolkitCore.Common.Scripting;
 using RemoteControlToolkitCore.Common.Commandline;
+using RemoteControlToolkitCore.Common.DeviceBus;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Proxy;
 using RemoteControlToolkitCore.Subsystem.Audio;
+using RemoteControlToolkitCore.Subsystem.Serial;
 using RemoteControlToolkitCore.Subsystem.Workflow;
 
 namespace RemoteControlToolkitCoreServer
@@ -34,17 +36,16 @@ namespace RemoteControlToolkitCoreServer
 
     public class Startup : IApplicationStartup
     {
-        private IServiceCollection _services;
         public void ConfigureServices(IServiceCollection services, IAppBuilder builder)
         {
-            _services = services;
             services.AddLogging(logBuilder =>
             {
                 logBuilder.AddConsole();
             });
             services.AddPluginSystem<DefaultPluginLoader>();
+            services.AddDeviceBus();
             services.AddVFS();
-            services.AddScriptingEngine<IronPythonScriptingEngine>();
+            services.AddScriptingEngine<ScriptingSubsystem>();
             services.AddAudio();
             services.AddCommandLine();
             services.AddSingleton<IServerPool, ServerPool>();
@@ -68,8 +69,12 @@ namespace RemoteControlToolkitCoreServer
                 .LoadFromFolder("Extensions", application.ExecutingSide);
             provider.GetService<IPluginLibraryLoader>()
                 .LoadFromAssembly(Assembly.GetAssembly(typeof(WorkflowCommand)), application.ExecutingSide);
+            provider.GetService<IPluginLibraryLoader>()
+                .LoadFromAssembly(Assembly.GetAssembly(typeof(RCTSerialDevice)), application.ExecutingSide);
             provider.GetService<IApplicationSubsystem>().Init();
             provider.GetService<IFileSystemSubsystem>().Init();
+            provider.GetService<IDeviceBus>().Init();
+            provider.GetService<IScriptingSubsystem>().Init();
         }
     }
 }

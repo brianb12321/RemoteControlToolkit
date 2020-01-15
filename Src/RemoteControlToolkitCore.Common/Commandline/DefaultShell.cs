@@ -31,6 +31,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
     public class DefaultShell : RCTApplication
     {
         private IScriptingEngine _engine;
+        private IScriptingSubsystem _scriptingSubsystem;
+        private IScriptExecutionContext _scriptContext;
         private IApplicationSubsystem _appSubsystem;
         private IHostApplication _nodeApplication;
         private IServiceProvider _services;
@@ -196,6 +198,14 @@ namespace RemoteControlToolkitCore.Common.Commandline
             else return executeCommand(command, currentProc, token);
         }
 
+        private void setupScriptingEngine(TextWriter outWriter, TextWriter errorWriter, TextReader inReader, RCTProcess currentProc, CancellationToken token)
+        {
+            _engine.ParentProcess = currentProc;
+            _engine.Token = token;
+            _engine.SetIn(inReader);
+            _engine.SetOut(outWriter);
+            _engine.SetError(errorWriter);
+        }
         private void handleMultipleCommands(CancellationToken token, RCTProcess currentProc, StringBuilder sb)
         {
             List<string> _commands = new List<string>();
@@ -228,26 +238,21 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public CommandResponse executeCommand(string command, RCTProcess currentProc, CancellationToken token)
         {
-            var context = currentProc.ClientContext.GetExtension<IScriptExecutionContext>();
             if (command.StartsWith("::"))
             {
                 _process = currentProc.ClientContext.ProcessTable.Factory.Create(currentProc.ClientContext, "Scripting",
                     (proc, newToken) =>
                     {
-                        _engine.SetIn(proc.In);
-                        _engine.SetOut(proc.Out);
-                        _engine.SetError(proc.Error);
-                        _engine.ExecuteString<dynamic>(command.Substring(2), context);
+                        _engine.ParentProcess = proc;
+                        _engine.Token = newToken;
+                        setupScriptingEngine(proc.Out, proc.Error, proc.In, proc, newToken);
+                        _engine.ExecuteString<dynamic>(command.Substring(2), _scriptContext);
                         return new CommandResponse(CommandResponse.CODE_SUCCESS);
                     }, currentProc, currentProc.Identity);
                 _process.ThreadError += (sender, e) =>
                 {
                     currentProc.Error.WriteLine(Output.Red($"Error while running script: {e.Message}"));
                 };
-                addProcessExtensions(_process);
-                _process.DisposeIn = false;
-                _process.DisposeOut = false;
-                _process.DisposeError = false;
                 _process.SetOut(currentProc.Out);
                 _process.SetError(currentProc.Error);
                 _process.SetIn(currentProc.In);
@@ -259,7 +264,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             IReadOnlyList<IReadOnlyList<ICommandElement>> parsedItems = null;
             try
             {
-                IParser parser = new Parser(_engine, context, currentProc.EnvironmentVariables);
+                IParser parser = new Parser(_engine, _scriptContext, currentProc.EnvironmentVariables);
                 var lexedItems = lexer.Lex(command);
                 parsedItems = parser.Parse(lexedItems);
                 CommandRequest newRequest = new CommandRequest(parsedItems[0].ToArray());
@@ -275,8 +280,22 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 //Check if command should execute external program.
                 else if (newCommand.StartsWith("./"))
                 {
-                    _process = currentProc.ClientContext.ProcessTable.Factory.CreateOnExternalProcess(currentProc.ClientContext, newRequest,
-                        currentProc, currentProc.Identity);
+                    string fileName = newCommand.Substring(2);
+                    _process = currentProc.ClientContext.ProcessTable.Factory.CreateFromScript(
+                        currentProc.ClientContext, fileName, newRequest, currentProc,
+                        currentProc.Extensions.Find<IExtensionFileSystem>().GetFileSystem(), _engine,
+                        currentProc.Identity);
+
+                    _process.ThreadError += (sender, e) =>
+                    {
+                        currentProc.Error.WriteLine(Output.Red($"Error while running script: {e.Message}"));
+                    };
+                    _process.SetOut(currentProc.Out);
+                    _process.SetError(currentProc.Error);
+                    _process.SetIn(currentProc.In);
+                    _process.Start();
+                    _process.WaitForExit();
+                    return _process.ExitCode;
                 }
                 else
                 {
@@ -307,7 +326,6 @@ namespace RemoteControlToolkitCore.Common.Commandline
                     currentProc.Error.WriteLine(Output.Red($"Error while redirecting IO: {ex.Message}"));
                     return new CommandResponse(CommandResponse.CODE_FAILURE);
                 }
-                addProcessExtensions(_process);
                 _process.Start();
                 _process.WaitForExit();
                 return _process.ExitCode;
@@ -324,10 +342,6 @@ namespace RemoteControlToolkitCore.Common.Commandline
             }
         }
 
-        private void addProcessExtensions(RCTProcess process)
-        {
-            process.Extensions.Add(new ExtensionFileSystem(_fileSystem));
-        }
         private void redirectIO(IParser parser, RCTProcess currentProc)
         {
             IFileSystem workingDirFileSystem = currentProc.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
@@ -375,10 +389,6 @@ namespace RemoteControlToolkitCore.Common.Commandline
             {
                 _engine.SetIn(currentProc.In);
             }
-            //Configure dispose options
-            if (parser.ErrorRedirected == RedirectionMode.None) _process.DisposeError = false;
-            if (parser.OutputRedirected == RedirectionMode.None) _process.DisposeOut = false;
-            if (parser.InputRedirected == RedirectionMode.None) _process.DisposeIn = false;
         }
         public override void InitializeServices(IServiceProvider kernel)
         {
@@ -387,7 +397,9 @@ namespace RemoteControlToolkitCore.Common.Commandline
             _logger = kernel.GetService<ILogger<DefaultShell>>();
             _logger.LogInformation("Shell initialized.");
             _builtInCommands = new Dictionary<string, Func<CommandRequest, CommandResponse>>();
-            _engine = kernel.GetService<IScriptingEngine>();
+            _scriptingSubsystem = kernel.GetService<IScriptingSubsystem>();
+            _engine = _scriptingSubsystem.CreateEngine();
+            _scriptContext = _engine.CreateContext();
             _appSubsystem = kernel.GetService<IApplicationSubsystem>();
             _services = kernel;
         }

@@ -19,8 +19,9 @@ namespace RemoteControlToolkitCore.Common.Commandline
         private readonly IImpersonationProvider _provider;
         private ILogger<BaseProcessConsole> _logger;
         private IApplicationSubsystem _subsystem;
-        private IInstanceExtensionProvider[] _providers;
+        private IExtensionProvider<IInstanceSession>[] _providers;
         private IFileSystemSubsystem _fileSystemSubsystem;
+        private IServiceProvider _serviceProvider;
         public CommandChannelConsumer(ILogger<BaseConsoleChannelConsumer> logger, IImpersonationProvider provider, IFileSystemSubsystem fileSystemSubsystem, ILogger<BaseProcessConsole> consoleLogger, IApplicationSubsystem subsystem, IServiceProvider serviceProvider) : base(logger)
         {
             _fileSystemSubsystem = fileSystemSubsystem;
@@ -28,7 +29,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
             _logger = consoleLogger;
             _subsystem = subsystem;
             _provider = provider;
-            _providers = serviceProvider.GetServices<IInstanceExtensionProvider>().ToArray();
+            _serviceProvider = serviceProvider;
+            _providers = serviceProvider.GetServices<IExtensionProvider<IInstanceSession>>().ToArray();
         }
         protected override IConsole CreateConsole()
         {
@@ -36,7 +38,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             ClaimsIdentity identity = new ClaimsIdentity();
             identity.AddClaim(new Claim(ClaimTypes.Role, "Administrator"));
             principal.AddIdentity(identity);
-            return new BaseProcessConsole(_logger, _subsystem, _providers, _fileSystemSubsystem, Channel, InitialTerminalConfiguration, InitialEnvironmentVariables, principal);
+            return new BaseProcessConsole(_logger, _subsystem, _providers, _fileSystemSubsystem, Channel, InitialTerminalConfiguration, InitialEnvironmentVariables, _serviceProvider, principal);
         }
 
         public string Command { get; set; }

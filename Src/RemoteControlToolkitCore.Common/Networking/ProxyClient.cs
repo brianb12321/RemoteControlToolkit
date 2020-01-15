@@ -8,6 +8,7 @@ using System.Security.Principal;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline;
@@ -29,16 +30,18 @@ namespace RemoteControlToolkitCore.Common.Networking
         private NetworkStream _networkStream;
         private StreamReader _sr;
         private StreamWriter _sw;
-        private TerminalHandler _terminalHandler;
 
-        public ProxyClient(TcpClient client, ILogger<ProxyClient> logger, IApplicationSubsystem appSubsystem, IInstanceExtensionProvider[] providers)
+        public ProxyClient(TcpClient client, IServiceProvider serviceProvider)
         {
+            _logger = serviceProvider.GetService<ILogger<ProxyClient>>();
+            IApplicationSubsystem appSubsystem = serviceProvider.GetService<IApplicationSubsystem>();
+            IExtensionProvider<IInstanceSession>[] providers =
+                serviceProvider.GetService<IExtensionProvider<IInstanceSession>[]>();
             Extensions = new ExtensionCollection<IInstanceSession>(this);
-            ProcessTable = new ProcessTable();
+            ProcessTable = new ProcessTable(serviceProvider);
             ClientUniqueID = Guid.NewGuid();
             _networkStream = client.GetStream();
-            _logger = logger;
-            foreach (IInstanceExtensionProvider provider in providers)
+            foreach (IExtensionProvider<IInstanceSession> provider in providers)
             {
                 provider.GetExtension(this);
             }

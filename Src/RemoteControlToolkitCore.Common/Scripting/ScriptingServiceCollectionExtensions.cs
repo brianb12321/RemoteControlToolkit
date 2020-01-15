@@ -5,11 +5,10 @@ namespace RemoteControlToolkitCore.Common.Scripting
 {
     public static class ScriptingServiceCollectionExtensions
     {
-        public static IServiceCollection AddScriptingEngine<TImpl>(this IServiceCollection services)
-            where TImpl : class, IScriptingEngine
+        public static IServiceCollection AddScriptingEngine<TSubsystem>(this IServiceCollection services)
+            where TSubsystem : class, IScriptingSubsystem
         {
-            services.AddSingleton<IScriptingEngine, TImpl>();
-            services.AddTransient<IInstanceExtensionProvider, ScriptingEngineExtensionProvider>();
+            services.AddSingleton<IScriptingSubsystem, TSubsystem>();
             return services;
         }
     }

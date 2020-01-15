@@ -77,7 +77,7 @@ namespace RemoteControlToolkitCore.Common
             {
                 TcpClient client = new TcpClient();
                 client.Connect(proxyAddress, proxyPort);
-                ProxyClient instance = new ProxyClient(client, _proxyClientLogger, _provider.GetService<IApplicationSubsystem>(), _provider.GetServices<IInstanceExtensionProvider>().ToArray());
+                ProxyClient instance = new ProxyClient(client, _provider);
                 _proxyLogger.LogInformation("Connected to proxy server.");
                 instance.Start();
             }
@@ -96,7 +96,7 @@ namespace RemoteControlToolkitCore.Common
                     {
                         TcpClient client = _proxyListener.AcceptTcpClient();
                         _logger.LogInformation("A proxy client established a connection.");
-                        ProxyNetworkInstance instance = new ProxyNetworkInstance(client, _proxyLogger, _proxyClients);
+                        ProxyNetworkInstance instance = new ProxyNetworkInstance(client, _provider);
                         _proxyClients.AddServer(instance);
                     }
                 });

@@ -7,7 +7,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Subsystem.Audio
 {
-    public class AudioOutSubsystem : BasePluginSubsystem<IAudioOutSubsystem, IAudioOutDeviceModule>, IAudioOutSubsystem
+    public class AudioOutSubsystem : BasePluginSubsystem<IAudioOutSubsystem, IAudioProviderModule>, IAudioOutSubsystem
     {
         private ILogger<AudioOutSubsystem> _logger;
         private IServiceProvider _services;
@@ -33,18 +33,6 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
             }
             base.Init();
             GetAllAudioProviders().ToList().ForEach(m => m.InitializeServices(_services));
-        }
-
-        public IReadOnlyDictionary<string, string> GetAudioDevices(string name)
-        {
-            var devices = GetAudioDeviceType(name).GetDevices();
-            return devices;
-        }
-
-        public IAudioOutDeviceModule GetAudioDeviceType(string name)
-        {
-            return PluginLoader.GetAllModules<IAudioOutDeviceModule>()
-                .FirstOrDefault(m => m.DeviceName == name);
         }
 
         public IAudioProviderModule GetAudioProvider(string name)

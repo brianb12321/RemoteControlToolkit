@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using RemoteControlToolkitCore.Common.DeviceBus;
 using RemoteControlToolkitCore.Common.Plugin;
 using Zio;
 using Zio.FileSystems;
@@ -12,6 +14,12 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
 {
     public class UDevFileSystem : FileSystem
     {
+        private readonly IDeviceBus _bus;
+
+        public UDevFileSystem(IDeviceBus bus)
+        {
+            _bus = bus;
+        }
         protected override void CreateDirectoryImpl(UPath path)
         {
             throw new NotImplementedException();
@@ -20,7 +28,7 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
         protected override bool DirectoryExistsImpl(UPath path)
         {
             if (path == "/") return true;
-            else return false;
+            else return _bus.CategoryExist(path.GetNameWithoutExtension());
         }
 
         protected override void MoveDirectoryImpl(UPath srcPath, UPath destPath)
@@ -50,9 +58,13 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
 
         protected override bool FileExistsImpl(UPath path)
         {
-            string file = path.GetNameWithoutExtension();
-            if (file == "null") return true;
-            else return false;
+            string category = path.GetDirectory().GetNameWithoutExtension();
+            string device = path.GetNameWithoutExtension();
+            if (string.IsNullOrEmpty(category))
+            {
+                return _bus.GetDeviceSelector("root").DeviceConnected(device);
+            }
+            else return _bus.GetDeviceSelector(category).DeviceConnected(device);
         }
 
         protected override void MoveFileImpl(UPath srcPath, UPath destPath)
@@ -67,7 +79,19 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
 
         protected override Stream OpenFileImpl(UPath path, FileMode mode, FileAccess access, FileShare share)
         {
-            if (path == "/null") return Stream.Null;
+            string context = path.GetDirectory().GetNameWithoutExtension();
+            string name = path.GetNameWithoutExtension();
+            if (FileExists(path))
+            {
+                if (string.IsNullOrEmpty(context))
+                {
+                    return _bus.GetDeviceSelector("root").GetDevice(name).OpenDevice();
+                }
+                else
+                {
+                    return _bus.GetDeviceSelector(context).GetDevice(name).OpenDevice();
+                }
+            }
             else throw new FileNotFoundException();
         }
 
@@ -113,14 +137,23 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
 
         protected override IEnumerable<UPath> EnumeratePathsImpl(UPath path, string searchPattern, SearchOption searchOption, SearchTarget searchTarget)
         {
+            List<UPath> items = new List<UPath>();
             if (path == "/")
             {
-                return new List<UPath>()
+                if(searchTarget == SearchTarget.Both || searchTarget == SearchTarget.Directory)
+                    items.AddRange(_bus.GetAllModules().Select(v => new UPath($"/{v.Category}")));
+                if (searchTarget == SearchTarget.Both || searchTarget == SearchTarget.File)
                 {
-                    "/null"
-                };
+                    items.AddRange(_bus.GetDeviceSelector("root").GetDevicesInfo().Select(v => new UPath($"/{v.FileName}")));
+                }
             }
-            else throw new DirectoryNotFoundException();
+            else
+            {
+                return _bus.GetDeviceSelector(path.GetNameWithoutExtension()).GetDevicesInfo()
+                    .Select(v => UPath.Combine(path, v.FileName));
+            }
+
+            return items;
         }
 
         protected override IFileSystemWatcher WatchImpl(UPath path)
@@ -143,14 +176,15 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
     public class UDevFileSystemModule : IFileSystemPluginModule
     {
         public bool AutoMount => true;
+        private IDeviceBus _bus;
         public void InitializeServices(IServiceProvider kernel)
         {
-            
+            _bus = kernel.GetRequiredService<IDeviceBus>();
         }
 
         public (UPath MountPoint, IFileSystem FileSystem) MountFileSystem(IReadOnlyDictionary<string, string> options)
         {
-            return ("/dev", new UDevFileSystem());
+            return ("/dev", new UDevFileSystem(_bus));
         }
 
         public void UnMount(MountFileSystem mfs)

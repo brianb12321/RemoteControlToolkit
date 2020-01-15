@@ -14,19 +14,29 @@ using Zio;
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
     [PluginModule(Name = "cat", ExecutingSide = NetworkSide.Server | NetworkSide.Proxy)]
-    [CommandHelp("Reads the VFS and prints to StdOut.")]
+    [CommandHelp("Reads the VFS or StdIn and prints to StdOut.")]
     public class CatCommand : RCTApplication
     {
         public override string ProcessName => "Cat";
         public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
         {
-            IFileSystem fileSystem = context.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
-            StreamReader sr = new StreamReader(fileSystem.OpenFile(args.Arguments[1].ToString(), FileMode.Open, FileAccess.Read, FileShare.Read));
-            while (!sr.EndOfStream)
+            if (args.Arguments.Length > 1)
             {
-                context.Out.WriteLine(sr.ReadLine());
+                IFileSystem fileSystem = context.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
+                StreamReader sr = new StreamReader(fileSystem.OpenFile(args.Arguments[1].ToString(), FileMode.Open, FileAccess.Read, FileShare.Read));
+                while (!sr.EndOfStream && !token.IsCancellationRequested)
+                {
+                    context.Out.WriteLine(sr.ReadLine());
+                }
+                sr.Close();
             }
-            sr.Close();
+            else
+            {
+                while (!token.IsCancellationRequested)
+                {
+                    context.Out.WriteLine(context.In.ReadLine());
+                }
+            }
             return new CommandResponse(CommandResponse.CODE_SUCCESS);
         }
 

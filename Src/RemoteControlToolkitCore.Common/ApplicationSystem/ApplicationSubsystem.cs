@@ -17,8 +17,8 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
 
         public ApplicationSubsystem(IPluginLibraryLoader loader, IServiceProvider services) : base(loader, services)
         {
-            _table = new ProcessTable();
-            Factory = new RCTProcess.RCTPRocessFactory(_table);
+            _table = new ProcessTable(services);
+            Factory = new RCTProcess.RCTPRocessFactory(_table, services);
             _application = services.GetService<IHostApplication>();
             _logger = services.GetService<ILogger<ApplicationSubsystem>>();
         }

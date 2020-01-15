@@ -36,7 +36,7 @@ namespace RemoteControlToolkitCore.Common.Scripting
         {
             return CurrentScriptScope.GetVariableNames()
                 .Where(s => CurrentScriptScope.GetVariable(s) is T)
-                .Select(s => GetVariable<T>(s))
+                .Select(GetVariable<T>)
                 .ToArray();
         }
 

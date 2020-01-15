@@ -3,14 +3,19 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Security.Principal;
 using System.ServiceModel;
 using System.Text;
 using System.Threading;
 using Crayon;
 using IronPython.Modules;
+using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common.Commandline;
+using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 using RemoteControlToolkitCore.Common.Networking;
+using RemoteControlToolkitCore.Common.Plugin;
+using RemoteControlToolkitCore.Common.Scripting;
 using Zio;
 using ThreadState = System.Threading.ThreadState;
 
@@ -21,9 +26,6 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
     {
         public uint Pid { get; set; }
         public bool IsBackground { get; set; }
-        public bool DisposeIn { get; set; } = true;
-        public bool DisposeOut { get; set; } = true;
-        public bool DisposeError { get; set; } = true;
         public bool InRedirected { get; private set; }
         public bool OutRedirected { get; private set; }
         public bool ErrorRedirected { get; private set; }
@@ -33,7 +35,15 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public TextWriter Out { get; private set; }
         public TextWriter Error { get; private set; }
         public TextReader In { get; private set; }
-        public UPath WorkingDirectory { get; set; }
+        public bool DisposeIn { get; set; } = true;
+        public bool DisposeOut { get; set; } = true;
+        public bool DisposeError { get; set; } = true;
+
+        public UPath WorkingDirectory
+        {
+            get => EnvironmentVariables["WORKINGDIR"];
+            set => EnvironmentVariables["WORKINGDIR"] = value.ToString();
+        } 
         public IExtensionCollection<RCTProcess> Extensions { get; }
         public bool Running => State == ThreadState.Running;
         public ThreadState State => _workingThread.ThreadState;
@@ -52,10 +62,10 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public Dictionary<string, string> EnvironmentVariables { get; }
         public bool Disposed { get; private set; }
         private IProcessTable _table;
+        private IExtensionProvider<RCTProcess>[] _extensionProviders;
 
-        private RCTProcess(IProcessTable table, IInstanceSession session, string name, RCTProcess parent, ProcessDelegate threadStart, IPrincipal identity)
+        private RCTProcess(IProcessTable table, IInstanceSession session, string name, RCTProcess parent, ProcessDelegate threadStart, IPrincipal identity, IExtensionProvider<RCTProcess>[] providers)
         {
-            WorkingDirectory = "/";
             _table = table;
             Name = name;
             Parent = parent;
@@ -63,6 +73,9 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             ClientContext = session;
             Pid = _table.LatestProcess + 1;
             Extensions = new ExtensionCollection<RCTProcess>(this);
+            _extensionProviders = providers;
+            populateExtension();
+            //Populate Extensions
             EnvironmentVariables = new Dictionary<string, string>();
             Identity = identity;
             if (Parent != null)
@@ -73,20 +86,16 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 Error = Parent.Error;
                 Identity = Parent.Identity;
                 ClientContext = Parent.ClientContext;
-                DisposeIn = Parent.DisposeIn;
-                DisposeError = Parent.DisposeError;
-                DisposeOut = Parent.DisposeOut;
                 StandardOutDisposed += Parent.StandardOutDisposed;
                 StandardInDisposed += Parent.StandardInDisposed;
                 StandardErrorDisposed += Parent.StandardErrorDisposed;
                 InRedirected = Parent.InRedirected;
                 OutRedirected = Parent.OutRedirected;
                 ErrorRedirected = Parent.ErrorRedirected;
+                DisposeIn = Parent.DisposeIn;
+                DisposeOut = Parent.DisposeOut;
+                DisposeError = Parent.DisposeError;
                 IsBackground = Parent.IsBackground;
-                WorkingDirectory = Parent.WorkingDirectory;
-                IExtension<RCTProcess>[] buffer = new IExtension<RCTProcess>[Parent.Extensions.Count];
-                Parent.Extensions.CopyTo(buffer, 0);
-                Extensions = new ExtensionCollection<RCTProcess>(this);
                 EnvironmentVariables = new Dictionary<string, string>(Parent.EnvironmentVariables);
             }
 
@@ -95,6 +104,13 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             cts = new CancellationTokenSource();
         }
 
+        private void populateExtension()
+        {
+            foreach (IExtensionProvider<RCTProcess> provider in _extensionProviders)
+            {
+                provider.GetExtension(this);
+            }
+        }
         public void Start()
         {
             if (IsBackground)
@@ -196,6 +212,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                     In?.Close();
                     StandardInDisposed?.Invoke(this, EventArgs.Empty);
                 }
+
                 if (DisposeOut)
                 {
                     Out?.Close();
@@ -207,6 +224,10 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                     Error?.Close();
                     StandardErrorDisposed?.Invoke(this, EventArgs.Empty);
                 }
+                foreach (IExtensionProvider<RCTProcess> provider in _extensionProviders)
+                {
+                    provider.RemoveExtension(this);
+                }
                 Child?.Dispose();
                 _table.RemoveProcess(Pid);
                 Disposed = true;
@@ -217,18 +238,20 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public class RCTPRocessFactory
         {
             private IProcessTable _table;
-            public RCTPRocessFactory(IProcessTable table)
+            private IServiceProvider _provider;
+            public RCTPRocessFactory(IProcessTable table, IServiceProvider provider)
             {
                 _table = table;
+                _provider = provider;
             }
             public RCTProcess Create(IInstanceSession session, string name, ProcessDelegate processDelegate, RCTProcess parent, IPrincipal identity)
             {
-                RCTProcess process = new RCTProcess(_table, session, name, parent, processDelegate, parent?.Identity ?? identity);
+                RCTProcess process = new RCTProcess(_table, session, name, parent, processDelegate, parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RCTProcess>>().ToArray());
                 return process;
             }
             public RCTProcess CreateOnApplication(IInstanceSession session, IApplication application, RCTProcess parent, CommandRequest request, IPrincipal identity)
             {
-                RCTProcess process = new RCTProcess(_table, session, application.ProcessName, parent, (proc, token) => application.Execute(request, proc, token), parent?.Identity ?? identity);
+                RCTProcess process = new RCTProcess(_table, session, application.ProcessName, parent, (proc, token) => application.Execute(request, proc, token), parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RCTProcess>>().ToArray());
                 return process;
             }
 
@@ -270,7 +293,27 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                         proc.Error.WriteLine(Output.Red($"Error while executing external program: {e.Message}"));
                         return new CommandResponse(CommandResponse.CODE_FAILURE);
                     }
-                }, parent?.Identity ?? identity);
+                }, parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RCTProcess>>().ToArray());
+                return process;
+            }
+
+            public RCTProcess CreateFromScript(IInstanceSession session, string fileName, CommandRequest args, RCTProcess parent, IFileSystem fileSystem, IScriptingEngine engine,
+                IPrincipal identity)
+            {
+                var process = new RCTProcess(_table, session, fileName, parent,
+                    (proc, newToken) =>
+                    {
+                        engine.ParentProcess = proc;
+                        engine.Token = newToken;
+                        engine.SetIn(proc.In);
+                        engine.SetOut(proc.Out);
+                        engine.SetError(proc.Error);
+                        List<ICommandElement> argList = new List<ICommandElement>();
+                        argList.Add(new StringCommandElement(fileName));
+                        argList.AddRange(args.Arguments.Length >= 1 ? args.Arguments.Skip(1) : args.Arguments);
+                        engine.GetDefaultModule().AddVariable("argv", argList.ToArray());
+                        return new CommandResponse(engine.ExecuteProgram(fileName, fileSystem));
+                    }, parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RCTProcess>>().ToArray());
                 return process;
             }
         }

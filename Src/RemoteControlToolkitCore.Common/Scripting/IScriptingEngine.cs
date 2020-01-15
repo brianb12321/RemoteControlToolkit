@@ -1,15 +1,24 @@
 ﻿using System.IO;
 using System.Reflection;
+using System.Threading;
+using Microsoft.Scripting.Hosting;
+using RemoteControlToolkitCore.Common.ApplicationSystem;
+using RemoteControlToolkitCore.Common.Networking;
+using Zio;
 
 namespace RemoteControlToolkitCore.Common.Scripting
 {
     public interface IScriptingEngine
     {
         #region Engine Methods
+        RCTProcess ParentProcess { get; set; }
+        CancellationToken Token { get; set; }
         void SetIn(TextReader reader);
         void SetOut(TextWriter writer);
         void SetError(TextWriter writer);
+        ScriptIO IO { get; }
         IScriptExecutionContext ExecuteFile(string path);
+        int ExecuteProgram(string file, IFileSystem fileSystem);
         IScriptExecutionContext ExecuteFile(string path, IScriptExecutionContext context);
         IScriptExecutionContext CreateModule(string name);
         IScriptExecutionContext GetDefaultModule();

@@ -1,4 +1,5 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Linq;
 
 namespace RemoteControlToolkitCore.Common.ApplicationSystem
@@ -17,9 +18,9 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             }
         }
 
-        public ProcessTable()
+        public ProcessTable(IServiceProvider provider)
         {
-            Factory = new RCTProcess.RCTPRocessFactory(this);
+            Factory = new RCTProcess.RCTPRocessFactory(this, provider);
             _activeProcesses = new ConcurrentDictionary<uint, RCTProcess>();
         }
 

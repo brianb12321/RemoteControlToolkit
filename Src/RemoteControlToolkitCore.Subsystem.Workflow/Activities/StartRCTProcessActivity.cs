@@ -30,10 +30,6 @@ namespace RemoteControlToolkitCore.Subsystem.Workflow.Activities
                 currentProc.ClientContext, subsystem.GetApplication(request.Arguments[0].ToString()), currentProc,
                 request, currentProc.Identity);
 
-            newProc.DisposeIn = false;
-            newProc.DisposeOut = false;
-            newProc.DisposeError = false;
-
             newProc.Start();
             newProc.WaitForExit();
             newProc.Dispose();

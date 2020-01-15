@@ -13,6 +13,7 @@ using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
+using RemoteControlToolkitCore.Common.DeviceBus;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Utilities;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
@@ -28,6 +29,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
     public class AudioCommand : RCTApplication
     {
         private IAudioOutSubsystem _audioSubystem;
+        private IDeviceBus _bus;
 
         public override string ProcessName => "Audio Command";
 
@@ -116,12 +118,12 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
             }
             else if (mode == "showAllDevices")
             {
-                IAudioOutDeviceModule[] modules = _audioSubystem.GetAllModules();
-                foreach (IAudioOutDeviceModule module in modules)
+                IDeviceSelector[] deviceInfo = _bus.GetSelectorsByTag("audio");
+                foreach (IDeviceSelector info in deviceInfo)
                 {
-                    currentProc.Out.WriteLine(module.DeviceName);
+                    currentProc.Out.WriteLine(info.Category);
                     currentProc.Out.WriteLine("=========================================================");
-                    currentProc.Out.WriteLine(module.GetDevices().ShowDictionary());
+                    currentProc.Out.WriteLine(info.GetDevicesInfo().ToDictionary(k => k.FileName).ShowDictionary(v => v.Name));
                 }
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }
@@ -142,7 +144,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
             try
             {
 
-                IAudioOutDeviceModule module = _audioSubystem.GetAudioDeviceType(device);
+                IAudioDevice module = (IAudioDevice)_bus.GetSelectorsByTag("audio").First(v => v.Category == device).GetDevice(deviceId);
                 switch (pathMode.ToUpper())
                 {
                     case "VFS":
@@ -170,9 +172,13 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                             var convert = new FFMpegConverter();
                             MemoryStream audioStream = new MemoryStream();
                             var task = convert.ConvertLiveMedia(stream, format, audioStream, "mp3", new ConvertSettings());
+                            convert.LogReceived += (sender, eventArgs) =>
+                            {
+                                currentProc.Out.WriteLine($"LOG: {eventArgs.Data}");
+                            };
                             task.Start();
-                            currentProc.Out.WriteLine("Converting audio...");
                             task.Wait();
+                            currentProc.Out.WriteLine();
                             audioStream.Seek(0, SeekOrigin.Begin);
                             fileStream = audioStream;
                             currentProc.Out.WriteLine($"Loaded file with audio {video.Title}");
@@ -198,7 +204,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                     throw new ArgumentException("No audio provider module found.");
                 }
 
-                player = module.OpenDeviceForPlayback(provider.OpenAudio(fileStream, new WaveFormat(sampleRate, bitDepth, channels)), deviceId);
+                player = module.Init(provider.OpenAudio(fileStream, new WaveFormat(sampleRate, bitDepth, channels)));
 
                 player.PlaybackStopped += (sender, e) =>
                 {
@@ -232,7 +238,8 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
 
         public override void InitializeServices(IServiceProvider kernel)
         {
-            _audioSubystem = (IAudioOutSubsystem)kernel.GetService<IPluginSubsystem<IAudioOutDeviceModule>>();
+            _audioSubystem = (IAudioOutSubsystem)kernel.GetService<IPluginSubsystem<IAudioProviderModule>>();
+            _bus = kernel.GetService<IDeviceBus>();
         }
     }
 }

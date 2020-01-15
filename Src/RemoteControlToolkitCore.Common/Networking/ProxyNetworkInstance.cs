@@ -6,12 +6,14 @@ using System.Net.Sockets;
 using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Proxy;
+using RemoteControlToolkitCore.Common.VirtualFileSystem;
 
 namespace RemoteControlToolkitCore.Common.Networking
 {
@@ -29,13 +31,13 @@ namespace RemoteControlToolkitCore.Common.Networking
         private StreamWriter _sw;
         private RCTProcess _commandShell;
 
-        public ProxyNetworkInstance(TcpClient client, ILogger<ProxyNetworkInstance> logger, IServerPool pool)
+        public ProxyNetworkInstance(TcpClient client, IServiceProvider provider)
         {
-            _logger = logger;
+            _logger = provider.GetService<ILogger<ProxyNetworkInstance>>();
+            _pool = provider.GetService<IServerPool>();
             ClientUniqueID = Guid.NewGuid();
             Extensions = new ExtensionCollection<IInstanceSession>(this);
-            _pool = pool;
-            ProcessTable = new ProcessTable();
+            ProcessTable = new ProcessTable(provider);
             _client = client;
             _networkStream = _client.GetStream();
             _sr = new StreamReader(_networkStream);

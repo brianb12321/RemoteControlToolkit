@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Subsystem.Audio
@@ -12,8 +13,8 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
     {
         public static IServiceCollection AddAudio(this IServiceCollection services)
         {
-            services.AddSingleton<IPluginSubsystem<IAudioOutDeviceModule>, AudioOutSubsystem>();
-            return services.AddSingleton<IInstanceExtensionProvider, AudioQueueExtensionProvider>();
+            services.AddSingleton<IPluginSubsystem<IAudioProviderModule>, AudioOutSubsystem>();
+            return services.AddSingleton<IExtensionProvider<IInstanceSession>, AudioQueueExtensionProvider>();
         }
     }
 }
