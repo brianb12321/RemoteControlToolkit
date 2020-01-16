@@ -5,8 +5,4 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="VtNetCore" Version="1.0.30" />
-  </ItemGroup>
-
 </Project>
