@@ -75,7 +75,8 @@ namespace RemoteControlToolkitCore.Common.Commandline.Parsing
             List<CommandToken> _tokens = new List<CommandToken>();
             for (int i = 0; i < input.Length; i++)
             {
-                switch (input[i])
+                char currentChar = input[i];
+                switch (currentChar)
                 {
                     case ' ':
                         break;
