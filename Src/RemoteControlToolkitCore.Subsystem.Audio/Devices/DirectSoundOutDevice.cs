@@ -11,12 +11,10 @@ namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
 {
     public class DirectSoundOutDevice : IAudioDevice
     {
-        private readonly DirectSoundOut _device;
-        private readonly DeviceInfo _info;
-        public DirectSoundOutDevice(Guid id, DeviceInfo info)
+        private readonly Guid _id;
+        public DirectSoundOutDevice(Guid id)
         {
-            _device = new DirectSoundOut(id);
-            _info = info;
+            _id = id;
         }
 
         public Stream OpenDevice()
@@ -26,13 +24,23 @@ namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
 
         public DeviceInfo GetDeviceInfo()
         {
-            return _info;
+            DirectSoundDeviceInfo info = DirectSoundOut.Devices.FirstOrDefault(d => d.Guid == _id);
+            if (info == null)
+            {
+                throw new ArgumentException("The specified guid does not exist.");
+            }
+            DeviceInfo deviceInfo = new DeviceInfo(info.ModuleName, info.Guid.ToString());
+            deviceInfo.Data.Add("Guid", info.Guid.ToString());
+            deviceInfo.Data.Add("Description", info.Description);
+            deviceInfo.Data.Add("ModuleName", info.ModuleName);
+            return deviceInfo;
         }
 
         public IWavePlayer Init(IWaveProvider provider)
         {
-            _device.Init(provider);
-            return _device;
+            DirectSoundOut device = new DirectSoundOut(_id);
+            device.Init(provider);
+            return device;
         }
     }
 }

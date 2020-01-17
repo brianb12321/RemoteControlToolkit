@@ -11,13 +11,11 @@ namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
 {
     public class WaveOutDevice : IAudioDevice
     {
-        private readonly WaveOutEvent _device;
-        private readonly DeviceInfo _info;
+        private readonly int _id;
 
-        public WaveOutDevice(int id, DeviceInfo info)
+        public WaveOutDevice(int id)
         {
-            _device = new WaveOutEvent();
-            _device.DeviceNumber = id;
+            _id = id;
         }
         public Stream OpenDevice()
         {
@@ -26,13 +24,18 @@ namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
 
         public DeviceInfo GetDeviceInfo()
         {
-            return _info;
+            WaveOutCapabilities cap = WaveOut.GetCapabilities(_id);
+            DeviceInfo info = new DeviceInfo(cap.ProductName, _id.ToString());
+            info.Data.Add("ProductName", cap.ProductName);
+            info.Data.Add("Channels", cap.Channels.ToString());
+            return info;
         }
 
         public IWavePlayer Init(IWaveProvider provider)
         {
-            _device.Init(provider);
-            return _device;
+            WaveOutEvent device = new WaveOutEvent {DeviceNumber = _id};
+            device.Init(provider);
+            return device;
         }
     }
 }

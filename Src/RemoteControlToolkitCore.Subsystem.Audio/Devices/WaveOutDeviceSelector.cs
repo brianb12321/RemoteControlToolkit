@@ -21,28 +21,19 @@ namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
             
         }
 
-        DeviceInfo getInfo(int id)
-        {
-            WaveOutCapabilities cap = WaveOut.GetCapabilities(id);
-            DeviceInfo info = new DeviceInfo(cap.ProductName, id.ToString());
-            info.Data.Add("ProductName", cap.ProductName);
-            info.Data.Add("Channels", cap.Channels.ToString());
-            return info;
-        }
-
         public IDevice GetDevice(string name)
         {
             int id = int.Parse(name);
-            return new WaveOutDevice(id, getInfo(id));
+            return new WaveOutDevice(id);
         }
 
         IDevice[] IDeviceSelector.GetDevices()
         {
             List<IDevice> devices = new List<IDevice>();
-            devices.Add(new WaveOutDevice(-1, getInfo(-1)));
+            devices.Add(new WaveOutDevice(-1));
             for (int i = 0; i < WaveOut.DeviceCount; i++)
             {
-                devices.Add(new WaveOutDevice(i, getInfo(i)));
+                devices.Add(new WaveOutDevice(i));
             }
 
             return devices.ToArray();
@@ -50,16 +41,16 @@ namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
 
         public DeviceInfo GetDeviceInfo(string name)
         {
-            return getInfo(int.Parse(name));
+            return new WaveOutDevice(int.Parse(name)).GetDeviceInfo();
         }
 
         public DeviceInfo[] GetDevicesInfo()
         {
             List<DeviceInfo> deviceInfo = new List<DeviceInfo>();
-            deviceInfo.Add(getInfo(-1));
+            deviceInfo.Add(new WaveOutDevice(-1).GetDeviceInfo());
             for (int i = 0; i < WaveOut.DeviceCount; i++)
             {
-                deviceInfo.Add(getInfo(i));
+                deviceInfo.Add(new WaveOutDevice(i).GetDeviceInfo());
             }
 
             return deviceInfo.ToArray();

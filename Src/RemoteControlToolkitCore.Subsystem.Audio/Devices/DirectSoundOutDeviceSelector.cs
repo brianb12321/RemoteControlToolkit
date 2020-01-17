@@ -18,24 +18,10 @@ namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
             
         }
 
-        private DeviceInfo getInfo(Guid id)
-        {
-            DirectSoundDeviceInfo info = DirectSoundOut.Devices.FirstOrDefault(v => v.Guid == id);
-            if (info == null)
-            {
-                throw new ArgumentException("The specified guid does not exist.");
-            }
-            DeviceInfo deviceInfo = new DeviceInfo(info.ModuleName, info.Guid.ToString());
-            deviceInfo.Data.Add("Guid", info.Guid.ToString());
-            deviceInfo.Data.Add("Description", info.Description);
-            deviceInfo.Data.Add("ModuleName", info.ModuleName);
-            return deviceInfo;
-        }
-
         public IDevice GetDevice(string name)
         {
             Guid id = Guid.Parse(name);
-            return new DirectSoundOutDevice(id, getInfo(id));
+            return new DirectSoundOutDevice(id);
         }
 
         IDevice[] IDeviceSelector.GetDevices()
@@ -43,7 +29,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
             List<IDevice> devices = new List<IDevice>();
             foreach (var device in DirectSoundOut.Devices)
             {
-                devices.Add(new DirectSoundOutDevice(device.Guid, getInfo(device.Guid)));
+                devices.Add(new DirectSoundOutDevice(device.Guid));
             }
 
             return devices.ToArray();
@@ -51,7 +37,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
 
         public DeviceInfo GetDeviceInfo(string name)
         {
-            return getInfo(Guid.Parse(name));
+            return new DirectSoundOutDevice(Guid.Parse(name)).GetDeviceInfo();
         }
 
         public DeviceInfo[] GetDevicesInfo()
@@ -59,7 +45,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
             List<DeviceInfo> info = new List<DeviceInfo>();
             foreach (var device in DirectSoundOut.Devices)
             {
-                info.Add(getInfo(device.Guid));
+                info.Add(new DirectSoundOutDevice(device.Guid).GetDeviceInfo());
             }
 
             return info.ToArray();

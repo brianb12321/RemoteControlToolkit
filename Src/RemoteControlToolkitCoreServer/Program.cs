@@ -50,7 +50,6 @@ namespace RemoteControlToolkitCoreServer
             services.AddCommandLine();
             services.AddSingleton<IServerPool, ServerPool>();
             services.AddPipeService();
-           
             services.AddSSH(new NSshServiceConfiguration()
             {
                 ListenEndPoints = { new IPEndPoint(IPAddress.Any, 8081)},
