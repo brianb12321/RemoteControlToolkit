@@ -29,7 +29,7 @@ namespace RemoteControlToolkitCore.Subsystem.Serial
         }
         public IDevice GetDevice(string name)
         {
-            return new RCTSerialDevice(getInfo(name));
+            return new RCTSerialDevice(name);
         }
 
         public IDevice[] GetDevices()
@@ -37,7 +37,7 @@ namespace RemoteControlToolkitCore.Subsystem.Serial
             List<IDevice> devices = new List<IDevice>();
             foreach (string name in SerialPort.GetPortNames())
             {
-                devices.Add(new RCTSerialDevice(getInfo(name)));
+                devices.Add(new RCTSerialDevice(name));
             }
 
             return devices.ToArray();

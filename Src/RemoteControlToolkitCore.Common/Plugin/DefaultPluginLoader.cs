@@ -83,7 +83,19 @@ namespace RemoteControlToolkitCore.Common.Plugin
                 .Where(a => a.ExecutingSide.HasFlag(_application.ExecutingSide))
                 .ToArray();
         }
+        public TModuleType[] ActivateAll<TModuleType>() where TModuleType : class, IPluginModule
+        {
+            List<TModuleType> _modules = new List<TModuleType>();
+            Type[] pluginTypes = GetModuleTypes<TModuleType>();
+            foreach (Type type in pluginTypes)
+            {
+                var module = (TModuleType) Activator.CreateInstance(type);
+                module.InitializeServices(_provider);
+                _modules.Add(module);
+            }
 
+            return _modules.ToArray();
+        }
         public TModuleType ActivateModuleByName<TModuleType>(string name) where TModuleType : class, IPluginModule
         {
             bool pluginExists = HasPluginModule<TModuleType>(name);

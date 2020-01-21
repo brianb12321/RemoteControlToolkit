@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Eventing.Reader;
-using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Net.Mime;
 using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using Crayon;
-using IronPython.Modules;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NDesk.Options;
@@ -35,6 +31,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         private IScriptExecutionContext _scriptContext;
         private IApplicationSubsystem _appSubsystem;
         private IHostApplication _nodeApplication;
+        private string _motd = "I love cookies!";
         private IServiceProvider _services;
         private ILogger<DefaultShell> _logger;
         private ITerminalHandler _shellExt;
@@ -134,6 +131,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 .Add("command|c=", "The command to execute.", v => command = v)
                 .Add("help|?", "Displays the help screen.", v => showHelp = true)
                 .Add("newLine|n", "Prints a new-line when finished reading from StdIn.", v => printNewLine = true)
+                .Add("motd|m=", "Sets the shell's motto of the day.", v => _motd = v)
                 .Add("promptAnyways|p", "Displays the prompt even when StdIn is redirected.", v => _promptAnyways = true);
 
             options.Parse(args.Arguments.Select(a => a.ToString()));
@@ -166,7 +164,13 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 _shellExt?.SetTitle($"RCT Shell - {currentProc.WorkingDirectory}");
                 currentProc.Out.WriteLine("Welcome to RCT shell! For help, enter help");
                 currentProc.Out.WriteLine();
+                if (!string.IsNullOrWhiteSpace(_motd))
+                {
+                    currentProc.Out.WriteLine(_motd);
+                    currentProc.Out.WriteLine();
+                }
                 if(currentProc.Identity.IsInRole("Administrator")) currentProc.Out.WriteLine("WARNING: You are logged in as a server administrator.".BrightYellow());
+                token.Register(() => _engine?.Dispose());
                 while (!token.IsCancellationRequested)
                 {
                     sb.Clear();

@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NugetPackageManager", "Src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteControlToolkitCore.Subsystem.Serial", "Src\RemoteControlToolkitCore.Subsystem.Serial\RemoteControlToolkitCore.Subsystem.Serial.csproj", "{C0E14124-C7FA-4EC5-872E-03BC985C83F9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailGun", "Src\PluginLibraries\MailGun\MailGun.csproj", "{20E79299-B565-4A31-A870-F328671F876F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,6 +55,10 @@ Global
 		{C0E14124-C7FA-4EC5-872E-03BC985C83F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C0E14124-C7FA-4EC5-872E-03BC985C83F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C0E14124-C7FA-4EC5-872E-03BC985C83F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{20E79299-B565-4A31-A870-F328671F876F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20E79299-B565-4A31-A870-F328671F876F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20E79299-B565-4A31-A870-F328671F876F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20E79299-B565-4A31-A870-F328671F876F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -60,6 +66,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{58180B6A-0013-4288-BCF6-1BA07859931D} = {D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}
 		{1FE359FD-4F4B-42EA-A195-19CBFC31385B} = {D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}
+		{20E79299-B565-4A31-A870-F328671F876F} = {D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D6FE14CE-3C81-49CF-BB5E-798286159FC7}

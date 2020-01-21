@@ -14,6 +14,7 @@ namespace RemoteControlToolkitCore.Common.Plugin
         PluginModuleAttribute GetModuleAttributeByName<TModuleType>(string name) where TModuleType : class, IPluginModule;
         PluginModuleAttribute[] GetAllModuleAttribute<TModuleType>() where TModuleType : class, IPluginModule;
         TModuleType ActivateModuleByName<TModuleType>(string name) where TModuleType : class, IPluginModule;
+        TModuleType[] ActivateAll<TModuleType>() where TModuleType : class, IPluginModule;
         bool HasPluginModule<TModuleType>(string name) where TModuleType : class, IPluginModule;
         TModuleType[] GetAllModules<TModuleType>() where TModuleType : class, IPluginModule;
         Type[] GetModuleTypes<TModuleType>() where TModuleType : class, IPluginModule;

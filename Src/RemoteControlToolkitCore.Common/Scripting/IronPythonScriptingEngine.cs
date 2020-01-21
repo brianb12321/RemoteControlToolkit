@@ -138,5 +138,10 @@ namespace RemoteControlToolkitCore.Common.Scripting
         {
             ScriptingEngine.Runtime.LoadAssembly(assembly);
         }
+
+        public void Dispose()
+        {
+            ScriptingEngine.Runtime.Shutdown();
+        }
     }
 }

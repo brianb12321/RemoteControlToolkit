@@ -12,17 +12,20 @@ namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
     public class DirectSoundOutDevice : IAudioDevice
     {
         private readonly Guid _id;
+        private DeviceInfo _info;
+
+        public float Volume
+        {
+            get => (float)_info.Data["Volume"];
+            set => _info.Data["Volume"] = value;
+        }
         public DirectSoundOutDevice(Guid id)
         {
             _id = id;
+            _info = setupDevice();
         }
 
-        public Stream OpenDevice()
-        {
-            throw new NotImplementedException();
-        }
-
-        public DeviceInfo GetDeviceInfo()
+        private DeviceInfo setupDevice()
         {
             DirectSoundDeviceInfo info = DirectSoundOut.Devices.FirstOrDefault(d => d.Guid == _id);
             if (info == null)
@@ -33,12 +36,34 @@ namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
             deviceInfo.Data.Add("Guid", info.Guid.ToString());
             deviceInfo.Data.Add("Description", info.Description);
             deviceInfo.Data.Add("ModuleName", info.ModuleName);
+            deviceInfo.Data.Add("Volume", 1f);
             return deviceInfo;
+        }
+
+        public Stream OpenDevice()
+        {
+            throw new NotImplementedException();
+        }
+
+        public DeviceInfo GetDeviceInfo()
+        {
+            return _info;
+        }
+
+        public TType Query<TType>(string key)
+        {
+            return (TType) _info.Data[key];
+        }
+
+        public void SetProperty(string propertyName, object value)
+        {
+            _info.Data[propertyName] = value;
         }
 
         public IWavePlayer Init(IWaveProvider provider)
         {
             DirectSoundOut device = new DirectSoundOut(_id);
+            device.Volume = (float)_info.Data["Volume"];
             device.Init(provider);
             return device;
         }

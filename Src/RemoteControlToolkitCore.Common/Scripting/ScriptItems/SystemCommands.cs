@@ -63,7 +63,7 @@ namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
         public void ConfigureDefaultEngine(IScriptingEngine engine)
         {
             engine.GetDefaultModule().AddVariable("token", engine.Token);
-            IScriptExecutionContext context = engine.CreateModule("rSys");
+            IScriptExecutionContext context = engine.CreateModule("remote_sys");
             addExFunction(engine, context);
             addEnvironmentFunctions(engine, context);
         }

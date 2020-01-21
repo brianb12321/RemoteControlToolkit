@@ -25,7 +25,7 @@ namespace RemoteControlToolkitCore.Common.Scripting
         }
         private void populateGlobalScope(IScriptingEngine engine)
         {
-            foreach (IScriptExtensionModule module in GetAllModules())
+            foreach (IScriptExtensionModule module in PluginLoader.ActivateAll<IScriptExtensionModule>())
             {
                 module.ConfigureDefaultEngine(engine);
             }

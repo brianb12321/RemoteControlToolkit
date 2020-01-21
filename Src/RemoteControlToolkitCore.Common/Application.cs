@@ -87,20 +87,20 @@ namespace RemoteControlToolkitCore.Common
                 {
                     handleConnections(_config.ListenEndPoints[0]);
                 });
-                _proxyThread = new Thread(() =>
-                {
-                    _proxyListener = new TcpListener(IPAddress.Any, 8080);
-                    _logger.LogInformation("Starting proxy listener.");
-                    _proxyListener.Start();
-                    while (true)
-                    {
-                        TcpClient client = _proxyListener.AcceptTcpClient();
-                        _logger.LogInformation("A proxy client established a connection.");
-                        ProxyNetworkInstance instance = new ProxyNetworkInstance(client, _provider);
-                        _proxyClients.AddServer(instance);
-                    }
-                });
-                _proxyThread.Start();
+                //_proxyThread = new Thread(() =>
+                //{
+                //    _proxyListener = new TcpListener(IPAddress.Any, 8080);
+                //    _logger.LogInformation("Starting proxy listener.");
+                //    _proxyListener.Start();
+                //    while (true)
+                //    {
+                //        TcpClient client = _proxyListener.AcceptTcpClient();
+                //        _logger.LogInformation("A proxy client established a connection.");
+                //        ProxyNetworkInstance instance = new ProxyNetworkInstance(client, _provider);
+                //        _proxyClients.AddServer(instance);
+                //    }
+                //});
+                //_proxyThread.Start();
                 _clientThread.Start();
                 _clientThread.Join();
             }

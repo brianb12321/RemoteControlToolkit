@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RemoteControlToolkitCore.Common.Commandline.Parsing;
 
 namespace RemoteControlToolkitCore.Common.DeviceBus
 {
@@ -11,5 +12,7 @@ namespace RemoteControlToolkitCore.Common.DeviceBus
     {
         Stream OpenDevice();
         DeviceInfo GetDeviceInfo();
+        TType Query<TType>(string key);
+        void SetProperty(string propertyName, object value);
     }
 }

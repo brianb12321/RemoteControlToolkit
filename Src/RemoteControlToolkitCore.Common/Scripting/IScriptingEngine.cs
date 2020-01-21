@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 using Microsoft.Scripting.Hosting;
@@ -8,7 +9,7 @@ using Zio;
 
 namespace RemoteControlToolkitCore.Common.Scripting
 {
-    public interface IScriptingEngine
+    public interface IScriptingEngine : IDisposable
     {
         #region Engine Methods
         RCTProcess ParentProcess { get; set; }

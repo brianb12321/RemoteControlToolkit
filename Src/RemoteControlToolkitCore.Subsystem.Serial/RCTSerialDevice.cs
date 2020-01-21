@@ -14,10 +14,15 @@ namespace RemoteControlToolkitCore.Subsystem.Serial
         private readonly string _port;
         private readonly DeviceInfo _info;
 
-        public RCTSerialDevice(DeviceInfo info)
+        public RCTSerialDevice(string port)
         {
-            _info = info;
-            _port = info.FileName;
+            _port = port;
+            _info = setupDevice();
+        }
+
+        private DeviceInfo setupDevice()
+        {
+            return new DeviceInfo(_port, _port);
         }
         public Stream OpenDevice()
         {
@@ -29,6 +34,16 @@ namespace RemoteControlToolkitCore.Subsystem.Serial
         public DeviceInfo GetDeviceInfo()
         {
             return _info;
+        }
+
+        public TType Query<TType>(string key)
+        {
+            return (TType) _info.Data[key];
+        }
+
+        public void SetProperty(string propertyName, object value)
+        {
+            _info.Data[propertyName] = value;
         }
     }
 }

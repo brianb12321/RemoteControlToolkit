@@ -10,6 +10,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
 {
     public interface IAudioDevice : IDevice
     {
+        float Volume { get; set; }
         IWavePlayer Init(IWaveProvider provider);
     }
 }

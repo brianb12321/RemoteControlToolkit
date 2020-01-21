@@ -25,5 +25,15 @@ namespace RemoteControlToolkitCore.Common.DeviceBus
         {
             return Info;
         }
+
+        public TType Query<TType>(string key)
+        {
+            return (TType)Info.Data[key];
+        }
+
+        public void SetProperty(string propertyName, object value)
+        {
+            Info.Data[propertyName] = value;
+        }
     }
 }

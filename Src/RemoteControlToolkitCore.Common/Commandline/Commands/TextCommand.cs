@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.Remoting.Channels;
@@ -7,6 +8,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Crayon;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Plugin;
@@ -19,6 +22,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
     [CommandHelp("RCT's own text editor.")]
     public class TextCommand : RCTApplication
     {
+        private ILogger<TextCommand> _logger;
         private IFileSystem _fileSystem;
         private int _cursorX = 0;
         private int _renderX = 0;
@@ -35,6 +39,8 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         private List<TextRow> _rows;
         private string _fileName = string.Empty;
         private string _filePath = string.Empty;
+        private List<EditorSyntax> _syntaxDatabase;
+        private EditorSyntax _currentSyntax;
         private const int TAB_STOP = 8;
         private const int QUIT_TIME = 3;
 
@@ -46,7 +52,17 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         {
             public string Text { get; set; }
             public string Render { get; set; } = string.Empty;
+            public editorHighlight[] HL;
         }
+        private class EditorSyntax
+        {
+            public string FileType { get; set; }
+
+            public highlightFlags Flags { get; set; }
+            public string[] FileMatch { get; set; }
+            public string[] Keywords { get; set; }
+            public string SingleLineCommentStart { get; set; }
+        };
 
         enum editorKey
         {
@@ -59,10 +75,236 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             END_KEY = 6,
             DELETE_KEY = 7
         };
+        enum editorHighlight
+        {
+            HL_NORMAL = 0,
+            HL_NUMBER,
+            HL_STRING,
+            HL_COMMENT,
+            HL_KEYWORD1,
+            HL_KEYWORD2,
+        };
+        [Flags]
+        enum highlightFlags
+        {
+            HL_HIGHLIGHT_NUMBERS = 1,
+            HL_HIGHLIGHT_STRINGS = 2
+        }
 
 
         public override string ProcessName => "Text";
+        void editorUpdateSyntax(TextRow row)
+        {
+            row.HL = new editorHighlight[row.Render.Length];
+            if (_currentSyntax == null) return;
+            string scs = _currentSyntax.SingleLineCommentStart;
+            int scs_len = scs.Length >= 1 ? scs.Length : 0;
+            string[] keywords = _currentSyntax.Keywords;
+            bool prev_sep = true;
+            int in_string = 0;
+            for (int i = 0; i < row.HL.Length; i++)
+            {
+                row.HL[i] = editorHighlight.HL_NORMAL;
+            }
+            int j = 0;
+            while (j < row.Render.Length)
+            {
+                char c = row.Render[j];
+                editorHighlight prev_hl = (j > 0) ? row.HL[j - 1] : editorHighlight.HL_NORMAL;
+                if (scs_len >= 1 && in_string <= 0)
+                {
+                    if (c.ToString() == scs)
+                    {
+                        for (int commentCount = j; commentCount < row.Render.Length; commentCount++)
+                        {
+                            row.HL[commentCount] = editorHighlight.HL_COMMENT;
+                        }
+                        break;
+                    }
+                }
+                if (_currentSyntax.Flags.HasFlag(highlightFlags.HL_HIGHLIGHT_STRINGS))
+                {
+                    if (in_string >= 1)
+                    {
+                        row.HL[j] = editorHighlight.HL_STRING;
+                        if (c == '\\' && j + 1 < row.Render.Length)
+                        {
+                            row.HL[j + 1] = editorHighlight.HL_STRING;
+                            j += 2;
+                            continue;
+                        }
+                        if (c == in_string) in_string = 0;
+                        j++;
+                        prev_sep = true;
+                        continue;
+                    }
+                    else
+                    {
+                        if (c == '"' || c == '\'')
+                        {
+                            in_string = c;
+                            row.HL[j] = editorHighlight.HL_STRING;
+                            j++;
+                            continue;
+                        }
+                    }
+                }
 
+                if (_currentSyntax.Flags.HasFlag(highlightFlags.HL_HIGHLIGHT_NUMBERS))
+                {
+                    if ((char.IsDigit(c) && (prev_sep || prev_hl == editorHighlight.HL_NUMBER)) ||
+                        (c == '.' && prev_hl == editorHighlight.HL_NUMBER))
+                    {
+                        row.HL[j] = editorHighlight.HL_NUMBER;
+                        j++;
+                        prev_sep = false;
+                        continue;
+                    }
+
+                    if (prev_sep)
+                    {
+                        int k;
+                        for (k = 0; keywords[k] != null; k++)
+                        {
+                            int klen = keywords[k].Length;
+                            bool kw2 = keywords[k][klen - 1] == '|';
+                            if (kw2) klen--;
+                            int separatorCount = j + klen;
+                            if(row.Render.Length >= klen)
+                            {
+                                if (row.Render.Substring(j).Contains(keywords[k]) && is_separator((row.Render.Length > separatorCount) ? row.Render[separatorCount] : row.Render[row.Render.Length - 1]))
+                                {
+                                    for (int keywordCounter = j; keywordCounter < ((row.Render.Length > separatorCount) ? separatorCount : row.Render.Length); keywordCounter++)
+                                    {
+                                        row.HL[keywordCounter] =
+                                            kw2 ? editorHighlight.HL_KEYWORD2 : editorHighlight.HL_KEYWORD1;
+                                    }
+
+                                    j += klen;
+                                    break;
+                                }
+                            }
+                        }
+                        if (keywords[k] != null)
+                        {
+                            prev_sep = false;
+                            continue;
+                        }
+                    }
+
+                    prev_sep = is_separator(c);
+                    j++;
+                }
+            }
+        }
+        private int? strchr(string originalString, char charToSearch)
+        {
+            int? found = originalString.IndexOf(charToSearch);
+            return found > -1 ? found : null;
+        }
+        private static int strncmp(string s1, string s2, int num)
+        {
+            int len1 = s1.Length;
+            int len2 = s2.Length;
+            if (len1 < num || len2 < num)
+            {
+                num = Math.Min(len1, len2);
+            }
+            string sub1 = s1.Substring(0, num);
+            string sub2 = s2.Substring(0, num);
+            return string.Compare(sub1, sub2, true);
+        }
+        bool is_separator(char c)
+        {
+            return char.IsWhiteSpace(c) || c == '\0' || strchr(",.()+-/*=~%<>[];", c) != null;
+        }
+        int editorSyntaxToColor(int hl)
+        {
+            switch (hl)
+            {
+                case (int)editorHighlight.HL_NUMBER: return 31;
+                case (int)editorHighlight.HL_STRING: return 35;
+                case (int)editorHighlight.HL_COMMENT: return 36;
+                case (int)editorHighlight.HL_KEYWORD1: return 33;
+                case (int)editorHighlight.HL_KEYWORD2: return 32;
+                default: return 37;
+            }
+        }
+
+        string editorPrompt(string prompt, Action<string, char> callback)
+        {
+            StringBuilder buf = new StringBuilder();
+            int buflen = 0;
+            while (true)
+            {
+                editorSetStatusMessage(prompt);
+                editorRefreshScreen();
+                char[] c = editorReadKey();
+                if (c[0] == (char)editorKey.DELETE_KEY || c[0] == (char)editorKey.BACKSPACE)
+                {
+                    if (buflen != 0) buf[--buflen] = '\0';
+                }
+                else if (c[0] == '\x1b')
+                {
+                    editorSetStatusMessage("");
+                    callback?.Invoke(buf.ToString(), c[0]);
+                    buf = null;
+                    return string.Empty;
+                }
+                else if (c[0] == '\r')
+                {
+                    if (buflen != 0)
+                    {
+                        editorSetStatusMessage("");
+                        callback?.Invoke(buf.ToString(), c[0]);
+                        break;
+                    }
+                }
+                else if (!char.IsControl(c[0]))
+                {
+                    buf.Insert(++buflen, c[0]);
+                }
+                callback?.Invoke(buf.ToString(), c[0]);
+            }
+            return buf.ToString();
+        }
+
+        void editorFindCallback(string query, char key)
+        {
+            if (key == '\r' || key == '\x1b')
+            {
+                return;
+            }
+            int i;
+            for (i = 0; i < _rows.Count; i++)
+            {
+                TextRow row = _rows[i];
+                int match = row.Render.IndexOf(query, StringComparison.CurrentCulture);
+                if (match != -1)
+                {
+                    _cursorY = i;
+                    _cursorX = editorRowRxToCx(row, match - row.Render.Length);
+                    _rowOff = _rows.Count;
+                    break;
+                }
+            }
+        }
+        void editorFind()
+        {
+            int saved_cx = _cursorX;
+            int saved_cy = _cursorY;
+            int saved_coloff = _colOff;
+            int saved_rowoff = _rowOff;
+            string query = editorPrompt("Search: %s (ESC to cancel)", editorFindCallback);
+            if (query == string.Empty) return;
+            else
+            {
+                _cursorX = saved_cx;
+                _cursorY = saved_cy;
+                _colOff = saved_coloff;
+                _rowOff = saved_rowoff;
+            }
+        }
         void editorRowInsertChar(TextRow row, int at, char c)
         {
             if (at < 0 || at > row.Text.Length) at = row.Text.Length;
@@ -179,6 +421,19 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             _buffer.Append("\u001b[m");
             _buffer.Append("\r\n");
         }
+        int editorRowRxToCx(TextRow row, int rx)
+        {
+            int cur_rx = 0;
+            int cx;
+            for (cx = 0; cx < row.Text.Length; cx++)
+            {
+                if (row.Text[cx] == '\t')
+                    cur_rx += (TAB_STOP - 1) - (cur_rx % TAB_STOP);
+                cur_rx++;
+                if (cur_rx > rx) return cx;
+            }
+            return cx;
+        }
         int editorRowCxToRx(TextRow row, int cx)
         {
             int rx = 0;
@@ -202,7 +457,6 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             {
                 renderBuilder.Append(' ');
                 row.Render = renderBuilder.ToString();
-                return;
             }
             for (j = 0; j < row.Text.Length; j++)
             {
@@ -228,6 +482,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             }
 
             row.Render = renderBuilder.ToString();
+            editorUpdateSyntax(row);
         }
         private void setupRawMode()
         {
@@ -263,12 +518,18 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 _cursorY--;
             }
         }
+
+        char[] editorReadKey()
+        {
+            char[] buffer = new char[4];
+            _process.In.Read(buffer, 0, buffer.Length);
+            return buffer;
+        }
         /*** input ***/
         void editorProcessKeypress()
         {
-            char[] buffer = new char[4];
-            char c = (char) 0;
-            _process.In.Read(buffer, 0, buffer.Length);
+            char[] buffer = editorReadKey();
+            char c = (char)0;
             if (buffer[0] == '\u001b')
             {
                 if (buffer[1] == '[')
@@ -332,6 +593,9 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                     _process.Out.Write("\u001b[2J");
                     _process.Out.Write("\u001b[H");
                     _process.Close();
+                    break;
+                case '\u0015':
+                    //editorFind();
                     break;
                 case '\u0013':
                     editorSave();
@@ -441,7 +705,47 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                     else
                     {
                         if (len > _handler.TerminalColumns) len = (int)_handler.TerminalColumns;
-                        _buffer.Append(_rows[fileRow].Render.Substring(_colOff, len));
+                        string c = _rows[fileRow].Render.Substring(_colOff);
+                        editorHighlight[] hl;
+                        hl = _rows[fileRow].HL.Skip(_colOff).ToArray();
+                        int current_color = -1;
+                        int j;
+                        for (j = 0; j < len; j++)
+                        {
+                            if (char.IsControl(c[j]))
+                            {
+                                char sym = (c[j] <= 26) ? (char)('@' + c[j]) : '?';
+                                _buffer.Append("\u001b[7m");
+                                _buffer.Append(sym);
+                                _buffer.Append("\u001b[m");
+                                if (current_color != -1)
+                                {
+                                    _buffer.Append($"\u001b[{current_color}m");
+                                }
+                            }
+                            else if (hl[j] == editorHighlight.HL_NORMAL)
+                            {
+                                if (current_color != -1)
+                                {
+                                    _buffer.Append("\u001b[39m");
+                                    current_color = -1;
+                                }
+                                _buffer.Append(c[j], 1);
+                            }
+                            else
+                            {
+                                int color = editorSyntaxToColor((int)hl[j]);
+                                if (color != current_color)
+                                {
+                                    current_color = color;
+                                    string code = $"\u001b[{color}m";
+                                    _buffer.Append(code);
+                                }
+
+                                _buffer.Append(c[j]);
+                            }
+                        }
+                        _buffer.Append("\u001b[39m");
                     }
                 }
                 else
@@ -518,12 +822,38 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             }
             sr.Close();
             _fileName = _fileSystem.GetFileEntry(path).Name;
+            editorSelectSyntaxHighlight();
             _filePath = path.FullName;
+        }
+        void editorSelectSyntaxHighlight()
+        {
+            _currentSyntax = null;
+            if (string.IsNullOrWhiteSpace(_fileName)) return;
+            string ext = Path.GetExtension(_fileName);
+            _currentSyntax = _syntaxDatabase.Find(s => s.FileMatch.Any(s2 => s2 == ext));
+            int filerow;
+            for (filerow = 0; filerow < _rows.Count; filerow++)
+            {
+                editorUpdateSyntax(_rows[filerow]);
+            }
         }
         public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
         {
             try
             {
+                _syntaxDatabase = new List<EditorSyntax>();
+                _syntaxDatabase.Add(new EditorSyntax()
+                {
+                    FileType = "Python",
+                    FileMatch =  new []{".py"},
+                    SingleLineCommentStart = "#",
+                    Keywords = new []
+                    {
+                        "switch", "if", "while", "for", "break", "continue", "return", "elif", "import",
+                        "static", "enum", "class", "case", "from", "void|", null
+                    },
+                    Flags = highlightFlags.HL_HIGHLIGHT_NUMBERS | highlightFlags.HL_HIGHLIGHT_STRINGS
+                });
                 _process = context;
                 _handler = context.ClientContext.GetExtension<ITerminalHandler>();
                 if (args.Arguments.Length == 1)
@@ -549,7 +879,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             }
             catch (Exception e)
             {
-                die($"Error: {e.Message}".Red());
+                die($"Error: {e}".Red());
                 token.ThrowIfCancellationRequested();
                 return new CommandResponse(CommandResponse.CODE_FAILURE);
             }
@@ -574,7 +904,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
 
         public override void InitializeServices(IServiceProvider kernel)
         {
-            
+            _logger = kernel.GetService<ILogger<TextCommand>>();
         }
     }
 }
