@@ -12,17 +12,22 @@ using NDesk.Options;
 using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline;
+using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Plugin;
+using RemoteControlToolkitCore.Common.VirtualFileSystem;
+using Zio;
 using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
 namespace MailGun
 {
     [PluginModule(Name = "mlg", ExecutingSide = NetworkSide.Server | NetworkSide.Proxy)]
+    [CommandHelp("Sends emails from the command-line.")]
     public class MailGunCommand : RCTApplication
     {
         public override string ProcessName => "Mail Gun Command.";
         public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
         {
+            IFileSystem fileSystem = context.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
             bool showHelp = false;
             string server = string.Empty;
             string username = string.Empty;
@@ -35,6 +40,7 @@ namespace MailGun
             List<string> to = new List<string>();
             List<string> cc = new List<string>();
             List<string> bcc = new List<string>();
+            List<UPath> attachments = new List<UPath>();
             OptionSet options = new OptionSet()
                 .Add("server|s=", "The server to connect to.", v => server = v)
                 .Add("port|p=", "The SMTP port number.", v => port = int.Parse(v))
@@ -66,6 +72,11 @@ namespace MailGun
                     string[] values = v.Split(';');
                     bcc.AddRange(values);
                 })
+                .Add("attachments|a=", "Specifies the list (denoted by ;) of attachments to attach to the current MIME message. (Must be VFS path)",
+                v =>
+                {
+                    attachments.Add(v);
+                })
                 .Add("showHelp|?", "Displays the help screen.", v => showHelp = true);
 
             options.Parse(args.Arguments.Select(v => v.ToString()));
@@ -89,10 +100,15 @@ namespace MailGun
                 {
                     message.Bcc.Add(new MailboxAddress(bccAddress));
                 }
+                
                 message.Subject = subject;
-                TextPart text = new TextPart("html");
-                text.Text = context.In.ReadToEnd();
-                message.Body = text;
+                BodyBuilder builder = new BodyBuilder();
+                builder.HtmlBody = context.In.ReadToEnd();
+                foreach(UPath path in attachments)
+                {
+                    builder.Attachments.Add(path.GetName(), fileSystem.OpenFile(path, System.IO.FileMode.Open, System.IO.FileAccess.Read));
+                }
+                message.Body = builder.ToMessageBody();
                 SmtpClient client = new SmtpClient();
                 try
                 {
