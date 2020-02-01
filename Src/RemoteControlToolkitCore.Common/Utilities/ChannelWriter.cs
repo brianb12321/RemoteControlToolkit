@@ -39,6 +39,12 @@ namespace RemoteControlToolkitCore.Common.Utilities
         {
             _channel.SendData(Encoding.GetBytes(value));
         }
+
+        static IEnumerable<string> Split(string str, int maxChunkSize)
+        {
+            for (int i = 0; i < str.Length; i += maxChunkSize)
+                yield return str.Substring(i, Math.Min(maxChunkSize, str.Length - i));
+        }
         public override void WriteLine(string value)
         {
             _channel.SendData(Encoding.GetBytes(value + "\n" + (opost ? "\r" : string.Empty)));

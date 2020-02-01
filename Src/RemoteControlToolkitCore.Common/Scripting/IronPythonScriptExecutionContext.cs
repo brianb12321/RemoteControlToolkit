@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.ServiceModel;
 using Microsoft.Scripting.Hosting;
+using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Networking;
 
 namespace RemoteControlToolkitCore.Common.Scripting
@@ -45,12 +46,12 @@ namespace RemoteControlToolkitCore.Common.Scripting
             return CurrentScriptScope.GetVariable<T>(name);
         }
 
-        void IExtension<IInstanceSession>.Attach(IInstanceSession owner)
+        void IExtension<RCTProcess>.Attach(RCTProcess owner)
         {
             
         }
 
-        void IExtension<IInstanceSession>.Detach(IInstanceSession owner)
+        void IExtension<RCTProcess>.Detach(RCTProcess owner)
         {
             
         }

@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Text;
+using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 
 namespace RemoteControlToolkitCore.Common.ApplicationSystem
 {

@@ -1,9 +1,10 @@
 ﻿using System.ServiceModel;
+using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Networking;
 
 namespace RemoteControlToolkitCore.Common.Scripting
 {
-    public interface IScriptExecutionContext : IExtension<IInstanceSession>
+    public interface IScriptExecutionContext : IExtension<RCTProcess>
     {
         bool ContainsVariable(string name);
         T GetVariable<T>(string name);

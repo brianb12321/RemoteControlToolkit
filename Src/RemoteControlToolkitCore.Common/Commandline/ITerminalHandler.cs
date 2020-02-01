@@ -25,7 +25,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         PseudoTerminalPayload InitialTerminalConfig { get; }
         PseudoTerminalMode TerminalModes { get; }
         void Clear();
-        void ClearScreenCursorDown();
+        string ClearScreenCursorDown(bool writeCode = false);
         void ClearRow();
         void Bell();
         string ReadLine();
@@ -33,7 +33,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         char Read();
         int ReadFromPipe(char[] buffer, int offset, int count);
         void UpdateHomePosition(int col, int row);
-        void UpdateCursorPosition(int col, int row);
+        string UpdateCursorPosition(int col, int row, bool writeCode = false);
         void MoveCursorLeft(int count = 1);
         void MoveCursorRight(int count = 1);
         void MoveCursorUp(int count = 1);

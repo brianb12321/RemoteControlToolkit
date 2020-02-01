@@ -24,6 +24,16 @@ namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
 
         private void addExFunction(IScriptingEngine engine, IScriptExecutionContext context)
         {
+            context.AddVariable("ex_application", new Func<string, string[], RCTProcess>((name, args) =>
+            {
+                var application = _subSystem.Factory.CreateOnApplication(engine.ParentProcess.ClientContext,
+                    _subSystem.GetApplication(name), engine.ParentProcess,
+                    new CommandRequest(args.Select(a => new StringCommandElement(a)).ToArray()), engine.ParentProcess.Identity);
+                application.SetOut(engine.IO.OutputWriter);
+                application.SetIn(engine.IO.InputReader);
+                application.SetError(engine.IO.ErrorWriter);
+                return application;
+            }));
             context.AddVariable("ex", new Func<string, CommandResponse>((command) =>
             {
                 var application = _subSystem.Factory.CreateOnApplication(engine.ParentProcess.ClientContext,
@@ -46,6 +56,10 @@ namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
             }));
         }
 
+        private void addTerminalFunctions(IScriptingEngine engine, IScriptExecutionContext context)
+        {
+            context.AddVariable("get_tty", new Func<ITerminalHandler>(() => engine.ParentProcess.ClientContext.GetExtension<ITerminalHandler>()));
+        }
         private void addEnvironmentFunctions(IScriptingEngine engine, IScriptExecutionContext context)
         {
             context.AddVariable("get_envar", new Func<string, string>(variable => engine.ParentProcess.EnvironmentVariables[variable]));
@@ -66,6 +80,7 @@ namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
             IScriptExecutionContext context = engine.CreateModule("remote_sys");
             addExFunction(engine, context);
             addEnvironmentFunctions(engine, context);
+            addTerminalFunctions(engine, context);
         }
     }
 }

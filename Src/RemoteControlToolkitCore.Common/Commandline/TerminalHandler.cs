@@ -23,6 +23,10 @@ namespace RemoteControlToolkitCore.Common.Commandline
         private uint _terminalRows = 36;
         private uint _terminalColumns = 130;
         private uint _scrollOffset = 0;
+        private uint _maxChars = 272;
+        private int _cursorX;
+        private int _cursorY;
+        private StringBuilder _renderBuffer = new StringBuilder();
         public List<string> History { get; }
 
         public string TerminalName
@@ -92,9 +96,15 @@ namespace RemoteControlToolkitCore.Common.Commandline
             _textOut.Write("\u001b[2J\u001b[;H\u001b[0m");
         }
 
-        public void ClearScreenCursorDown()
+        public string ClearScreenCursorDown(bool writeCode = false)
         {
-            _textOut.Write("\u001b[J");
+            if (writeCode) return "\u001b[J";
+            else
+            {
+                _textOut.Write("\u001b[J");
+                return string.Empty;
+            }
+
         }
 
         public void ClearRow()
@@ -121,37 +131,43 @@ namespace RemoteControlToolkitCore.Common.Commandline
             if (TerminalModes.ECHO)
             {
                 //Restore saved cursor position.
-                UpdateCursorPosition(_originalCol, originalRow);
+                _renderBuffer.Append(UpdateCursorPosition(_originalCol, originalRow, true));
                 //Clear lines
-                ClearScreenCursorDown();
-                UpdateCursorPosition(_originalCol, originalRow);
-                //Print data
-                _textOut.Write(sb.ToString());
-                UpdateCursorPosition(_originalCol, originalRow);
+                _renderBuffer.Append(ClearScreenCursorDown(true));
+                _renderBuffer.Append(UpdateCursorPosition(_originalCol, originalRow, true));
+                _renderBuffer.Append(sb);
+                _renderBuffer.Append(UpdateCursorPosition(_originalCol, originalRow, true));
                 //Reposition cursor
-                int newRow = -1;
                 if (cursorPosition > 0)
                 {
                     if (realCursorPosition > (int)TerminalColumns)
                     {
+                        if(cellsToMove > 0) _cursorX = cellsToMove;
+                        _cursorY += cursorRowsToMove - 1;
+                        //Check if cursor is at the end of the row and must count the new scrolled coordinates.
+                        if (_cursorY == TerminalRows && _cursorX == TerminalColumns)
+                        {
+                            _scrollOffset += 1;
+                        }
+                        
                         for (int i = 0; i < cursorRowsToMove; i++)
                         {
-                            _textOut.Write("\r\n");
-                            //Check if cursor is at the end of the row and must count the new scrolled coordinates.
-                            if ((newRow = int.Parse(GetCursorPosition().row)) != -1 && newRow == TerminalRows)
-                                _scrollOffset++;
+                            _renderBuffer.AppendLine();
                         }
 
                         if (cellsToMove > 0)
                         {
-                            _textOut.Write($"\u001b[{cellsToMove}C");
+                            _renderBuffer.Append($"\u001b[{_cursorX}C");
                         }
                     }
                     else
                     {
-                        _textOut.Write("\u001b[" + cursorPosition + "C");
+                        _renderBuffer.Append("\u001b[" + cursorPosition + "C");
+                        _cursorX = realCursorPosition;
                     }
                 }
+                _textOut.Write(_renderBuffer.ToString());
+                _renderBuffer.Clear();
             }
         }
 
@@ -159,6 +175,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         {
             sb.Insert(0, Encoding.UTF8.GetString(_stdIn.GetBuffer()));
         }
+
         public string ReadLine()
         {
             StringBuilder sb = new StringBuilder();
@@ -168,8 +185,10 @@ namespace RemoteControlToolkitCore.Common.Commandline
             int HistoryPosition = History.Count;
             var cursorDimensions = GetCursorPosition();
             _originalCol = int.Parse(cursorDimensions.column);
+            _cursorX = _originalCol;
             _scrollOffset = 0;
             _originalRow = int.Parse(cursorDimensions.row);
+            _cursorY = _originalRow;
             char text;
             int cursorPosition = sb.Length;
             updateTerminal(sb, cursorPosition);
@@ -182,8 +201,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 {
                     if (TerminalModes.ECHO)
                     {
-                        _textOut.Write(text);
-                        _textOut.Write("\u001b[1C");
+                        _renderBuffer.Append(text);
+                        _renderBuffer.Append("\u001b[1C");
                     }
                     return text.ToString();
                 }
@@ -220,9 +239,12 @@ namespace RemoteControlToolkitCore.Common.Commandline
                                     HistoryPosition--;
                                     sb.Clear();
                                     cursorPosition = 0;
-                                    string HistoryCommand = History[HistoryPosition];
-                                    sb.Append(HistoryCommand);
-                                    cursorPosition = HistoryCommand.Length;
+                                    string historyCommand = History[HistoryPosition];
+                                    byte[] historyCommandBytes = Encoding.UTF8.GetBytes(historyCommand);
+                                    //Clean out buffer
+                                    _stdIn.GetBuffer();
+                                    _renderBuffer.Clear();
+                                    _stdIn.Write(historyCommandBytes, 0, historyCommandBytes.Length);
                                 }
                                 break;
                             //Cursor Down
@@ -232,9 +254,12 @@ namespace RemoteControlToolkitCore.Common.Commandline
                                     HistoryPosition++;
                                     sb.Clear();
                                     cursorPosition = 0;
-                                    string HistoryCommand = History[HistoryPosition];
-                                    sb.Append(HistoryCommand);
-                                    cursorPosition = HistoryCommand.Length;
+                                    string historyCommand = History[HistoryPosition];
+                                    //Clean out buffer
+                                    _stdIn.GetBuffer();
+                                    _renderBuffer.Clear();
+                                    byte[] historyCommandBytes = Encoding.UTF8.GetBytes(historyCommand);
+                                    _stdIn.Write(historyCommandBytes, 0, historyCommandBytes.Length);
                                 }
                                 break;
                             //Home
@@ -261,8 +286,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
                         break;
 
                     default:
-                        sb.Insert(cursorPosition, text);
-                        cursorPosition++;
+                        if (sb.Length <= _maxChars)
+                        {
+                            sb.Insert(cursorPosition, text);
+                            cursorPosition++;
+                        }
                         break;
                 }
                 updateTerminal(sb, cursorPosition);
@@ -308,9 +336,14 @@ namespace RemoteControlToolkitCore.Common.Commandline
             UpdateCursorPosition(col, row);
         }
 
-        public void UpdateCursorPosition(int col, int row)
+        public string UpdateCursorPosition(int col, int row, bool writeCode = false)
         {
-            _textOut.Write($"\u001b[{row};{col}H");
+            if (writeCode) return $"\u001b[{row};{col}H";
+            else
+            {
+                _textOut.Write($"\u001b[{row};{col}H");
+                return string.Empty;
+            }
         }
 
         public void MoveCursorLeft(int count = 1)
@@ -357,22 +390,24 @@ namespace RemoteControlToolkitCore.Common.Commandline
         {
             //Send code for cursor position.
             _textOut.Write("\u001b[6n");
-            char[] buffer = new char[8];
-            _textIn.Read(buffer, 0, buffer.Length);
-            if (buffer.Length > 0 && buffer[0] == '\u001b')
+            char escapeChar = (char)_textIn.Read();
+            if (escapeChar == '\u001b')
             {
+                char[] buffer = new char[9];
+                _textIn.Read(buffer, 0, buffer.Length);
                 string newString = new string(buffer);
                 //Get rid of \0
                 newString = newString.Replace("\0", string.Empty);
-                //Get rid of ANSI escape code.
-                newString = newString.Replace("\u001b", string.Empty);
                 //Get rid of brackets
                 newString = newString.Replace("[", string.Empty);
                 //Split between the semicolon and R.
                 string[] position = newString.Split(';', 'R');
                 return (position[0], position[1]);
             }
-            else return ("-1", "-1");
+            else
+            {
+                return ("-1", "-1");
+            }
         }
 
         public void Attach(IInstanceSession owner)

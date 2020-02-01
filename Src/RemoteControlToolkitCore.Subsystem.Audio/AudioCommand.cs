@@ -65,6 +65,8 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                     "The file provider module to use.",
                     v => fileType = v)
                 .Add("stop", "Stops all audio playback.", v => mode = "stop")
+                .Add("pause", "Pauses all audio playback.", v => mode = "pause")
+                .Add("resume", "Resume all paused audio playback.", v => mode = "resume")
                 .Add("wait|w", "Waits for the audio to finish.", v => wait = true)
                 .Add("showAllDevices", "Displays all the registered audio devices.", v => mode = "showAllDevices")
                 .Add("showAllProviders", "Shows all the audio providers.", v => mode = "showAllProviders")
@@ -141,6 +143,22 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                 currentProc.Out.WriteLine(sb.ToString());
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }
+            else if (mode == "pause")
+            {
+                foreach (var audio in currentProc.ClientContext.GetExtension<IAudioQueue>().Queue)
+                {
+                    audio.Pause();
+                }
+                return new CommandResponse(CommandResponse.CODE_SUCCESS);
+            }
+            else if (mode == "resume")
+            {
+                foreach (var audio in currentProc.ClientContext.GetExtension<IAudioQueue>().Queue)
+                {
+                    audio.Play();
+                }
+                return new CommandResponse(CommandResponse.CODE_SUCCESS);
+            }
             try
             {
 
@@ -174,7 +192,18 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                             var task = convert.ConvertLiveMedia(stream, format, audioStream, "mp3", new ConvertSettings());
                             convert.LogReceived += (sender, eventArgs) =>
                             {
-                                currentProc.Out.WriteLine($"LOG: {eventArgs.Data}");
+                                ITerminalHandler handler;
+                                //Display progress bar.
+                                if (eventArgs.Data.StartsWith("size=") && (handler = currentProc.ClientContext.GetExtension<ITerminalHandler>()) != null)
+                                {
+                                    handler.ClearRow();
+                                    currentProc.Out.Write($"LOG: {eventArgs.Data}");
+                                    handler.MoveCursorLeft(9999999);
+                                }
+                                else
+                                {
+                                    currentProc.Out.WriteLine($"LOG: {eventArgs.Data}");
+                                }
                             };
                             task.Start();
                             task.Wait();

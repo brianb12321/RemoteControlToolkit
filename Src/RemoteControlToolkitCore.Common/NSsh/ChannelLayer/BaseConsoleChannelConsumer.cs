@@ -40,7 +40,10 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
 
         public void SignalWindowChange(WindowChangePayload args)
         {
-            console.SignalWindowChange(args);;
+            if (args != null)
+            {
+                console?.SignalWindowChange(args);
+            }
         }
 
         public ChannelRequestType ChannelType { get; set; }

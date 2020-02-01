@@ -260,6 +260,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 _process.SetOut(currentProc.Out);
                 _process.SetError(currentProc.Error);
                 _process.SetIn(currentProc.In);
+                addProcessExtensions(_process);
                 _process.Start();
                 _process.WaitForExit();
                 return _process.ExitCode;
@@ -297,6 +298,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                     _process.SetOut(currentProc.Out);
                     _process.SetError(currentProc.Error);
                     _process.SetIn(currentProc.In);
+                    addProcessExtensions(_process);
                     _process.Start();
                     _process.WaitForExit();
                     return _process.ExitCode;
@@ -330,6 +332,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                     currentProc.Error.WriteLine(Output.Red($"Error while redirecting IO: {ex.Message}"));
                     return new CommandResponse(CommandResponse.CODE_FAILURE);
                 }
+                addProcessExtensions(_process);
                 _process.Start();
                 _process.WaitForExit();
                 return _process.ExitCode;
@@ -346,6 +349,10 @@ namespace RemoteControlToolkitCore.Common.Commandline
             }
         }
 
+        void addProcessExtensions(RCTProcess process)
+        {
+            process.Extensions.Add(_scriptContext);
+        }
         private void redirectIO(IParser parser, RCTProcess currentProc)
         {
             IFileSystem workingDirFileSystem = currentProc.Extensions.Find<IExtensionFileSystem>().GetFileSystem();

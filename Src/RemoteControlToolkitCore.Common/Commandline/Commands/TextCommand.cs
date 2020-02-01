@@ -202,18 +202,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             int? found = originalString.IndexOf(charToSearch);
             return found > -1 ? found : null;
         }
-        private static int strncmp(string s1, string s2, int num)
-        {
-            int len1 = s1.Length;
-            int len2 = s2.Length;
-            if (len1 < num || len2 < num)
-            {
-                num = Math.Min(len1, len2);
-            }
-            string sub1 = s1.Substring(0, num);
-            string sub2 = s2.Substring(0, num);
-            return string.Compare(sub1, sub2, true);
-        }
+        
         bool is_separator(char c)
         {
             return char.IsWhiteSpace(c) || c == '\0' || strchr(",.()+-/*=~%<>[];", c) != null;
@@ -528,15 +517,17 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         /*** input ***/
         void editorProcessKeypress()
         {
-            char[] buffer = editorReadKey();
+            char buffer = (char)_process.In.Read();
             char c = (char)0;
-            if (buffer[0] == '\u001b')
+            if (buffer == '\u001b')
             {
-                if (buffer[1] == '[')
+                buffer = (char) _process.In.Read();
+                if (buffer == '[')
                 {
-                    if (char.IsDigit(buffer[2]))
+                    buffer = (char) _process.In.Read();
+                    if (char.IsDigit(buffer))
                     {
-                        switch (buffer[2])
+                        switch (buffer)
                         {
                             case '1':
                                 c = (char) editorKey.HOME_KEY;
@@ -548,10 +539,12 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                                 c = (char) editorKey.DELETE_KEY;
                                 break;
                         }
+
+                        _process.In.Read();
                     }
                     else
                     {
-                        switch (buffer[2])
+                        switch (buffer)
                         {
                             case 'A':
                                 c = (char)editorKey.ARROW_UP;
@@ -573,7 +566,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                     c = '\u001b';
                 }
             }
-            else c = buffer[0];
+            else c = buffer;
             switch (c)
             {
                 case '\r':
@@ -841,19 +834,21 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         {
             try
             {
-                _syntaxDatabase = new List<EditorSyntax>();
-                _syntaxDatabase.Add(new EditorSyntax()
+                _syntaxDatabase = new List<EditorSyntax>
                 {
-                    FileType = "Python",
-                    FileMatch =  new []{".py"},
-                    SingleLineCommentStart = "#",
-                    Keywords = new []
+                    new EditorSyntax()
                     {
-                        "switch", "if", "while", "for", "break", "continue", "return", "elif", "import",
-                        "static", "enum", "class", "case", "from", "void|", null
-                    },
-                    Flags = highlightFlags.HL_HIGHLIGHT_NUMBERS | highlightFlags.HL_HIGHLIGHT_STRINGS
-                });
+                        FileType = "Python",
+                        FileMatch = new[] {".py"},
+                        SingleLineCommentStart = "#",
+                        Keywords = new[]
+                        {
+                            "switch", "if", "while", "for", "break", "continue", "return", "elif", "import",
+                            "static", "enum", "class", "case", "from", "void|", null
+                        },
+                        Flags = highlightFlags.HL_HIGHLIGHT_NUMBERS | highlightFlags.HL_HIGHLIGHT_STRINGS
+                    }
+                };
                 _process = context;
                 _handler = context.ClientContext.GetExtension<ITerminalHandler>();
                 if (args.Arguments.Length == 1)
