@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.ServiceModel;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,7 @@ using RemoteControlToolkitCore.Common.NSsh.Packets.Channel;
 using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
 using RemoteControlToolkitCore.Common.NSsh.TransportLayer;
 using RemoteControlToolkitCore.Common.NSsh.Types;
+using RemoteControlToolkitCore.Common.Utilities;
 
 namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
 {
@@ -168,7 +170,17 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
                     _channelConsumer.ChannelType = _consumerType;
                     _channelConsumer.InitialTerminalConfiguration = _terminalPayload;
                     _channelConsumer.InitialEnvironmentVariables.AddRange(_environmentPayloads);
-                    TransportLayerManager.Disconnected += (s, e) => { Close(); _channelConsumer.Close(); };
+                    TransportLayerManager.Disconnected += (s, e) =>
+                    {
+                        try
+                        {
+                            Close(); _channelConsumer.Close();
+                        }
+                        catch (RctProcessException)
+                        {
+                            
+                        }
+                    };
                     _channelConsumer.AuthenticatedIdentity = TransportLayerManager.AuthenticatedIdentity;
                     _channelConsumer.Channel = this;
                     _channelConsumer.Initialise();
@@ -178,7 +190,17 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
                     _consumerType = ChannelRequestType.ExecuteCommand;
                     _channelConsumer = _provider.GetService<IChannelCommandConsumer>();
                     _channelConsumer.ChannelType = _consumerType;
-                    TransportLayerManager.Disconnected += (s, e) => { Close();  _channelConsumer.Close(); };
+                    TransportLayerManager.Disconnected += (s, e) =>
+                    {
+                        try
+                        {
+                            Close(); _channelConsumer.Close();
+                        }
+                        catch (RctProcessException)
+                        {
+
+                        }
+                    };
                     _channelConsumer.InitialTerminalConfiguration = _terminalPayload;
                     _channelConsumer.InitialEnvironmentVariables.AddRange(_environmentPayloads);
                     ((IChannelCommandConsumer)_channelConsumer).Command = ((ExecuteCommandPayload)packet.ChannelRequestPayload).Command;
@@ -206,6 +228,10 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
                 case ChannelRequestType.AuthenticationAgent:
                     // Ignore
                     _logger.LogInformation("AuthenticationAgent request.");
+                    break;
+                case ChannelRequestType.PuttyWinAdj:
+                    packet.WantReply = false;
+                    TransportLayerManager.WritePacket(new ChannelFailurePacket() {RecipientChannel = ChannelId});
                     break;
 
                 default:
@@ -239,7 +265,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
                     {
                         lock (_outgoingData)
                         {
-                            //log.Debug("ProcessOutgoingData queue size " + _outgoingData.Count);
+                           // _logger.LogInformation("ProcessOutgoingData queue size " + _outgoingData.Count);
 
                             if (_outgoingData.Count != 0)
                             {
@@ -291,7 +317,6 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
                 if (TransportLayerManager.Connected)
                 {
                     Packet result = _incomingData.Dequeue();
-
                     TransportLayerManager.WritePacket(new ChannelWindowAdjustPacket()
                     {
                         RecipientChannel = ChannelId,
@@ -319,10 +344,10 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
 
             //log.Debug("SendOutgoingPacket done");
         }
-
+        
         public void SendData(byte[] buffer)
         {
-            SendOutgoingPacket(new ChannelDataPacket() { RecipientChannel = ChannelId, Data = buffer });
+            SendOutgoingPacket(new ChannelDataPacket() { RecipientChannel = ChannelId, Data = buffer, Length = buffer.Length });
         }
 
         public void SendErrorData(byte[] buffer)
@@ -331,7 +356,8 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
             {
                 RecipientChannel = ChannelId,
                 Data = buffer,
-                ExtendedDataType = ExtendedDataType.StandardError
+                ExtendedDataType = ExtendedDataType.StandardError,
+                Length = buffer.Length
             });
         }
 
@@ -346,7 +372,10 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
             }
 
             _outgoingDataArrived.Set();
-            _incomingDataArrived.Set();
+            lock (_incomingData)
+            {
+                _incomingDataArrived.Set();
+            }
 
             if (Closed != null) Closed(this, EventArgs.Empty);
         }

@@ -24,6 +24,6 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public bool SIGINT { get; set; } = true;
         public bool SIGTSTP { get; set; } = true;
-
+        public bool ClearScrollbackOnClear { get; set; } = true;
     }
 }

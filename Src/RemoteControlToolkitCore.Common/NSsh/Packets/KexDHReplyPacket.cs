@@ -25,7 +25,6 @@ namespace RemoteControlToolkitCore.Common.NSsh.Packets
     /// </summary>
     public class KexDHReplyPacket : Packet
     {
-        private readonly object lockObj = new object();
         public KexDHReplyPacket(BigInteger e, string clientVersion, string serverVersion, 
             KexInitPacket clientKexInit, KexInitPacket serverKexInit, HashAlgorithm hashAlgorithm,
             IPublicKeyPair hostKey, PublicKeyAlgorithm signingAlgorithm, ISecureRandom secureRandom) : base(PacketType.KexDHReply)
@@ -52,10 +51,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.Packets
             writer.Write(e);
             writer.Write(F);
             writer.Write(K);
-            lock(lockObj)
-            {
-                H = hashAlgorithm.ComputeHash(buffer.ToArray());
-            }
+            H = hashAlgorithm.ComputeHash(buffer.ToArray());
 
             switch (signingAlgorithm)
             {

@@ -18,15 +18,17 @@ namespace RemoteControlToolkitCore.Common.Commandline
     {
         private readonly IImpersonationProvider _provider;
         private ILogger<BaseProcessConsole> _logger;
+        private ILogger<TerminalHandler> _terminalLogger;
         private IApplicationSubsystem _subsystem;
         private IExtensionProvider<IInstanceSession>[] _providers;
         private IFileSystemSubsystem _fileSystemSubsystem;
         private IServiceProvider _serviceProvider;
-        public CommandChannelConsumer(ILogger<BaseConsoleChannelConsumer> logger, IImpersonationProvider provider, IFileSystemSubsystem fileSystemSubsystem, ILogger<BaseProcessConsole> consoleLogger, IApplicationSubsystem subsystem, IServiceProvider serviceProvider) : base(logger)
+        public CommandChannelConsumer(ILogger<BaseConsoleChannelConsumer> logger, ILogger<TerminalHandler> terminalLogger, IImpersonationProvider provider, IFileSystemSubsystem fileSystemSubsystem, ILogger<BaseProcessConsole> consoleLogger, IApplicationSubsystem subsystem, IServiceProvider serviceProvider) : base(logger)
         {
             _fileSystemSubsystem = fileSystemSubsystem;
             _provider = provider;
             _logger = consoleLogger;
+            _terminalLogger = terminalLogger;
             _subsystem = subsystem;
             _provider = provider;
             _serviceProvider = serviceProvider;
@@ -38,7 +40,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             ClaimsIdentity identity = new ClaimsIdentity();
             identity.AddClaim(new Claim(ClaimTypes.Role, "Administrator"));
             principal.AddIdentity(identity);
-            return new BaseProcessConsole(_logger, _subsystem, _providers, _fileSystemSubsystem, Channel, InitialTerminalConfiguration, InitialEnvironmentVariables, _serviceProvider, principal);
+            return new BaseProcessConsole(_logger, _subsystem, _providers, _fileSystemSubsystem, Channel, InitialTerminalConfiguration, InitialEnvironmentVariables, _serviceProvider, principal, _terminalLogger);
         }
 
         public string Command { get; set; }

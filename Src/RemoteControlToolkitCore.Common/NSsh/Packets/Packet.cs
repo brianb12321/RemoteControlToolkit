@@ -38,7 +38,6 @@ namespace RemoteControlToolkitCore.Common.NSsh.Packets
     /// </summary>
     public abstract class Packet
     {
-        private readonly object lockObj = new object();
         public Packet(PacketType packetType)
         {
             this.PacketType = packetType;
@@ -76,10 +75,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.Packets
 
                 context.ReceiveMac.Initialize();
                 byte[] expectedMacData;
-                lock (lockObj)
-                {
-                    expectedMacData = context.ReceiveMac.ComputeHash(macBuffer.ToArray());
-                }
+                expectedMacData = context.ReceiveMac.ComputeHash(macBuffer.ToArray());
 
                 for (int i = 0; i < expectedMacData.Length; i++)
                 {
@@ -162,10 +158,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.Packets
                 macWriter.Write(unencryptedBuffer.ToArray());
 
                 transmitMac.Initialize();
-                lock (lockObj)
-                {
-                    macData = transmitMac.ComputeHash(macBuffer.ToArray());
-                }
+                macData = transmitMac.ComputeHash(macBuffer.ToArray());
             }
 
             // Encrypted the packet if required

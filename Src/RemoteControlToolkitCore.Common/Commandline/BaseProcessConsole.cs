@@ -5,6 +5,7 @@ using System.IO.Pipes;
 using System.Security.Principal;
 using System.ServiceModel;
 using System.Text;
+using System.Windows.Forms;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
@@ -16,6 +17,7 @@ using RemoteControlToolkitCore.Common.NSsh.Utility;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Utilities;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
+using RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {
@@ -42,7 +44,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
             PseudoTerminalPayload terminalConfig,
             List<EnvironmentPayload> environmentPayloads,
             IServiceProvider serviceProvider,
-            IPrincipal identity)
+            IPrincipal identity,
+            ILogger<TerminalHandler> terminalLogger)
         {
             ClientUniqueID = Guid.NewGuid();
             Pipe = new BlockingMemoryStream();
@@ -55,7 +58,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 provider.GetExtension(this);
             }
             var outStream = GetClientWriter();
-            _terminalHandler = new TerminalHandler(Pipe, outStream, terminalConfig);
+            _terminalHandler = new TerminalHandler(Pipe, outStream, terminalConfig, terminalLogger);
             TerminalHandler = _terminalHandler;
             var consoleInStream = new ConsoleTextReader(_terminalHandler);
             _shellProcess = ProcessTable.Factory.CreateOnApplication(this, subsystem.GetApplication("shell"),
@@ -105,8 +108,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
         }
 
         public TextWriter GetClientWriter()
-        { 
-            return new ChannelTextWriter(Producer);
+        {
+           return new ChannelTextWriter(Producer);
         }
 
         public T GetExtension<T>() where T : IExtension<IInstanceSession>
@@ -121,8 +124,15 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public void Close()
         {
-            _shellProcess.Close();
-            Closed?.Invoke(this, EventArgs.Empty);
+            try
+            {
+                _shellProcess.Close();
+                Pipe.Close();
+                Closed?.Invoke(this, EventArgs.Empty);
+            }
+            catch (RctProcessException)
+            {
+            }
         }
 
         public void Start()

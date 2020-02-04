@@ -194,8 +194,9 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                             {
                                 ITerminalHandler handler;
                                 //Display progress bar.
-                                if (eventArgs.Data.StartsWith("size=") && (handler = currentProc.ClientContext.GetExtension<ITerminalHandler>()) != null)
+                                if (eventArgs.Data.StartsWith("size=") && !currentProc.OutRedirected)
                                 {
+                                    handler = currentProc.ClientContext.GetExtension<ITerminalHandler>();
                                     handler.ClearRow();
                                     currentProc.Out.Write($"LOG: {eventArgs.Data}");
                                     handler.MoveCursorLeft(9999999);

@@ -17,6 +17,7 @@ using RemoteControlToolkitCore.Common.NSsh;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.NSsh.Services;
 using RemoteControlToolkitCore.Common.Proxy;
+using RemoteControlToolkitCore.Common.Utilities;
 
 [assembly: PluginLibrary("CommonPlugin", FriendlyName = "Common Plugin", LibraryType = NetworkSide.Proxy | NetworkSide.Server)]
 namespace RemoteControlToolkitCore.Common

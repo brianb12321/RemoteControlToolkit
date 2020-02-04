@@ -245,7 +245,6 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
         {
             try
             {
-                //log.Debug("WRITE PACKET: " + packet);
                 _stream.Write(packet.ToByteArray(_transmitTransform, TransmitMac?.CreateMac(), TransmitSequenceNumber++, _random));
                 _stream.Flush();
             }

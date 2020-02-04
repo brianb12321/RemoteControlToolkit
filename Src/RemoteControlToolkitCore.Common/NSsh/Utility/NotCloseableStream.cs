@@ -1,7 +1,98 @@
 ﻿using System.IO;
+using System.Text;
 
 namespace RemoteControlToolkitCore.Common.NSsh.Utility
 {
+    public class NotClosableStreamWriter : StreamWriter
+    {
+        public NotClosableStreamWriter(Stream stream) : base(stream)
+        {
+        }
+
+        public NotClosableStreamWriter(Stream stream, Encoding encoding) : base(stream, encoding)
+        {
+        }
+
+        public NotClosableStreamWriter(Stream stream, Encoding encoding, int bufferSize) : base(stream, encoding, bufferSize)
+        {
+        }
+
+        public NotClosableStreamWriter(Stream stream, Encoding encoding, int bufferSize, bool leaveOpen) : base(stream, encoding, bufferSize, leaveOpen)
+        {
+        }
+
+        public NotClosableStreamWriter(string path) : base(path)
+        {
+        }
+
+        public NotClosableStreamWriter(string path, bool append) : base(path, append)
+        {
+        }
+
+        public NotClosableStreamWriter(string path, bool append, Encoding encoding) : base(path, append, encoding)
+        {
+        }
+
+        public NotClosableStreamWriter(string path, bool append, Encoding encoding, int bufferSize) : base(path, append, encoding, bufferSize)
+        {
+        }
+
+        public override void Close()
+        {
+            
+        }
+    }
+    public class NotClosableStreamReader : StreamReader
+    {
+        public NotClosableStreamReader(Stream stream) : base(stream)
+        {
+        }
+
+        public NotClosableStreamReader(Stream stream, bool detectEncodingFromByteOrderMarks) : base(stream, detectEncodingFromByteOrderMarks)
+        {
+        }
+
+        public NotClosableStreamReader(Stream stream, Encoding encoding) : base(stream, encoding)
+        {
+        }
+
+        public NotClosableStreamReader(Stream stream, Encoding encoding, bool detectEncodingFromByteOrderMarks) : base(stream, encoding, detectEncodingFromByteOrderMarks)
+        {
+        }
+
+        public NotClosableStreamReader(Stream stream, Encoding encoding, bool detectEncodingFromByteOrderMarks, int bufferSize) : base(stream, encoding, detectEncodingFromByteOrderMarks, bufferSize)
+        {
+        }
+
+        public NotClosableStreamReader(Stream stream, Encoding encoding, bool detectEncodingFromByteOrderMarks, int bufferSize, bool leaveOpen) : base(stream, encoding, detectEncodingFromByteOrderMarks, bufferSize, leaveOpen)
+        {
+        }
+
+        public NotClosableStreamReader(string path) : base(path)
+        {
+        }
+
+        public NotClosableStreamReader(string path, bool detectEncodingFromByteOrderMarks) : base(path, detectEncodingFromByteOrderMarks)
+        {
+        }
+
+        public NotClosableStreamReader(string path, Encoding encoding) : base(path, encoding)
+        {
+        }
+
+        public NotClosableStreamReader(string path, Encoding encoding, bool detectEncodingFromByteOrderMarks) : base(path, encoding, detectEncodingFromByteOrderMarks)
+        {
+        }
+
+        public NotClosableStreamReader(string path, Encoding encoding, bool detectEncodingFromByteOrderMarks, int bufferSize) : base(path, encoding, detectEncodingFromByteOrderMarks, bufferSize)
+        {
+        }
+
+        public override void Close()
+        {
+            
+        }
+    }
     public class NotCloseableStream : Stream
     {
         private Stream _stream;

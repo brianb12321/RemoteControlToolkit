@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Crayon;
+using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
@@ -19,6 +21,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
     {
         public PseudoTerminalPayload InitialTerminalConfig { get; }
         public PseudoTerminalMode TerminalModes { get; }
+        public TextWriter TerminalOut => _textOut;
+        public TextReader TerminalIn => _textIn;
         public event EventHandler TerminalDimensionsChanged;
         private uint _terminalRows = 36;
         private uint _terminalColumns = 130;
@@ -27,6 +31,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         private int _cursorX;
         private int _cursorY;
         private StringBuilder _renderBuffer = new StringBuilder();
+        private ILogger<TerminalHandler> _logger;
         public List<string> History { get; }
 
         public string TerminalName
@@ -76,8 +81,9 @@ namespace RemoteControlToolkitCore.Common.Commandline
         }
 
         private int _originalRow;
-        public TerminalHandler(MemoryStream stdIn, TextWriter stdOut, PseudoTerminalPayload terminalConfig)
+        public TerminalHandler(MemoryStream stdIn, TextWriter stdOut, PseudoTerminalPayload terminalConfig, ILogger<TerminalHandler> logger)
         {
+            _logger = logger;
             _stdIn = stdIn;
             _textOut = stdOut;
             _textIn = new StreamReader(_stdIn);
@@ -94,6 +100,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         public void Clear()
         {
             _textOut.Write("\u001b[2J\u001b[;H\u001b[0m");
+            if(TerminalModes.ClearScrollbackOnClear) _textOut.Write("\u001b[3J");
         }
 
         public string ClearScreenCursorDown(bool writeCode = false)
@@ -213,6 +220,10 @@ namespace RemoteControlToolkitCore.Common.Commandline
                         quit = true;
                         cursorPosition = sb.Length;
                         break;
+                    case (char)26:
+                        quit = true;
+                        cursorPosition = sb.Length;
+                        break;
                     //Handle backspace
                     case '\u007f':
                         if (sb.Length > 0)
@@ -314,11 +325,13 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public char Read()
         {
+            _renderBuffer.Clear();
             var character = _textIn.Read();
             if (TerminalModes.ECHO)
             {
-                _textOut.Write((char)character);
-                _textOut.Write("\u001b[1C");
+                _renderBuffer.Append((char)character);
+                _renderBuffer.Append("\u001b[1C");
+                _textOut.Write(_renderBuffer.ToString());
             }
 
             return (char)character;
@@ -338,10 +351,15 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public string UpdateCursorPosition(int col, int row, bool writeCode = false)
         {
-            if (writeCode) return $"\u001b[{row};{col}H";
+            if (writeCode)
+            {
+                if (col == 0 && row == 0) return "\u001b[;H";
+                else return $"\u001b[{row};{col}H";
+            }
             else
             {
-                _textOut.Write($"\u001b[{row};{col}H");
+                if(col == 0 && row == 0) _textOut.Write("\u001b[;H");
+                else _textOut.Write($"\u001b[{row};{col}H");
                 return string.Empty;
             }
         }
@@ -384,6 +402,82 @@ namespace RemoteControlToolkitCore.Common.Commandline
         public void SetTitle(string title)
         {
             _textOut.Write($"\u001b]0;{title}\x7");
+        }
+
+        public void SetForeground(ConsoleColor color)
+        {
+            switch(color)
+            {
+                case ConsoleColor.Black:
+                    SetDisplayMode(30);
+                    break;
+                case ConsoleColor.Blue:
+                    SetDisplayMode(34);
+                    break;
+                case ConsoleColor.Cyan:
+                    SetDisplayMode(36);
+                    break;
+                case ConsoleColor.Magenta:
+                    SetDisplayMode(35);
+                    break;
+                case ConsoleColor.Red:
+                    SetDisplayMode(31);
+                    break;
+                case ConsoleColor.Green:
+                    SetDisplayMode(32);
+                    break;
+                case ConsoleColor.White:
+                    SetDisplayMode(37);
+                    break;
+                case ConsoleColor.Yellow:
+                    SetDisplayMode(33);
+                    break;
+            }
+        }
+        public void SetBackground(ConsoleColor color)
+        {
+            switch (color)
+            {
+                case ConsoleColor.Black:
+                    SetDisplayMode(40);
+                    break;
+                case ConsoleColor.Blue:
+                    SetDisplayMode(44);
+                    break;
+                case ConsoleColor.Cyan:
+                    SetDisplayMode(46);
+                    break;
+                case ConsoleColor.Magenta:
+                    SetDisplayMode(45);
+                    break;
+                case ConsoleColor.Red:
+                    SetDisplayMode(41);
+                    break;
+                case ConsoleColor.Green:
+                    SetDisplayMode(42);
+                    break;
+                case ConsoleColor.White:
+                    SetDisplayMode(47);
+                    break;
+                case ConsoleColor.Yellow:
+                    SetDisplayMode(43);
+                    break;
+            }
+        }
+
+        public void HideCursor()
+        {
+            _textOut.Write("\u001b[?25l");
+        }
+
+        public void ShowCursor()
+        {
+            _textOut.WriteLine($"\u001b[?25h");
+        }
+
+        public void ResizeWindow(int column, int row)
+        {
+            _textOut.Write($"\x1B[8; {row}; {column}t");
         }
 
         public (string row, string column) GetCursorPosition()

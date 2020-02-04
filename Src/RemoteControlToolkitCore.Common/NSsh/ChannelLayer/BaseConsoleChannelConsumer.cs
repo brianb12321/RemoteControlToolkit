@@ -5,6 +5,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.NSsh.ChannelLayer.Console;
 using RemoteControlToolkitCore.Common.NSsh.Packets;
 using RemoteControlToolkitCore.Common.NSsh.Packets.Channel;
@@ -123,7 +124,6 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
                                         console.Pipe.Flush();
                                     }
                                     break;
-
                                 case PacketType.ChannelEof:
                                     Close();
                                     break;
@@ -143,13 +143,6 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
             });
             stdnInThread.Start();
             console.Start();
-
-            //Thread stdOutThread = new Thread(ProcessStandardOutput);
-            //stdOutThread.Start();
-
-            //Thread stdErrThread = new Thread(ProcessStandardError);
-            //stdErrThread.Start();
-
         }
     }
 }

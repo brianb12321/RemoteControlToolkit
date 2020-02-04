@@ -8,7 +8,6 @@ namespace RemoteControlToolkitCore.Common.NSsh.Utility
 {
     public class CipherFactory : ICipherFactory
     {
-        public static object lockObject = new object();
         #region ICipherFactory Members
 
         public SymmetricAlgorithm CreateCipher(EncryptionAlgorithm algorithm, BigInteger key, byte[] hash,
@@ -78,10 +77,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.Utility
             while (keyBuffer.Length < length)
             {
                 byte[] keyInput;
-                lock(lockObject)
-                {
-                    keyInput = sha1.ComputeHash(hashBuffer.ToArray());
-                }
+                keyInput = sha1.ComputeHash(hashBuffer.ToArray());
                 int writeLength = Math.Min(length, keyInput.Length);
                 keyWriter.Write(keyInput, 0, writeLength);
 

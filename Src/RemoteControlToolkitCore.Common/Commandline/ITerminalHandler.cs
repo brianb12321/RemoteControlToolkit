@@ -16,6 +16,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
     /// </summary>
     public interface ITerminalHandler : IExtension<IInstanceSession>
     {
+        TextWriter TerminalOut { get; }
+        TextReader TerminalIn { get; }
         event EventHandler TerminalDimensionsChanged;
         List<string> History { get; }
         string TerminalName { get; }
@@ -42,5 +44,10 @@ namespace RemoteControlToolkitCore.Common.Commandline
         void Reset();
         void ScrollDown();
         void SetTitle(string title);
+        void SetForeground(ConsoleColor color);
+        void SetBackground(ConsoleColor color);
+        void HideCursor();
+        void ShowCursor();
+        void ResizeWindow(int column, int row);
     }
 }

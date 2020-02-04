@@ -39,8 +39,36 @@ namespace RemoteControlToolkitCore.Common.Commandline
         private RCTProcess _process;
         private bool _promptAnyways;
         private Dictionary<string, Func<CommandRequest, CommandResponse>> _builtInCommands;
+        private List<(string art, string artist)> _bannerArts;
         public override string ProcessName => "DefaultShell";
 
+        private void loadBannerArt()
+        {
+            _bannerArts = new List<(string art, string artist)>();
+            _bannerArts.Add((@"
+                 _
+     .,-;-;-,. /'_\
+   _/_/_/_|_\_\) /
+ '-<_><_><_><_>=/\
+   `/_/====/_/-'\_\
+    ""     ""    """.Cyan(), "Joan Stark"));
+            _bannerArts.Add((@"
+.--.
+|__| .-------.
+|=.| |.-----.|
+|--| || KCK ||
+|  | |'-----'|
+|__|~')_____('
+".Cyan(), "KCK"));
+            _bannerArts.Add((@"
+.`.     _ _
+__;_ \ /,//`
+--, `._) (
+ '//,,,  |
+      )_/
+     /_|
+".Cyan(), "sk"));
+        }
         private void setupInternalCommands(RCTProcess currentProc)
         {
             _builtInCommands.Add("cls", (args2) =>
@@ -118,6 +146,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 _shellExt.Bell();
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             });
+            _builtInCommands.Add("banner", arg2 =>
+            {
+                currentProc.Out.WriteLine(drawBanner());
+                return new CommandResponse(CommandResponse.CODE_SUCCESS);
+            });
         }
         public override CommandResponse Execute(CommandRequest args, RCTProcess currentProc, CancellationToken token)
         {
@@ -162,13 +195,9 @@ namespace RemoteControlToolkitCore.Common.Commandline
             {
                 StringBuilder sb = new StringBuilder();
                 _shellExt?.SetTitle($"RCT Shell - {currentProc.WorkingDirectory}");
-                currentProc.Out.WriteLine("Welcome to RCT shell! For help, enter help");
-                currentProc.Out.WriteLine();
-                if (!string.IsNullOrWhiteSpace(_motd))
-                {
-                    currentProc.Out.WriteLine(_motd);
-                    currentProc.Out.WriteLine();
-                }
+                //Draw Banner
+                loadBannerArt();
+                currentProc.Out.Write(drawBanner().ToString());
                 if(currentProc.Identity.IsInRole("Administrator")) currentProc.Out.WriteLine("WARNING: You are logged in as a server administrator.".BrightYellow());
                 token.Register(() => _engine?.Dispose());
                 while (!token.IsCancellationRequested)
@@ -202,6 +231,33 @@ namespace RemoteControlToolkitCore.Common.Commandline
             else return executeCommand(command, currentProc, token);
         }
 
+        (string art, string artist) getBannerArt()
+        {
+            Random rand = new Random();
+            return _bannerArts[rand.Next(_bannerArts.Count)];
+        }
+        StringBuilder drawBanner()
+        {
+            StringBuilder bannerBuilder = new StringBuilder();
+            var bannerArt = getBannerArt();
+            bannerBuilder.AppendLine(bannerArt.art);
+            bannerBuilder.AppendLine($"Art by {bannerArt.artist}");
+            bannerBuilder.AppendLine();
+            bannerBuilder.AppendLine("┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
+            bannerBuilder.AppendLine("┃  Welcome to RCT shell! For a list of commands, enter help   ┃");
+            bannerBuilder.AppendLine("┃                                                             ┃");
+            bannerBuilder.AppendLine("┃  Visit my Github page at https://github.com/brianb12321     ┃");
+            bannerBuilder.AppendLine("┃  For executing a script, start a command with ./            ┃");
+            bannerBuilder.AppendLine("┃  For inlining a script as an argument, use {script}         ┃");
+            bannerBuilder.AppendLine("┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+            bannerBuilder.AppendLine();
+            if (!string.IsNullOrWhiteSpace(_motd))
+            {
+                bannerBuilder.AppendLine(_motd);
+                bannerBuilder.AppendLine();
+            }
+            return bannerBuilder;
+        }
         private void setupScriptingEngine(TextWriter outWriter, TextWriter errorWriter, TextReader inReader, RCTProcess currentProc, CancellationToken token)
         {
             _engine.ParentProcess = currentProc;
@@ -280,6 +336,10 @@ namespace RemoteControlToolkitCore.Common.Commandline
                     _process = currentProc.ClientContext.ProcessTable.Factory.Create(currentProc.ClientContext, "internalCommand",
                         (proc, delToken) =>
                             _builtInCommands[newCommand](newRequest), currentProc, currentProc.Identity);
+                    _process.ThreadError += (sender, e) =>
+                    {
+                        currentProc.Error.WriteLine(Output.Red($"Error while executing built-in command: {e.Message}"));
+                    };
                 }
 
                 //Check if command should execute external program.
@@ -295,13 +355,6 @@ namespace RemoteControlToolkitCore.Common.Commandline
                     {
                         currentProc.Error.WriteLine(Output.Red($"Error while running script: {e.Message}"));
                     };
-                    _process.SetOut(currentProc.Out);
-                    _process.SetError(currentProc.Error);
-                    _process.SetIn(currentProc.In);
-                    addProcessExtensions(_process);
-                    _process.Start();
-                    _process.WaitForExit();
-                    return _process.ExitCode;
                 }
                 else
                 {
@@ -310,6 +363,10 @@ namespace RemoteControlToolkitCore.Common.Commandline
                         var application = _appSubsystem.GetApplication(newCommand);
                         _process = currentProc.ClientContext.ProcessTable.Factory.CreateOnApplication(currentProc.ClientContext, application,
                             currentProc, newRequest, currentProc.Identity);
+                        _process.ThreadError += (sender, e) =>
+                        {
+                            currentProc.Error.WriteLine(Output.Red($"Error while executing command: {e.Message}"));
+                        };
                     }
                     catch (RctProcessException ex)
                     {
@@ -318,10 +375,6 @@ namespace RemoteControlToolkitCore.Common.Commandline
                     }
                 }
 
-                _process.ThreadError += (sender, e) =>
-                {
-                    currentProc.Error.WriteLine(Output.Red($"Error while executing command: {e.Message}"));
-                };
                 //Redirect IO
                 try
                 {
