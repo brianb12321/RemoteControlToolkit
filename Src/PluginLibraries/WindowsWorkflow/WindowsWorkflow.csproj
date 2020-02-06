@@ -118,4 +118,13 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\packages\NETStandard.Library.2.0.3\build\netstandard2.0\NETStandard.Library.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\NETStandard.Library.2.0.3\build\netstandard2.0\NETStandard.Library.targets'))" />
   </Target>
+  <PropertyGroup>
+    <PostBuildEvent>cd $(TargetDir)
+del System*.dll
+del Microsoft*.dll
+del IronPython*.dll
+del NDesk*.dll
+del net*.dll
+del Zio*.dll</PostBuildEvent>
+  </PropertyGroup>
 </Project>

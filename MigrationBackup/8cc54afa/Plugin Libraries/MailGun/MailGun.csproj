@@ -75,8 +75,8 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Zio, Version=0.7.4.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Zio.0.7.4\lib\net45\Zio.dll</HintPath>
+    <Reference Include="Zio, Version=0.7.6.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Zio.0.7.6\lib\net45\Zio.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -84,14 +84,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\RemoteControlToolkitCore.Common\RemoteControlToolkitCore.Common.csproj">
       <Project>{d1634ef0-3d18-4a45-99df-f5ec988ea5f4}</Project>
       <Name>RemoteControlToolkitCore.Common</Name>
-      <Private>False</Private>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

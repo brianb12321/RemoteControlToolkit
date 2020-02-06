@@ -1,8 +1,7 @@
-﻿using System.Reflection;
+﻿using RemoteControlToolkitCore.Common.Plugin;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using RemoteControlToolkitCore.Common;
-using RemoteControlToolkitCore.Common.Plugin;
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
@@ -15,7 +14,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: PluginLibrary("MailGun", FriendlyName = "Mail Gun", LibraryType = NetworkSide.Server | NetworkSide.Proxy)]
+[assembly: PluginLibrary("MailGun", FriendlyName = "Mail Gun", LibraryType = RemoteControlToolkitCore.Common.NetworkSide.Server | RemoteControlToolkitCore.Common.NetworkSide.Proxy)]
 
 // Setting ComVisible to false makes the types in this assembly not visible
 // to COM components.  If you need to access a type in this assembly from
@@ -23,7 +22,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("20e79299-b565-4a31-a870-f328671f876f")]
+[assembly: Guid("5e9d8adb-6b6b-453a-bfd1-64d9f664c659")]
 
 // Version information for an assembly consists of the following four values:
 //

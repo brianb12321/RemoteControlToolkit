@@ -20,6 +20,8 @@ using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Plugin;
+using RemoteControlToolkitCore.Common.VirtualFileSystem;
+using Zio;
 
 [assembly: PluginLibrary("NugetPackageManager", FriendlyName = "RCT Nuget Package Manager", LibraryType = NetworkSide.Server)]
 namespace NugetPackageManager
@@ -32,6 +34,7 @@ namespace NugetPackageManager
 
         public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
         {
+            context.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
             string mode = "showHelp";
             string package = string.Empty;
             string version = "1.0.0.0";

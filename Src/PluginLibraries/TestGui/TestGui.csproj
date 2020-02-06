@@ -69,4 +69,13 @@
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>cd $(TargetDir)
+del System*.dll
+del Microsoft*.dll
+del IronPython*.dll
+del NDesk*.dll
+del net*.dll
+del Zio*.dll</PostBuildEvent>
+  </PropertyGroup>
 </Project>

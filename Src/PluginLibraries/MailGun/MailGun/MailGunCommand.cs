@@ -37,6 +37,7 @@ namespace MailGun
             bool ssl = false;
             bool google = false;
             SecureString password = new SecureString();
+            bool requestPassword = true;
             List<string> to = new List<string>();
             List<string> cc = new List<string>();
             List<string> bcc = new List<string>();
@@ -47,6 +48,7 @@ namespace MailGun
                 .Add("username|u=", "The username to authenticate with.", v => username = v)
                 .Add("password=", "Open-text password to send to the server.", v =>
                 {
+                    requestPassword = false;
                     foreach (char p in v)
                     {
                         password.AppendChar(p);
@@ -80,7 +82,7 @@ namespace MailGun
                 .Add("showHelp|?", "Displays the help screen.", v => showHelp = true);
 
             options.Parse(args.Arguments.Select(v => v.ToString()));
-            if (showHelp)
+            if (showHelp || string.IsNullOrWhiteSpace(server))
             {
                 options.WriteOptionDescriptions(context.Out);
             }
@@ -100,11 +102,11 @@ namespace MailGun
                 {
                     message.Bcc.Add(new MailboxAddress(bccAddress));
                 }
-                
+
                 message.Subject = subject;
                 BodyBuilder builder = new BodyBuilder();
                 builder.HtmlBody = context.In.ReadToEnd();
-                foreach(UPath path in attachments)
+                foreach (UPath path in attachments)
                 {
                     builder.Attachments.Add(path.GetName(), fileSystem.OpenFile(path, System.IO.FileMode.Open, System.IO.FileAccess.Read));
                 }
@@ -113,6 +115,10 @@ namespace MailGun
                 try
                 {
                     client.Connect(server, port, ssl, token);
+                    if (requestPassword)
+                    {
+                        password = getPassword(context);
+                    }
                     if (google)
                     {
                         client.Authenticate(new SaslMechanismOAuth2(username, password.ToString()), token);
@@ -133,13 +139,43 @@ namespace MailGun
                         context.Out.WriteLine($"Inner Exception: {e.InnerException.Message}".Red());
                     }
                 }
+                finally
+                {
+                    client.Dispose();
+                    password.Dispose();
+                }
             }
             return new CommandResponse(CommandResponse.CODE_SUCCESS);
+        }
+        private SecureString getPassword(RCTProcess context)
+        {
+            SecureString password = new SecureString();
+            //Check if IO is redirected.
+            if (context.InRedirected)
+            {
+                foreach (char c in context.In.ReadLine())
+                {
+                    password.AppendChar(c);
+                }
+            }
+            else
+            {
+                ITerminalHandler handler = context.ClientContext.GetExtension<ITerminalHandler>();
+                context.Out.Write("Enter SMTP Password: ");
+                handler.TerminalModes.ECHO = false;
+                foreach (char c in context.In.ReadLine())
+                {
+                    password.AppendChar(c);
+                }
+                handler.TerminalModes.ECHO = true;
+            }
+            password.MakeReadOnly();
+            return password;
         }
 
         public override void InitializeServices(IServiceProvider kernel)
         {
-            
+
         }
     }
 }

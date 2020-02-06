@@ -50,7 +50,7 @@ namespace RemoteControlToolkitCore.Common
             _startups.Add((IApplicationStartup)Activator.CreateInstance(typeof(TStartup)));
             return this;
         }
-
+        
         public IAppBuilder ScanForAppStartup(string folder)
         {
             if (Directory.Exists(folder))

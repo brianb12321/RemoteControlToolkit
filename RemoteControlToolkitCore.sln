@@ -19,11 +19,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NugetPackageManager", "Src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteControlToolkitCore.Subsystem.Serial", "Src\RemoteControlToolkitCore.Subsystem.Serial\RemoteControlToolkitCore.Subsystem.Serial.csproj", "{C0E14124-C7FA-4EC5-872E-03BC985C83F9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailGun", "Src\PluginLibraries\MailGun\MailGun.csproj", "{20E79299-B565-4A31-A870-F328671F876F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestGui", "Src\PluginLibraries\TestGui\TestGui.csproj", "{5A2531C4-78FC-4FF6-B241-46763194295E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteControlToolkitCore.Common.Gui", "RemoteControlToolkitCore.Common.Gui\RemoteControlToolkitCore.Common.Gui.csproj", "{47112540-9DE2-44F0-AFD5-495D86129C8A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCore.Common.Gui", "RemoteControlToolkitCore.Common.Gui\RemoteControlToolkitCore.Common.Gui.csproj", "{47112540-9DE2-44F0-AFD5-495D86129C8A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailGun", "Src\PluginLibraries\MailGun\MailGun\MailGun.csproj", "{5E9D8ADB-6B6B-453A-BFD1-64D9F664C659}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -59,10 +59,6 @@ Global
 		{C0E14124-C7FA-4EC5-872E-03BC985C83F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C0E14124-C7FA-4EC5-872E-03BC985C83F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C0E14124-C7FA-4EC5-872E-03BC985C83F9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{20E79299-B565-4A31-A870-F328671F876F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{20E79299-B565-4A31-A870-F328671F876F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{20E79299-B565-4A31-A870-F328671F876F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{20E79299-B565-4A31-A870-F328671F876F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5A2531C4-78FC-4FF6-B241-46763194295E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5A2531C4-78FC-4FF6-B241-46763194295E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A2531C4-78FC-4FF6-B241-46763194295E}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -71,6 +67,10 @@ Global
 		{47112540-9DE2-44F0-AFD5-495D86129C8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{47112540-9DE2-44F0-AFD5-495D86129C8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{47112540-9DE2-44F0-AFD5-495D86129C8A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E9D8ADB-6B6B-453A-BFD1-64D9F664C659}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E9D8ADB-6B6B-453A-BFD1-64D9F664C659}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E9D8ADB-6B6B-453A-BFD1-64D9F664C659}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E9D8ADB-6B6B-453A-BFD1-64D9F664C659}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -78,8 +78,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{58180B6A-0013-4288-BCF6-1BA07859931D} = {D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}
 		{1FE359FD-4F4B-42EA-A195-19CBFC31385B} = {D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}
-		{20E79299-B565-4A31-A870-F328671F876F} = {D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}
 		{5A2531C4-78FC-4FF6-B241-46763194295E} = {D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}
+		{5E9D8ADB-6B6B-453A-BFD1-64D9F664C659} = {D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D6FE14CE-3C81-49CF-BB5E-798286159FC7}

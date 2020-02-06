@@ -102,8 +102,15 @@ namespace RemoteControlToolkitCore.Common
                 //    }
                 //});
                 //_proxyThread.Start();
-                _clientThread.Start();
-                _clientThread.Join();
+                try
+                {
+                    _clientThread.Start();
+                    _clientThread.Join();
+                }
+                catch(ThreadStateException ex)
+                {
+                    _logger.LogError($"Unable to start client thread: {ex.Message}");
+                }
             }
         }
         private void handleConnections(object endPointObject)

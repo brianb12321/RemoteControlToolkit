@@ -143,7 +143,10 @@ namespace RemoteControlToolkitCore.Common.Plugin
                     _libs.Add(loadedLib);
                     return loadedLib;
                 }
-
+                else
+                {
+                    _logger.LogInformation($"Assembly: \"{assembly.GetName().Name}\" already loaded.");
+                }
                 return null;
             }
             catch (InvalidPluginLibraryException ex)
@@ -158,10 +161,17 @@ namespace RemoteControlToolkitCore.Common.Plugin
             List<PluginLibrary> _libs = new List<PluginLibrary>();
             if (Directory.Exists(folder))
             {
-                foreach (string file in Directory.GetFiles(folder, "*.dll", SearchOption.AllDirectories))
+                try
                 {
-                    _logger.LogInformation($"Found extension library \"{Path.GetFileName(file)}\"");
-                    _libs.Add(LoadFromAssembly(Assembly.LoadFrom(file), side));
+                    foreach (string file in Directory.GetFiles(folder, "*.dll", SearchOption.AllDirectories))
+                    {
+                        _logger.LogInformation($"Found extension library \"{Path.GetFileName(file)}\"");
+                        _libs.Add(LoadFromAssembly(Assembly.LoadFrom(file), side));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error while enumerating directory: {ex.Message}");
                 }
                 return _libs.ToArray();
             }
