@@ -19,6 +19,9 @@ namespace RemoteControlToolkitCore.Common.DeviceBus
         {
             _devices = new Dictionary<string, (DeviceInfo info, Func<IDevice> function)>();
             _devices.Add("null", (new DeviceInfo("Null Device", "null"), () => new InlineDevice(() => Stream.Null)));
+            _devices.Add("consoleOut", (new DeviceInfo("Console Out Device", "consoleOut"), () => new InlineDevice(() => Console.OpenStandardOutput())));
+            _devices.Add("consoleError", (new DeviceInfo("Console Out Device", "consoleError"), () => new InlineDevice(() => Console.OpenStandardError())));
+            _devices.Add("consoleIn", (new DeviceInfo("Console In Device", "consoleIn"), () => new InlineDevice(() => Console.OpenStandardInput())));
         }
         public void InitializeServices(IServiceProvider kernel)
         {
