@@ -10,7 +10,7 @@ using Microsoft.Scripting;
 using Microsoft.Scripting.Hosting;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.NSsh.Utility;
-using Zio;
+using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
 namespace RemoteControlToolkitCore.Common.Scripting
 {

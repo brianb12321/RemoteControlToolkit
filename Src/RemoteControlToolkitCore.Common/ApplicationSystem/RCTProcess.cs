@@ -16,7 +16,7 @@ using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Scripting;
-using Zio;
+using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 using ThreadState = System.Threading.ThreadState;
 
 namespace RemoteControlToolkitCore.Common.ApplicationSystem

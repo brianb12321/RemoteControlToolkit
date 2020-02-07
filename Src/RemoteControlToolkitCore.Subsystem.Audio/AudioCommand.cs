@@ -17,9 +17,9 @@ using RemoteControlToolkitCore.Common.DeviceBus;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Utilities;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
+using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 using YoutubeExplode;
 using YoutubeExplode.Models.MediaStreams;
-using Zio;
 
 [assembly: PluginLibrary("AudioSubsystem", FriendlyName = "Audio Subsystem", LibraryType = NetworkSide.Proxy | NetworkSide.Server)]
 namespace RemoteControlToolkitCore.Subsystem.Audio

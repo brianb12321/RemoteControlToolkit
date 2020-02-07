@@ -5,7 +5,7 @@ using System.Threading;
 using Microsoft.Scripting.Hosting;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Networking;
-using Zio;
+using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
 namespace RemoteControlToolkitCore.Common.Scripting
 {

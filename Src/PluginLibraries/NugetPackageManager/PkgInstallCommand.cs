@@ -21,7 +21,6 @@ using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
-using Zio;
 
 [assembly: PluginLibrary("NugetPackageManager", FriendlyName = "RCT Nuget Package Manager", LibraryType = NetworkSide.Server)]
 namespace NugetPackageManager

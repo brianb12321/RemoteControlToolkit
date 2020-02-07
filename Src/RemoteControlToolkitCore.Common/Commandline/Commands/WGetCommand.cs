@@ -12,7 +12,7 @@ using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
-using Zio;
+using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {

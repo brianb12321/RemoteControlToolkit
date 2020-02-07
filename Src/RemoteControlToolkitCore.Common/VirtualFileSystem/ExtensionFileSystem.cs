@@ -1,5 +1,5 @@
 ﻿using RemoteControlToolkitCore.Common.ApplicationSystem;
-using Zio;
+using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
 namespace RemoteControlToolkitCore.Common.VirtualFileSystem
 {

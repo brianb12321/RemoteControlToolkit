@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common.Plugin;
-using Zio;
-using Zio.FileSystems;
+using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
+using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio.FileSystems;
 
 namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
 {

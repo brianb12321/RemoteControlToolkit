@@ -1,4 +1,4 @@
-﻿using Zio;
+﻿using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements
 {

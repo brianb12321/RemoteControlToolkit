@@ -15,7 +15,7 @@ using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
-using Zio;
+using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
 namespace MailGun

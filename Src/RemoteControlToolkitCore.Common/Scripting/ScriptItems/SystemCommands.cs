@@ -9,7 +9,6 @@ using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
-using Zio;
 
 namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
 {

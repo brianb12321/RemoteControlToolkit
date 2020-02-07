@@ -18,7 +18,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Scripting;
 using RemoteControlToolkitCore.Common.Utilities;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
-using Zio;
+using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {
