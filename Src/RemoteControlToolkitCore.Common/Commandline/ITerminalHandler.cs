@@ -11,15 +11,18 @@ using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {
+    public delegate bool KeyBindingDelegate(StringBuilder buffer, StringBuilder renderBuffer, ref int cursorPosition);
     /// <summary>
     /// Provides helper methods for reading and writing to and from the terminal.
     /// </summary>
-    public interface ITerminalHandler : IExtension<IInstanceSession>
+    public interface ITerminalHandler : IExtension<IInstanceSession>, IExtensibleObject<ITerminalHandler>
     {
         TextWriter TerminalOut { get; }
         TextReader TerminalIn { get; }
+        MemoryStream RawTerminalIn { get; }
         event EventHandler TerminalDimensionsChanged;
-        List<string> History { get; }
+        event EventHandler ReadLineInvoked;
+        event EventHandler<string> ReadLineCompleted;
         string TerminalName { get; }
         (string row, string column) GetCursorPosition();
         uint TerminalRows { get; set; }
@@ -33,6 +36,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         string ReadLine();
         string ReadToEnd();
         char Read();
+        void BindKey(string key, KeyBindingDelegate function);
         int ReadFromPipe(char[] buffer, int offset, int count);
         void UpdateHomePosition(int col, int row);
         string UpdateCursorPosition(int col, int row, bool writeCode = false);

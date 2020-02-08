@@ -13,6 +13,7 @@ using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Commandline.Parsing;
 using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
+using RemoteControlToolkitCore.Common.Commandline.TerminalExtensions;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Scripting;
@@ -104,7 +105,8 @@ __;_ \ /,//`
             });
             _builtInCommands.Add("clearHistory", arg2 =>
             {
-                _shellExt.History.Clear();
+                var history =_shellExt.Extensions.Find<ITerminalHistory>();
+                history?.History?.Clear();
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             });
             _builtInCommands.Add("title", arg2 =>
@@ -184,7 +186,6 @@ __;_ \ /,//`
                         currentProc.Out.WriteLine("\u001b]e");
                         continue;
                     }
-                    _shellExt.History.Add(newCommand);
                     currentProc.EnvironmentVariables["?"] = executeCommand(newCommand, currentProc, token).Code.ToString();
                     currentProc.Out.WriteLine("\u001b]e");
                 }
@@ -217,7 +218,6 @@ __;_ \ /,//`
                     if (printNewLine) currentProc.Out.WriteLine();
                     if (newCommand == null) break;
                     if (string.IsNullOrWhiteSpace(newCommand)) continue;
-                    _shellExt.History.Add(newCommand);
                     if (newCommand.StartsWith("`"))
                     {
                         handleMultipleCommands(token, currentProc, sb);
@@ -279,7 +279,6 @@ __;_ \ /,//`
                 {
                     break;
                 }
-                _shellExt.History.Add(batchCommand);
                 _commands.Add(batchCommand);
             }
 

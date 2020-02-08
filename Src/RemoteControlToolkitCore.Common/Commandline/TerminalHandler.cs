@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 using Crayon;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
+using RemoteControlToolkitCore.Common.Commandline.TerminalExtensions;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
 using RemoteControlToolkitCore.Common.NSsh.Utility;
@@ -19,11 +21,16 @@ namespace RemoteControlToolkitCore.Common.Commandline
     /// </summary>
     public class TerminalHandler : ITerminalHandler
     {
+        
+        public IExtensionCollection<ITerminalHandler> Extensions { get; }
         public PseudoTerminalPayload InitialTerminalConfig { get; }
         public PseudoTerminalMode TerminalModes { get; }
         public TextWriter TerminalOut => _textOut;
         public TextReader TerminalIn => _textIn;
+        public MemoryStream RawTerminalIn => _stdIn;
         public event EventHandler TerminalDimensionsChanged;
+        public event EventHandler ReadLineInvoked;
+        public event EventHandler<string> ReadLineCompleted;
         private uint _terminalRows = 36;
         private uint _terminalColumns = 130;
         private uint _scrollOffset = 0;
@@ -31,6 +38,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         private int _cursorX;
         private int _cursorY;
         private StringBuilder _renderBuffer = new StringBuilder();
+        private Dictionary<string, KeyBindingDelegate> _keyBindings;
         private ILogger<TerminalHandler> _logger;
         public List<string> History { get; }
 
@@ -95,6 +103,16 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 _terminalColumns = InitialTerminalConfig.TerminalWidth;
             }
             TerminalModes = new PseudoTerminalMode();
+            Extensions = new ExtensionCollection<ITerminalHandler>(this);
+            _keyBindings = new Dictionary<string, KeyBindingDelegate>();
+            _keyBindings.Add("\u001b[11~", (StringBuilder sb, StringBuilder renderBuffer, ref int cursorPosition) =>
+            {
+                sb.Clear();
+                cursorPosition = 0;
+                return true;
+            });
+            //Add History functionality.
+            Extensions.Add(new TerminalHistory());
         }
 
         public void Clear()
@@ -189,7 +207,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
             //Clean out memory pipe's buffer
             cleanOutBuffers(sb);
-            int HistoryPosition = History.Count;
+            ReadLineInvoked?.Invoke(this, EventArgs.Empty);
             var cursorDimensions = GetCursorPosition();
             _originalCol = int.Parse(cursorDimensions.column);
             _cursorX = _originalCol;
@@ -243,47 +261,15 @@ namespace RemoteControlToolkitCore.Common.Commandline
                             case "[C":
                                 cursorPosition = Math.Min(sb.Length, cursorPosition + 1);
                                 break;
-                            //Cursor Up
-                            case "[A":
-                                if (History.Count > 0 && HistoryPosition > 0)
-                                {
-                                    HistoryPosition--;
-                                    sb.Clear();
-                                    cursorPosition = 0;
-                                    string historyCommand = History[HistoryPosition];
-                                    byte[] historyCommandBytes = Encoding.UTF8.GetBytes(historyCommand);
-                                    //Clean out buffer
-                                    _stdIn.GetBuffer();
-                                    _renderBuffer.Clear();
-                                    _stdIn.Write(historyCommandBytes, 0, historyCommandBytes.Length);
-                                }
-                                break;
-                            //Cursor Down
-                            case "[B":
-                                if (History.Count > 0 && HistoryPosition < History.Count - 1)
-                                {
-                                    HistoryPosition++;
-                                    sb.Clear();
-                                    cursorPosition = 0;
-                                    string historyCommand = History[HistoryPosition];
-                                    //Clean out buffer
-                                    _stdIn.GetBuffer();
-                                    _renderBuffer.Clear();
-                                    byte[] historyCommandBytes = Encoding.UTF8.GetBytes(historyCommand);
-                                    _stdIn.Write(historyCommandBytes, 0, historyCommandBytes.Length);
-                                }
-                                break;
                             //Home
+                            case "[H":
                             case "[1~":
                                 cursorPosition = 0;
                                 break;
                             //End
+                            case "[F":
                             case "[4~":
                                 cursorPosition = sb.Length;
-                                break;
-                            case "[11~":
-                                sb.Clear();
-                                cursorPosition = 0;
                                 break;
 
                             //Cursor Left
@@ -293,24 +279,42 @@ namespace RemoteControlToolkitCore.Common.Commandline
                                     cursorPosition = Math.Max(0, cursorPosition - 1);
                                 }
                                 break;
+                            default:
+                                if (_keyBindings.ContainsKey($"\u001b{code}"))
+                                {
+                                    bool consume = _keyBindings[$"\u001b{code}"](sb, _renderBuffer, ref cursorPosition);
+                                    if (!consume) insertCharacter(sb, ref cursorPosition, $"\u001b{code}");
+                                    break;
+                                }
+                                else break;
                         }
                         break;
 
                     default:
-                        if (sb.Length <= _maxChars)
+                        if (_keyBindings.ContainsKey(text.ToString()))
                         {
-                            sb.Insert(cursorPosition, text);
-                            cursorPosition++;
+                            bool consume = _keyBindings[text.ToString()](sb, _renderBuffer, ref cursorPosition);
+                            if (!consume) insertCharacter(sb, ref cursorPosition, text.ToString());
                         }
+                        else insertCharacter(sb, ref cursorPosition, text.ToString());
                         break;
                 }
                 updateTerminal(sb, cursorPosition);
                 if (quit) break;
             }
             _textOut.WriteLine();
+            ReadLineCompleted?.Invoke(this, sb.ToString());
             return sb.ToString();
         }
 
+        private void insertCharacter(StringBuilder sb, ref int cursorPosition, string text)
+        {
+            if (sb.Length <= _maxChars)
+            {
+                sb.Insert(cursorPosition, text);
+                cursorPosition++;
+            }
+        }
         public string ReadToEnd()
         {
             StringBuilder sb = new StringBuilder();
@@ -335,6 +339,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
             }
 
             return (char)character;
+        }
+
+        public void BindKey(string key, KeyBindingDelegate function)
+        {
+            _keyBindings.Add(key, function);
         }
 
         public int ReadFromPipe(char[] buffer, int offset, int length)
