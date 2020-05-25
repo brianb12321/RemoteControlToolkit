@@ -29,10 +29,11 @@ namespace RemoteControlToolkitCore.Common.Networking
         private readonly RCTProcess _proxyProcess;
         private StreamReader _sr;
         private StreamWriter _sw;
-        private RCTProcess _commandShell;
 
         public ProxyNetworkInstance(TcpClient client, IServiceProvider provider)
         {
+            _proxyProcess = null;
+            _networkStream = null;
             _logger = provider.GetService<ILogger<ProxyNetworkInstance>>();
             _pool = provider.GetService<IServerPool>();
             ClientUniqueID = Guid.NewGuid();

@@ -18,7 +18,7 @@ using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
-    [PluginModule(Name = "text", ExecutingSide = NetworkSide.Server | NetworkSide.Proxy)]
+    [Plugin(PluginName = "text")]
     [CommandHelp("RCT's own text editor.")]
     public class TextCommand : RCTApplication
     {

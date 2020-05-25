@@ -9,17 +9,12 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
 {
-    [PluginModule]
-    public class WaveOutDeviceSelector : IDeviceSelector
+    [Plugin]
+    public class WaveOutDeviceSelector : PluginModule<DeviceBusSubsystem>, IDeviceSelector
     {
         public string Category => "WaveOut";
         public string Tag => "audio";
         public NetworkSide ExecutingSide => NetworkSide.Server | NetworkSide.Proxy;
-
-        public void InitializeServices(IServiceProvider kernel)
-        {
-            
-        }
 
         public IDevice GetDevice(string name)
         {

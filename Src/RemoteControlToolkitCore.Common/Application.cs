@@ -19,7 +19,7 @@ using RemoteControlToolkitCore.Common.NSsh.Services;
 using RemoteControlToolkitCore.Common.Proxy;
 using RemoteControlToolkitCore.Common.Utilities;
 
-[assembly: PluginLibrary("CommonPlugin", FriendlyName = "Common Plugin", LibraryType = NetworkSide.Proxy | NetworkSide.Server)]
+[assembly: PluginLibrary("CommonPlugin","Common Plugin")]
 namespace RemoteControlToolkitCore.Common
 {
     public class Application : IHostApplication
@@ -41,6 +41,7 @@ namespace RemoteControlToolkitCore.Common
 
         public NetworkSide ExecutingSide { get; }
         public IAppBuilder Builder { get; }
+        public IPluginManager PluginManager { get; }
         private long _connectionsReceived;
         private List<TcpListener> _listenSockets = new List<TcpListener>();
         private Dictionary<ISshSession, Thread> _sessions = new Dictionary<ISshSession, Thread>();
@@ -53,6 +54,7 @@ namespace RemoteControlToolkitCore.Common
             NetworkSide side,
             IAppBuilder builder,
             IKeySetupService keySetup,
+            IPluginManager pluginManager,
             NSshServiceConfiguration config)
         {
             _logger = logger;
@@ -63,6 +65,7 @@ namespace RemoteControlToolkitCore.Common
             ExecutingSide = side;
             Builder = builder;
             _config = config;
+            PluginManager = pluginManager;
             keySetup.EnsureSetup();
         }
         public void Run(string[] args)
@@ -113,6 +116,7 @@ namespace RemoteControlToolkitCore.Common
                 }
             }
         }
+
         private void handleConnections(object endPointObject)
         {
             TcpListener socket = null;

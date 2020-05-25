@@ -34,7 +34,7 @@ namespace RemoteControlToolkitCore.Common.Networking
         public ProxyClient(TcpClient client, IServiceProvider serviceProvider)
         {
             _logger = serviceProvider.GetService<ILogger<ProxyClient>>();
-            IApplicationSubsystem appSubsystem = serviceProvider.GetService<IApplicationSubsystem>();
+            ApplicationSubsystem appSubsystem = serviceProvider.GetService<ApplicationSubsystem>();
             IExtensionProvider<IInstanceSession>[] providers =
                 serviceProvider.GetService<IExtensionProvider<IInstanceSession>[]>();
             Extensions = new ExtensionCollection<IInstanceSession>(this);

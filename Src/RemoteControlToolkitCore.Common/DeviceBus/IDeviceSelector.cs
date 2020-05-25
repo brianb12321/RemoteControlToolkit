@@ -9,7 +9,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 namespace RemoteControlToolkitCore.Common.DeviceBus
 {
 
-    public interface IDeviceSelector : IPluginModule
+    public interface IDeviceSelector : IPluginModule<DeviceBusSubsystem>
     {
         string Category { get; }
         string Tag { get; }

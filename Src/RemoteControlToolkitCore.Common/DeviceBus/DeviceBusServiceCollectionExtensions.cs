@@ -11,7 +11,7 @@ namespace RemoteControlToolkitCore.Common.DeviceBus
     {
         public static IServiceCollection AddDeviceBus(this IServiceCollection services)
         {
-            return services.AddSingleton<IDeviceBus, DeviceBus>();
+            return services.AddSingleton(provider => new DeviceBusSubsystem(provider.GetRequiredService<IHostApplication>().PluginManager));
         }
     }
 }

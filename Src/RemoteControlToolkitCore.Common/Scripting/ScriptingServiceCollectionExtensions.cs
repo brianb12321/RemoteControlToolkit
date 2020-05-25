@@ -5,10 +5,9 @@ namespace RemoteControlToolkitCore.Common.Scripting
 {
     public static class ScriptingServiceCollectionExtensions
     {
-        public static IServiceCollection AddScriptingEngine<TSubsystem>(this IServiceCollection services)
-            where TSubsystem : class, IScriptingSubsystem
+        public static IServiceCollection AddScriptingEngine(this IServiceCollection services)
         {
-            services.AddSingleton<IScriptingSubsystem, TSubsystem>();
+            services.AddSingleton<ScriptingSubsystem>(provider => new ScriptingSubsystem(provider.GetRequiredService<IHostApplication>().PluginManager));
             return services;
         }
     }

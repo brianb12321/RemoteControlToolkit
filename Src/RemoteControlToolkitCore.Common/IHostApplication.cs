@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using RemoteControlToolkitCore.Common.NSsh;
+using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common
 {
@@ -11,5 +12,6 @@ namespace RemoteControlToolkitCore.Common
         void Run(string[] args);
         NetworkSide ExecutingSide { get; }
         IAppBuilder Builder { get; }
+        IPluginManager PluginManager { get; }
     }
 }

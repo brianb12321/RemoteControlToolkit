@@ -9,13 +9,9 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
 {
-    [PluginModule]
-    public class IOFunctions : IScriptExtensionModule
+    [Plugin]
+    public class IOFunctions : PluginModule<ScriptingSubsystem>, IScriptExtensionModule
     {
-        public void InitializeServices(IServiceProvider kernel)
-        {
-            
-        }
         private string handleInput(dynamic prompt, IScriptingEngine engine, bool secure)
         {
             if (secure)

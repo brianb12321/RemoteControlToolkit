@@ -11,11 +11,10 @@ using RemoteControlToolkitCore.Common.Proxy;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
-    [PluginModule(Name = "remote", ExecutingSide = NetworkSide.Server)]
+    [Plugin(PluginName = "remote")]
     [CommandHelp("Opens a remote shell to the selected server.")]
     public class RemoteCommand : RCTApplication
     {
-        private IApplicationSubsystem _appSubsystem;
         private IServerPool _serverPool;
         public override string ProcessName => "Remote Command";
         public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
@@ -83,7 +82,6 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         public override void InitializeServices(IServiceProvider kernel)
         {
             _serverPool = kernel.GetService<IServerPool>();
-            _appSubsystem = (IApplicationSubsystem)kernel.GetService<IPluginSubsystem<IApplication>>();
         }
     }
 }

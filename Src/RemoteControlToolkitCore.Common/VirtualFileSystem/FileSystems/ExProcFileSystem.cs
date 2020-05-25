@@ -201,15 +201,10 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
         }
     }
 
-    [PluginModule]
-    public class ExProcFileSystemModule : IFileSystemPluginModule
+    [Plugin]
+    public class ExProcFileSystemModule : PluginModule<FileSystemSubsystem>, IFileSystemPluginModule
     {
         public bool AutoMount => true;
-        public void InitializeServices(IServiceProvider kernel)
-        {
-            
-        }
-
         public (UPath MountPoint, IFileSystem FileSystem) MountFileSystem(IReadOnlyDictionary<string, string> options)
         {
             return ("/exproc", new ExProcFileSystem());

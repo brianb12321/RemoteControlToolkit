@@ -7,8 +7,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common.ApplicationSystem
 {
-    [ModuleInstance(TransientMode = true)]
-    public abstract class RCTApplication : IApplication
+    public abstract class RCTApplication : PluginModule<ApplicationSubsystem>, IApplication
     {
 
         protected RCTApplication()
@@ -19,7 +18,6 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public abstract string ProcessName { get; }
         public abstract CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token);
 
-        public abstract void InitializeServices(IServiceProvider kernel);
 
         public virtual void Dispose()
         {

@@ -12,13 +12,13 @@ using RemoteControlToolkitCore.Common.VirtualFileSystem;
 
 namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
 {
-    [PluginModule]
-    public class SystemCommands : IScriptExtensionModule
+    [Plugin]
+    public class SystemCommands : PluginModule<ScriptingSubsystem>, IScriptExtensionModule
     {
-        private IApplicationSubsystem _subSystem;
-        public void InitializeServices(IServiceProvider kernel)
+        private ApplicationSubsystem _subSystem;
+        public override void InitializeServices(IServiceProvider kernel)
         {
-            _subSystem = kernel.GetService<IApplicationSubsystem>();
+            _subSystem = kernel.GetService<ApplicationSubsystem>();
         }
 
         private void addExFunction(IScriptingEngine engine, IScriptExecutionContext context)

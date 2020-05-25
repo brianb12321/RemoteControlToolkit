@@ -14,13 +14,9 @@ using RemoteControlToolkitCore.Subsystem.Workflow;
 
 namespace WindowsWorkflow.ActivityModules
 {
-    [PluginModule(Name = "TestActivity", ExecutingSide = NetworkSide.Server)]
-    public class TestActivityModule : IWorkflowPluginModule
+    [Plugin(PluginName = "TestActivity")]
+    public class TestActivityModule : PluginModule<WorkflowSubsystem>, IWorkflowPluginModule
     {
-        public void InitializeServices(IServiceProvider kernel)
-        {
-            
-        }
 
         public Activity ExecuteActivity(string arg, RCTProcess currentProc)
         {

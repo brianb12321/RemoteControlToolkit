@@ -19,11 +19,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
         private readonly IImpersonationProvider _provider;
         private ILogger<BaseProcessConsole> _logger;
         private ILogger<TerminalHandler> _terminalLogger;
-        private IApplicationSubsystem _subsystem;
+        private ApplicationSubsystem _subsystem;
         private IExtensionProvider<IInstanceSession>[] _providers;
-        private IFileSystemSubsystem _fileSystemSubsystem;
+        private FileSystemSubsystem _fileSystemSubsystem;
         private IServiceProvider _serviceProvider;
-        public CommandChannelConsumer(ILogger<BaseConsoleChannelConsumer> logger, ILogger<TerminalHandler> terminalLogger, IImpersonationProvider provider, IFileSystemSubsystem fileSystemSubsystem, ILogger<BaseProcessConsole> consoleLogger, IApplicationSubsystem subsystem, IServiceProvider serviceProvider) : base(logger)
+        public CommandChannelConsumer(ILogger<BaseConsoleChannelConsumer> logger, ILogger<TerminalHandler> terminalLogger, IImpersonationProvider provider, FileSystemSubsystem fileSystemSubsystem, ILogger<BaseProcessConsole> consoleLogger, ApplicationSubsystem subsystem, IServiceProvider serviceProvider) : base(logger)
         {
             _fileSystemSubsystem = fileSystemSubsystem;
             _provider = provider;

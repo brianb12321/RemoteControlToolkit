@@ -4,9 +4,8 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Subsystem.Audio
 {
-    public interface IAudioProviderModule : IPluginModule
+    public interface IAudioProviderModule : IPluginModule<AudioOutSubsystem>
     {
-        string ProviderName { get; }
         string Description { get; }
         bool BasedOnFile { get; }
         string FileExtension { get; }

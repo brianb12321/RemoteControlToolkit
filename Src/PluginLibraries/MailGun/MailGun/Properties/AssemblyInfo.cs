@@ -14,7 +14,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: PluginLibrary("MailGun", FriendlyName = "Mail Gun", LibraryType = RemoteControlToolkitCore.Common.NetworkSide.Server | RemoteControlToolkitCore.Common.NetworkSide.Proxy)]
+[assembly: PluginLibrary("MailGun", "Mail Gun")]
 
 // Setting ComVisible to false makes the types in this assembly not visible
 // to COM components.  If you need to access a type in this assembly from

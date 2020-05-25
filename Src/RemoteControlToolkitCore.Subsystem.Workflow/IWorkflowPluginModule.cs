@@ -4,8 +4,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Subsystem.Workflow
 {
-    [ModuleInstance(TransientMode = true)]
-    public interface IWorkflowPluginModule : IPluginModule
+    public interface IWorkflowPluginModule : IPluginModule<WorkflowSubsystem>
     {
         Activity ExecuteActivity(string args, RCTProcess currentProc);
     }

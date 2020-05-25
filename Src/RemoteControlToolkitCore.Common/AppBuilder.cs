@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
@@ -17,6 +18,8 @@ namespace RemoteControlToolkitCore.Common
     {
         private List<IApplicationStartup> _startups;
         private IServiceCollection _services;
+        private IPluginManager _pluginManager;
+        private ILoggerFactory _loggerFactory;
         public NetworkSide ExecutingSide => NetworkSide.Server;
 
         public AppBuilder()
@@ -35,6 +38,7 @@ namespace RemoteControlToolkitCore.Common
                     provider.GetService<ILogger<ProxyClient>>(),
                     provider, provider.GetService<IServerPool>(), ExecutingSide, this, 
                     provider.GetService<IKeySetupService>(), 
+                    _pluginManager,
                     provider.GetService<NSshServiceConfiguration>());
             });
             
@@ -45,27 +49,60 @@ namespace RemoteControlToolkitCore.Common
             return hostApplication;
         }
 
-        public IAppBuilder AddStartup<TStartup>() where TStartup : IApplicationStartup
+        public IAppBuilder UsePluginManager<TPluginManagerImpl>() where TPluginManagerImpl : IPluginManager
         {
-            _startups.Add((IApplicationStartup)Activator.CreateInstance(typeof(TStartup)));
+            _pluginManager = (IPluginManager)Activator.CreateInstance(typeof(TPluginManagerImpl));
             return this;
         }
-        
-        public IAppBuilder ScanForAppStartup(string folder)
+
+        public IAppBuilder ConfigureLogging(Action<ILoggingBuilder> factory)
         {
-            if (Directory.Exists(folder))
+            _loggerFactory = LoggerFactory.Create(factory);
+            //Add the logging factory to DI.
+            _services.TryAdd(ServiceDescriptor.Singleton(_loggerFactory));
+            _services.TryAdd(ServiceDescriptor.Singleton(typeof(ILogger<>), typeof(Logger<>)));
+            //Add all the other crap into the container.
+            _services.AddLogging(factory);
+            return this;
+        }
+
+        public IAppBuilder LoadFromPluginsFolder()
+        {
+            //Load from Plugins folder.
+            if (Directory.Exists("Plugins"))
             {
-                foreach (string file in Directory.GetFiles(folder, "*.dll", SearchOption.AllDirectories))
+                foreach (string assemblyPath in Directory.GetFiles("Plugins", "*.dll", SearchOption.AllDirectories))
                 {
-                    Assembly assembly = Assembly.LoadFrom(file);
-                    var startupAttrib = assembly.GetCustomAttribute<ApplicationStartupAttribute>();
-                    if (startupAttrib != null)
+                    try
                     {
-                        _startups.Add((IApplicationStartup)Activator.CreateInstance(startupAttrib.Startup));
+                        _pluginManager.LoadPluginFile(assemblyPath);
+                    }
+                    catch (PluginLoadException e)
+                    {
+                        //Create temporary logger.
+                        ILogger<AppBuilder> logger = _loggerFactory.CreateLogger<AppBuilder>();
+                        logger.LogWarning($"Unable to load plugin file: {e.Message}");
                     }
                 }
             }
+            //Activate all IApplicationStartup classes.
+            foreach (var startup in _pluginManager.ActivateGenericTypes<IApplicationStartup>())
+            {
+                if (!_startups.Contains(startup))
+                {
+                    _startups.Add(startup);
+                }
+            }
+            return this;
+        }
 
+        public IAppBuilder AddStartup<TStartup>() where TStartup : IApplicationStartup
+        {
+            var startup = (IApplicationStartup) Activator.CreateInstance(typeof(TStartup));
+            if (!_startups.Contains(startup))
+            {
+                _startups.Add(startup);
+            }
             return this;
         }
     }

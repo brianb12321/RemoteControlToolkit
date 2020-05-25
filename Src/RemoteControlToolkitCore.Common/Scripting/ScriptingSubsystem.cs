@@ -7,11 +7,11 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common.Scripting
 {
-    public class ScriptingSubsystem : BasePluginSubsystem<IScriptingSubsystem, IScriptExtensionModule>, IScriptingSubsystem
+    public class ScriptingSubsystem : PluginSubsystem
     {
         private List<string> _paths = new List<string>();
 
-        public ScriptingSubsystem(IPluginLibraryLoader loader, IServiceProvider services) : base(loader, services)
+        public ScriptingSubsystem(IPluginManager manager) : base(manager)
         {
 
         }
@@ -25,7 +25,7 @@ namespace RemoteControlToolkitCore.Common.Scripting
         }
         private void populateGlobalScope(IScriptingEngine engine)
         {
-            foreach (IScriptExtensionModule module in PluginLoader.ActivateAll<IScriptExtensionModule>())
+            foreach (IScriptExtensionModule module in PluginManager.ActivateAllPluginModules<ScriptingSubsystem>().Select(m => m as IScriptExtensionModule))
             {
                 module.ConfigureDefaultEngine(engine);
             }

@@ -7,16 +7,11 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
 {
-    [PluginModule]
-    public class DirectSoundOutDeviceSelector : IDeviceSelector
+    [Plugin]
+    public class DirectSoundOutDeviceSelector : PluginModule<DeviceBusSubsystem>, IDeviceSelector
     {
         public string Category => "directSoundOut";
         public string Tag => "audio";
-
-        public void InitializeServices(IServiceProvider kernel)
-        {
-            
-        }
 
         public IDevice GetDevice(string name)
         {

@@ -9,14 +9,10 @@ using RemoteControlToolkitCore.Common.VirtualFileSystem;
 
 namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
 {
-    [PluginModule]
-    public class VFSFunctions : IScriptExtensionModule
+    [Plugin]
+    public class VFSFunctions : PluginModule<ScriptingSubsystem>, IScriptExtensionModule
     {
         private IScriptingEngine _currentEngine;
-        public void InitializeServices(IServiceProvider kernel)
-        {
-            
-        }
 
         public void ConfigureDefaultEngine(IScriptingEngine engine)
         {

@@ -5,7 +5,7 @@ using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio.FileSystems;
 
 namespace RemoteControlToolkitCore.Common.VirtualFileSystem
 {
-    public interface IFileSystemPluginModule : IPluginModule
+    public interface IFileSystemPluginModule : IPluginModule<FileSystemSubsystem>
     {
         bool AutoMount { get; }
         (UPath MountPoint, IFileSystem FileSystem) MountFileSystem(IReadOnlyDictionary<string, string> options);

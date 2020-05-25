@@ -15,7 +15,7 @@ using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
-    [PluginModule(Name = "ls", ExecutingSide = NetworkSide.Server | NetworkSide.Proxy)]
+    [Plugin(PluginName = "ls")]
     [CommandHelp("Shows all folders and files in the VFS.")]
     public class LsCommand : RCTApplication
     {

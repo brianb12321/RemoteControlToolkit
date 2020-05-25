@@ -12,7 +12,7 @@ using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio.FileSystems;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
-    [PluginModule(Name = "mountfs", ExecutingSide = NetworkSide.Proxy | NetworkSide.Server)]
+    [Plugin(PluginName = "mountfs")]
     [CommandHelp("Manages the mount points of the file system.")]
     public class MountFSCommand : RCTApplication
     {
@@ -47,7 +47,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
 
         public override void InitializeServices(IServiceProvider kernel)
         {
-            _fileSystem = (MountFileSystem)kernel.GetRequiredService<IFileSystemSubsystem>().GetFileSystem();
+            _fileSystem = (MountFileSystem)kernel.GetRequiredService<FileSystemSubsystem>().GetFileSystem();
         }
     }
 }

@@ -14,9 +14,9 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
 {
     public class UDevFileSystem : FileSystem
     {
-        private readonly IDeviceBus _bus;
+        private readonly DeviceBusSubsystem _bus;
 
-        public UDevFileSystem(IDeviceBus bus)
+        public UDevFileSystem(DeviceBusSubsystem bus)
         {
             _bus = bus;
         }
@@ -140,8 +140,8 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
             List<UPath> items = new List<UPath>();
             if (path == "/")
             {
-                if(searchTarget == SearchTarget.Both || searchTarget == SearchTarget.Directory)
-                    items.AddRange(_bus.GetAllModules().Select(v => new UPath($"/{v.Category}")));
+                if (searchTarget == SearchTarget.Both || searchTarget == SearchTarget.Directory)
+                    items.AddRange(_bus.GetAllDeviceSelectors().Select(v => new UPath($"/{v.Category}")));
                 if (searchTarget == SearchTarget.Both || searchTarget == SearchTarget.File)
                 {
                     items.AddRange(_bus.GetDeviceSelector("root").GetDevicesInfo().Select(v => new UPath($"/{v.FileName}")));
@@ -172,14 +172,14 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
         }
     }
 
-    [PluginModule]
-    public class UDevFileSystemModule : IFileSystemPluginModule
+    [Plugin]
+    public class UDevFileSystemModule : PluginModule<FileSystemSubsystem>, IFileSystemPluginModule
     {
         public bool AutoMount => true;
-        private IDeviceBus _bus;
-        public void InitializeServices(IServiceProvider kernel)
+        private DeviceBusSubsystem _bus;
+        public override void InitializeServices(IServiceProvider kernel)
         {
-            _bus = kernel.GetRequiredService<IDeviceBus>();
+            _bus = kernel.GetRequiredService<DeviceBusSubsystem>();
         }
 
         public (UPath MountPoint, IFileSystem FileSystem) MountFileSystem(IReadOnlyDictionary<string, string> options)

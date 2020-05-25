@@ -16,7 +16,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 namespace TestGui
 {
 
-    [PluginModule(Name = "testGui", ExecutingSide = NetworkSide.Server | NetworkSide.Proxy)]
+    [Plugin(PluginName = "testGui")]
     [CommandHelp("Tests the terminal gui library.")]
     public class TestGui : RCTApplication
     {

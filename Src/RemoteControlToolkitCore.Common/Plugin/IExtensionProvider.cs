@@ -1,11 +1,18 @@
-﻿using System.ServiceModel;
-using RemoteControlToolkitCore.Common.Networking;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.ServiceModel;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace RemoteControlToolkitCore.Common.Plugin
 {
-    public interface IExtensionProvider<in TExtension> where TExtension : IExtensibleObject<TExtension>
+    /// <summary>
+    /// Extends extendable objects.
+    /// </summary>
+    public interface IExtensionProvider<in TExtendableObject> where TExtendableObject : IExtensibleObject<TExtendableObject>
     {
-        void GetExtension(TExtension context);
-        void RemoveExtension(TExtension context);
+        void GetExtension(TExtendableObject extendableObject);
+        void RemoveExtension(TExtendableObject extendableObject);
     }
 }
