@@ -13,7 +13,7 @@ using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
-    [PluginModule(Name = "cat", ExecutingSide = NetworkSide.Server | NetworkSide.Proxy)]
+    [Plugin(PluginName = "cat")]
     [CommandHelp("Reads the VFS or StdIn and prints to StdOut.")]
     public class CatCommand : RCTApplication
     {

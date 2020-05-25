@@ -1,24 +1,25 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Scripting.Utils;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio.FileSystems;
 
 namespace RemoteControlToolkitCore.Common.VirtualFileSystem
 {
-    public class FileSystemSubsystem : BasePluginSubsystem<IFileSystemSubsystem, IFileSystemPluginModule>, IFileSystemSubsystem
+    public class FileSystemSubsystem : PluginSubsystem
     {
         private IFileSystem _fileSystem;
-        public FileSystemSubsystem(IPluginLibraryLoader loader, IServiceProvider services) : base(loader, services)
+        public FileSystemSubsystem(IPluginManager pluginManager) : base(pluginManager)
         {
             
         }
 
-        public override void Init()
+        public override void InitializeSubsystem()
         {
-            base.Init();
+            base.InitializeSubsystem();
             MountFileSystem mfs = new MountFileSystem(new MemoryFileSystem());
-            foreach (var fileSystem in GetAllModules())
+            foreach (var fileSystem in PluginManager.ActivateAllPluginModules<FileSystemSubsystem>().Select(m => m as IFileSystemPluginModule))
             {
                 if (fileSystem.AutoMount)
                 {

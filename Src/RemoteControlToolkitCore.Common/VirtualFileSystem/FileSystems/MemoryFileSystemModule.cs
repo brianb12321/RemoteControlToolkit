@@ -7,14 +7,10 @@ using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio.FileSystems;
 
 namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
 {
-    [PluginModule]
-    public class MemoryFileSystemModule : IFileSystemPluginModule
+    [Plugin]
+    public class MemoryFileSystemModule : PluginModule<FileSystemSubsystem>, IFileSystemPluginModule
     {
         public bool AutoMount => true;
-        public void InitializeServices(IServiceProvider kernel)
-        {
-            
-        }
 
         private IFileSystem internalMount(UPath mountPoint, IReadOnlyDictionary<string, string> options)
         {

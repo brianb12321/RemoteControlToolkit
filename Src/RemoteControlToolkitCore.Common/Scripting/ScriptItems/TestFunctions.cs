@@ -7,14 +7,9 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
 {
-    [PluginModule]
-    public class TestFunctions : IScriptExtensionModule
+    [Plugin]
+    public class TestFunctions : PluginModule<ScriptingSubsystem>, IScriptExtensionModule
     {
-        public void InitializeServices(IServiceProvider kernel)
-        {
-            
-        }
-
         public void ConfigureDefaultEngine(IScriptingEngine engine)
         {
             engine.GetDefaultModule().AddVariable("test", new Action(() => engine.IO.OutputWriter.WriteLine("Hello world")));

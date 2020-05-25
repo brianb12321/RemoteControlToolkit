@@ -13,10 +13,10 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem
 
     public class ExtensionFileSystemProvder : IExtensionProvider<RCTProcess>
     {
-        private readonly IFileSystemSubsystem _subsystem;
+        private readonly FileSystemSubsystem _subsystem;
         private IExtensionFileSystem _fileSystem;
 
-        public ExtensionFileSystemProvder(IFileSystemSubsystem subsystem)
+        public ExtensionFileSystemProvder(FileSystemSubsystem subsystem)
         {
             _subsystem = subsystem;
         }

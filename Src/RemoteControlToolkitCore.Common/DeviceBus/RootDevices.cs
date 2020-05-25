@@ -8,8 +8,8 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common.DeviceBus
 {
-    [PluginModule]
-    public class RootDevices : IDeviceSelector
+    [Plugin]
+    public class RootDevices : PluginModule<DeviceBusSubsystem>, IDeviceSelector
     {
         public string Category => "root";
         public string Tag => "utilities";
@@ -23,11 +23,6 @@ namespace RemoteControlToolkitCore.Common.DeviceBus
             _devices.Add("consoleError", (new DeviceInfo("Console Out Device", "consoleError"), () => new InlineDevice(() => Console.OpenStandardError())));
             _devices.Add("consoleIn", (new DeviceInfo("Console In Device", "consoleIn"), () => new InlineDevice(() => Console.OpenStandardInput())));
         }
-        public void InitializeServices(IServiceProvider kernel)
-        {
-            
-        }
-
         public IDevice GetDevice(string name)
         {
             return _devices[name].function();

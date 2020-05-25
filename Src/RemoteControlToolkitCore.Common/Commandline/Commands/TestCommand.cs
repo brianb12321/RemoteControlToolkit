@@ -10,7 +10,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
-    [PluginModule(Name = "test", ExecutingSide = NetworkSide.Server)]
+    [Plugin(PluginName = "test")]
     [CommandHelp("Does testy things.")]
     public class TestCommand : RCTApplication
     {

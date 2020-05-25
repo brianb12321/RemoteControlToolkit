@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,47 +8,50 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common.ApplicationSystem
 {
-    public class ApplicationSubsystem : BasePluginSubsystem<IApplicationSubsystem, IApplication>, IApplicationSubsystem
+    public class ApplicationSubsystem : PluginSubsystem
     {
         private readonly ProcessTable _table;
         private readonly IHostApplication _application;
         private readonly ILogger<ApplicationSubsystem> _logger;
+        private readonly IServiceProvider _provider;
         public RCTProcess.RCTPRocessFactory Factory { get; }
         public uint LatestProcess { get; }
 
-        public ApplicationSubsystem(IPluginLibraryLoader loader, IServiceProvider services) : base(loader, services)
+        public ApplicationSubsystem(IPluginManager pluginManager, IServiceProvider provider) : base(pluginManager)
         {
-            _table = new ProcessTable(services);
-            Factory = new RCTProcess.RCTPRocessFactory(_table, services);
-            _application = services.GetService<IHostApplication>();
-            _logger = services.GetService<ILogger<ApplicationSubsystem>>();
-        }
-
-        public override void Init()
-        {
-            
+            _provider = provider;
+            _table = new ProcessTable(provider);
+            Factory = new RCTProcess.RCTPRocessFactory(_table, provider);
+            _application = provider.GetService<IHostApplication>();
+            _logger = provider.GetService<ILogger<ApplicationSubsystem>>();
         }
 
         public IApplication GetApplication(string name)
         {
-            IApplication app = PluginLoader.ActivateModuleByName<IApplication>(name);
-            if(app == null) throw new RctProcessException("No such application, script");
+            IApplication app = (IApplication)PluginManager.ActivatePluginModule<ApplicationSubsystem>(name);
+            if (app == null)
+            {
+                throw new RctProcessException("No such application, script.");
+            }
+            app.InitializeServices(_provider);
             return app;
         }
 
-        public Type GetApplicationType(string name)
+        
+
+        public PluginAttribute[] GetAllInstalledApplications()
         {
-            return PluginLoader.GetModuleTypeByName<IApplication>(name);
+            return PluginManager.GetAllPluginModuleInformation<IApplication>();
         }
 
-        public PluginModuleAttribute[] GetAllInstalledApplications()
+        public IEnumerable<Type> GetAllApplicationType()
         {
-            return PluginLoader.GetAllModuleAttribute<IApplication>();
+            return PluginManager.ActivateGenericTypes<IApplication>().Select(t => t.GetType());
         }
 
         public bool ApplicationExists(string name)
         {
-            return PluginLoader.HasPluginModule<IApplication>(name);
+            return PluginManager.GetAllPluginModuleInformation<IApplication>().Any(a => a.PluginName == name);
         }
 
         public void AddProcess(RCTProcess process)

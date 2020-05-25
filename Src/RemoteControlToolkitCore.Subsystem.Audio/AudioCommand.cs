@@ -21,15 +21,15 @@ using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 using YoutubeExplode;
 using YoutubeExplode.Models.MediaStreams;
 
-[assembly: PluginLibrary("AudioSubsystem", FriendlyName = "Audio Subsystem", LibraryType = NetworkSide.Proxy | NetworkSide.Server)]
+[assembly: PluginLibrary("AudioSubsystem", "Audio Subsystem")]
 namespace RemoteControlToolkitCore.Subsystem.Audio
 {
-    [PluginModule(Name = "audio", ExecutingSide = NetworkSide.Server)]
+    [Plugin(PluginName = "audio")]
     [CommandHelp("Manages the audio subsystem.")]
     public class AudioCommand : RCTApplication
     {
-        private IAudioOutSubsystem _audioSubystem;
-        private IDeviceBus _bus;
+        private AudioOutSubsystem _audioSubystem;
+        private DeviceBusSubsystem _bus;
 
         public override string ProcessName => "Audio Command";
 
@@ -133,12 +133,12 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
             {
                 StringBuilder sb = new StringBuilder();
                 IAudioProviderModule[] providers = _audioSubystem.GetAllAudioProviders();
-                int max = providers.Max(p => p.ProviderName.Length) + 5;
+                int max = providers.Max(p => p.GetPluginAttribute().PluginName.Length) + 5;
                 currentProc.Out.WriteLine("Installed Audio providers.");
                 currentProc.Out.WriteLine("================================================");
                 foreach (var provider in providers)
                 {
-                    sb.Append(provider.ProviderName.PadRight(max)).AppendLine(provider.Description);
+                    sb.Append(provider.GetPluginAttribute().PluginName.PadRight(max)).AppendLine(provider.Description);
                 }
                 currentProc.Out.WriteLine(sb.ToString());
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
@@ -268,8 +268,8 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
 
         public override void InitializeServices(IServiceProvider kernel)
         {
-            _audioSubystem = (IAudioOutSubsystem)kernel.GetService<IPluginSubsystem<IAudioProviderModule>>();
-            _bus = kernel.GetService<IDeviceBus>();
+            _audioSubystem = kernel.GetService<AudioOutSubsystem>();
+            _bus = kernel.GetService<DeviceBusSubsystem>();
         }
     }
 }

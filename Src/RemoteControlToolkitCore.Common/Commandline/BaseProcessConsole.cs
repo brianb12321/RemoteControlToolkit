@@ -37,9 +37,9 @@ namespace RemoteControlToolkitCore.Common.Commandline
         private readonly TerminalHandler _terminalHandler;
 
         public BaseProcessConsole(ILogger<BaseProcessConsole> logger,
-            IApplicationSubsystem subsystem,
+            ApplicationSubsystem subsystem,
             IExtensionProvider<IInstanceSession>[] providers,
-            IFileSystemSubsystem fileSystemSubsystem,
+            FileSystemSubsystem fileSystemSubsystem,
             IChannelProducer producer,
             PseudoTerminalPayload terminalConfig,
             List<EnvironmentPayload> environmentPayloads,

@@ -16,7 +16,7 @@ using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
-    [PluginModule(Name = "wget", ExecutingSide = NetworkSide.Server | NetworkSide.Proxy)]
+    [Plugin(PluginName = "wget")]
     [CommandHelp("Downloads resources from the network.")]
     public class WGetCommand :  RCTApplication
     {

@@ -9,16 +9,12 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Subsystem.Serial
 {
-    [PluginModule]
-    public class SerialDeviceSelector : IDeviceSelector
+    [Plugin]
+    public class SerialDeviceSelector : PluginModule<DeviceBusSubsystem>, IDeviceSelector
     {
         public string Category => "serial";
         public string Tag => "IO";
 
-        public void InitializeServices(IServiceProvider kernel)
-        {
-            
-        }
 
         private DeviceInfo getInfo(string name)
         {

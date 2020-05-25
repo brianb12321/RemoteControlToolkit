@@ -3,6 +3,7 @@ using System.Net;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
@@ -26,8 +27,11 @@ namespace RemoteControlToolkitCoreServer
         {
             IHostApplication app = new AppBuilder()
                 .AddStartup<Startup>()
+                .ConfigureLogging(factory =>
+                    factory.AddConsole())
                 .AddStartup<RemoteControlToolkitCore.Subsystem.Workflow.Startup>()
-                .ScanForAppStartup("Extensions")
+                .UsePluginManager<PluginManager>()
+                .LoadFromPluginsFolder()
                 .Build();
 
             app.Run(args);
@@ -38,14 +42,9 @@ namespace RemoteControlToolkitCoreServer
     {
         public void ConfigureServices(IServiceCollection services, IAppBuilder builder)
         {
-            services.AddLogging(logBuilder =>
-            {
-                logBuilder.AddConsole();
-            });
-            services.AddPluginSystem<DefaultPluginLoader>();
             services.AddDeviceBus();
             services.AddVFS();
-            services.AddScriptingEngine<ScriptingSubsystem>();
+            services.AddScriptingEngine();
             services.AddAudio();
             services.AddCommandLine();
             services.AddSingleton<IServerPool, ServerPool>();
@@ -62,20 +61,15 @@ namespace RemoteControlToolkitCoreServer
 
         public void PostConfigureServices(IServiceProvider provider, IHostApplication application)
         {
-            provider.GetService<IPluginLibraryLoader>().LoadFromAssembly(Assembly.GetAssembly(typeof(DefaultShell)),
-                application.ExecutingSide);
-            provider.GetService<IPluginLibraryLoader>()
-                .LoadFromAssembly(Assembly.GetAssembly(typeof(AudioCommand)), application.ExecutingSide);
-            provider.GetService<IPluginLibraryLoader>()
-                .LoadFromFolder("Extensions", application.ExecutingSide);
-            provider.GetService<IPluginLibraryLoader>()
-                .LoadFromAssembly(Assembly.GetAssembly(typeof(WorkflowCommand)), application.ExecutingSide);
-            provider.GetService<IPluginLibraryLoader>()
-                .LoadFromAssembly(Assembly.GetAssembly(typeof(RCTSerialDevice)), application.ExecutingSide);
-            provider.GetService<IApplicationSubsystem>().Init();
-            provider.GetService<IFileSystemSubsystem>().Init();
-            provider.GetService<IDeviceBus>().Init();
-            provider.GetService<IScriptingSubsystem>().Init();
+            application.PluginManager.LoadFromAssembly(Assembly.GetAssembly(typeof(DefaultShell)));
+            application.PluginManager.LoadFromAssembly(Assembly.GetAssembly(typeof(AudioCommand)));
+            application.PluginManager.LoadFromAssembly(Assembly.GetAssembly(typeof(WorkflowCommand)));
+            application.PluginManager.LoadFromAssembly(Assembly.GetAssembly(typeof(RCTSerialDevice)));
+            provider.GetService<ApplicationSubsystem>().InitializeSubsystem();
+            provider.GetService<AudioOutSubsystem>().InitializeSubsystem();
+            provider.GetService<FileSystemSubsystem>().InitializeSubsystem();;
+            provider.GetService<ScriptingSubsystem>().InitializeSubsystem();
+            provider.GetService<DeviceBusSubsystem>().InitializeSubsystem();
         }
     }
 }

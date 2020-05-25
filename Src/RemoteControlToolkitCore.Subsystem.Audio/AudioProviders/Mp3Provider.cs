@@ -7,20 +7,14 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Subsystem.Audio.AudioProviders
 {
-    [PluginModule]
-    public class Mp3Provider : IAudioProviderModule
+    [Plugin(PluginName = "MP3")]
+    public class Mp3Provider : PluginModule<AudioOutSubsystem>, IAudioProviderModule
     {
-        public string ProviderName => "MP3";
         public string Description => "Opens a stream as an MP3 file.";
         public bool BasedOnFile => true;
         public string FileExtension => "mp3";
         public string FileDescription => "MP3 File (*.mp3)";
         public NetworkSide ExecutingSide => NetworkSide.Server | NetworkSide.Proxy;
-
-        public void InitializeServices(IServiceProvider kernel)
-        {
-            
-        }
 
         public IWaveProvider OpenAudio(Stream input, WaveFormat format)
         {

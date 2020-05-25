@@ -14,7 +14,7 @@ using RemoteControlToolkitCore.Common.Utilities;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
-    [PluginModule(Name = "eps", ExecutingSide = NetworkSide.Server | NetworkSide.Proxy)]
+    [Plugin(PluginName = "eps")]
     [CommandHelp("Manages all external processes on the server.")]
     public class EpsCommand : RCTApplication
     {

@@ -7,7 +7,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
-    [PluginModule(Name = "echo", ExecutingSide = NetworkSide.Proxy | NetworkSide.Server)]
+    [Plugin(PluginName = "echo")]
     [CommandHelp("Writes the provided arguments into standard out.")]
     public class EchoCommand : RCTApplication
     {

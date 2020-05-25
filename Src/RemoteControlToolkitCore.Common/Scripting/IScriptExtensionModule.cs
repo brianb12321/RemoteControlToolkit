@@ -2,8 +2,7 @@
 
 namespace RemoteControlToolkitCore.Common.Scripting
 {
-    [ModuleInstance(TransientMode = true)]
-    public interface IScriptExtensionModule : IPluginModule
+    public interface IScriptExtensionModule : IPluginModule<ScriptingSubsystem>
     {
         void ConfigureDefaultEngine(IScriptingEngine engine);
     }

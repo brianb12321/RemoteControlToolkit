@@ -23,14 +23,14 @@ using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {
-    [PluginModule(Name = "shell", ExecutingSide = NetworkSide.Proxy | NetworkSide.Server)]
+    [Plugin(PluginName = "shell")]
     [CommandHelp("The main entry point for executing commands.")]
     public class DefaultShell : RCTApplication
     {
         private IScriptingEngine _engine;
-        private IScriptingSubsystem _scriptingSubsystem;
+        private ScriptingSubsystem _scriptingSubsystem;
         private IScriptExecutionContext _scriptContext;
-        private IApplicationSubsystem _appSubsystem;
+        private ApplicationSubsystem _appSubsystem;
         private IHostApplication _nodeApplication;
         private string _motd = "I love cookies!";
         private IServiceProvider _services;
@@ -456,18 +456,18 @@ __;_ \ /,//`
         public override void InitializeServices(IServiceProvider kernel)
         {
             _nodeApplication = kernel.GetService<IHostApplication>();
-            _fileSystem = kernel.GetService<IFileSystemSubsystem>().GetFileSystem();
+            _fileSystem = kernel.GetService<FileSystemSubsystem>().GetFileSystem();
             _logger = kernel.GetService<ILogger<DefaultShell>>();
             _logger.LogInformation("Shell initialized.");
             _builtInCommands = new Dictionary<string, Func<CommandRequest, CommandResponse>>();
-            _scriptingSubsystem = kernel.GetService<IScriptingSubsystem>();
+            _scriptingSubsystem = kernel.GetService<ScriptingSubsystem>();
             _engine = _scriptingSubsystem.CreateEngine();
             _scriptContext = _engine.CreateContext();
-            _appSubsystem = kernel.GetService<IApplicationSubsystem>();
+            _appSubsystem = kernel.GetService<ApplicationSubsystem>();
             _services = kernel;
         }
 
-        public static RCTProcess CreateShellWithParent(string command, RCTProcess parent, IApplicationSubsystem subsystem)
+        public static RCTProcess CreateShellWithParent(string command, RCTProcess parent, ApplicationSubsystem subsystem)
         {
             var request = new CommandRequest(new ICommandElement[]
             {
@@ -479,7 +479,7 @@ __;_ \ /,//`
                 subsystem.GetApplication("shell"), parent, request, parent.Identity);
             return shellProcess;
         }
-        public static RCTProcess CreateShell(string command, IInstanceSession session, IApplicationSubsystem subsystem, IPrincipal identity)
+        public static RCTProcess CreateShell(string command, IInstanceSession session, ApplicationSubsystem subsystem, IPrincipal identity)
         {
             var request = new CommandRequest(new ICommandElement[]
             {

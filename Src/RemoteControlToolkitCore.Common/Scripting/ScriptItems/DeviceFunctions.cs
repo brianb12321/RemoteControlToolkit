@@ -8,14 +8,9 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
 {
-    [PluginModule]
-    public class DeviceFunctions : IScriptExtensionModule
+    [Plugin]
+    public class DeviceFunctions : PluginModule<ScriptingSubsystem>, IScriptExtensionModule
     {
-        public void InitializeServices(IServiceProvider kernel)
-        {
-            
-        }
-
         public void ConfigureDefaultEngine(IScriptingEngine engine)
         {
             IScriptExecutionContext context = engine.CreateModule("dev");

@@ -11,7 +11,7 @@ using RemoteControlToolkitCore.Common.Utilities;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
-    [PluginModule(Name = "proxyControl", ExecutingSide = NetworkSide.Server)]
+    [Plugin(PluginName = "proxyControl")]
     [CommandHelp("Manages the connected servers on the proxy.")]
     public class ProxyControl : RCTApplication
     {

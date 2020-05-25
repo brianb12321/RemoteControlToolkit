@@ -20,7 +20,7 @@ using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
 namespace MailGun
 {
-    [PluginModule(Name = "mlg", ExecutingSide = NetworkSide.Server | NetworkSide.Proxy)]
+    [Plugin(PluginName = "mlg")]
     [CommandHelp("Sends emails from the command-line.")]
     public class MailGunCommand : RCTApplication
     {

@@ -23,8 +23,8 @@ namespace RemoteControlToolkitCore.Subsystem.Workflow.Activities
             // Obtain the runtime value of the Text input argument
             CommandRequest request = context.GetValue(this.Request);
             RCTProcess currentProc = context.GetExtension<RCTProcess>();
-            IApplicationSubsystem subsystem =
-                context.GetExtension<IServiceProvider>().GetService<IApplicationSubsystem>();
+            ApplicationSubsystem subsystem =
+                context.GetExtension<IServiceProvider>().GetService<ApplicationSubsystem>();
 
             RCTProcess newProc = currentProc.ClientContext.ProcessTable.Factory.CreateOnApplication(
                 currentProc.ClientContext, subsystem.GetApplication(request.Arguments[0].ToString()), currentProc,

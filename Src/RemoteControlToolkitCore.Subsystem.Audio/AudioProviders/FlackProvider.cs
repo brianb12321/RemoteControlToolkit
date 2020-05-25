@@ -7,15 +7,9 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Subsystem.Audio.AudioProviders
 {
-    [PluginModule]
-    public class FlackProvider : IAudioProviderModule
+    [Plugin(PluginName = "FLAC")]
+    public class FlackProvider : PluginModule<AudioOutSubsystem>, IAudioProviderModule
     {
-        public void InitializeServices(IServiceProvider kernel)
-        {
-            
-        }
-
-        public string ProviderName => "FLAC";
         public string Description => "Reads and decodes a FLAC file";
         public bool BasedOnFile => true;
         public string FileExtension => "flac";

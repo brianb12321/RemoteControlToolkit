@@ -16,8 +16,7 @@ using RemoteControlToolkitCore.Subsystem.Workflow;
 [assembly: AssemblyCopyright("Copyright ©  2019")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: PluginLibrary("WindowsWorkflowSubsystem", FriendlyName = "Windows Workflow Subsystem", LibraryType = NetworkSide.Server)]
-[assembly: ApplicationStartup(typeof(Startup))]
+[assembly: PluginLibrary("WindowsWorkflowSubsystem", "Windows Workflow Subsystem")]
 
 // Setting ComVisible to false makes the types in this assembly not visible
 // to COM components.  If you need to access a type in this assembly from

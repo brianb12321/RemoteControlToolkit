@@ -22,10 +22,10 @@ using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
 
-[assembly: PluginLibrary("NugetPackageManager", FriendlyName = "RCT Nuget Package Manager", LibraryType = NetworkSide.Server)]
+[assembly: PluginLibrary("NugetPackageManager", "RCT Nuget Package Manager")]
 namespace NugetPackageManager
 {
-    [PluginModule(Name = "pkg-install", ExecutingSide = NetworkSide.Server | NetworkSide.Proxy)]
+    [Plugin(PluginName = "pkg-install")]
     [CommandHelp("Installs and manages packages.")]
     public class PkgInstallCommand : RCTApplication
     {

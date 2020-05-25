@@ -14,11 +14,11 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Subsystem.Workflow
 {
-    [PluginModule(Name = "wws", ExecutingSide = NetworkSide.Server)]
+    [Plugin(PluginName = "wws")]
     [CommandHelp("Manage and execute Windows Workflow activities.")]
     public class WorkflowCommand : RCTApplication
     {
-        private IWorkflowSubsystem _subsystem;
+        private WorkflowSubsystem _subsystem;
         private IServiceProvider _provider;
         public override string ProcessName => "Windows Workflow Service";
         public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
@@ -44,9 +44,9 @@ namespace RemoteControlToolkitCore.Subsystem.Workflow
             }
             else if (mode == "displayActivities")
             {
-                foreach (var pluginModuleAttribute in _subsystem.GetInstalledActivityAttributes().ToList())
+                foreach (var activityName in _subsystem.GetAllActivityNames())
                 {
-                    context.Out.WriteLine(pluginModuleAttribute.Name);
+                    context.Out.WriteLine(activityName);
                 }
 
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
@@ -85,7 +85,7 @@ namespace RemoteControlToolkitCore.Subsystem.Workflow
 
         public override void InitializeServices(IServiceProvider kernel)
         {
-            _subsystem = kernel.GetService<IWorkflowSubsystem>();
+            _subsystem = kernel.GetService<WorkflowSubsystem>();
             _provider = kernel;
         }
     }

@@ -282,11 +282,12 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
             set => _baseStream.Position = value;
         }
     }
-    [PluginModule]
-    public class PipeFileSystemModule : IFileSystemPluginModule
+
+    [Plugin]
+    public class PipeFileSystemModule : PluginModule<FileSystemSubsystem>, IFileSystemPluginModule
     {
         private IPipeService _service;
-        public void InitializeServices(IServiceProvider kernel)
+        public override void InitializeServices(IServiceProvider kernel)
         {
             _service = kernel.GetService<IPipeService>();
         }

@@ -10,11 +10,11 @@ using RemoteControlToolkitCore.Common.Utilities;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
-    [PluginModule(Name = "help", ExecutingSide = NetworkSide.Server | NetworkSide.Proxy)]
+    [Plugin(PluginName = "help")]
     [CommandHelp("Shows all the installed applications.")]
     public class HelpCommand : RCTApplication
     {
-        private IApplicationSubsystem _appSubsystem;
+        private ApplicationSubsystem _appSubsystem;
         private IHostApplication _nodeApplication;
 
         public override string ProcessName => "Help Command";
@@ -25,15 +25,15 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             var serverData = Assembly.GetEntryAssembly()?.GetName();
             currentProc.Out.WriteLine($"{serverData.Name} [Version: {serverData.Version}]");
             currentProc.Out.WriteLine();
-            foreach (var apps in _appSubsystem.GetModuleTypes())
+            foreach (var apps in _appSubsystem.GetAllApplicationType())
             {
                 if (apps.GetCustomAttribute<CommandHelpAttribute>() != null)
                 {
                     var helpClass = apps.GetCustomAttribute<CommandHelpAttribute>();
-                    var moduleName = apps.GetCustomAttribute<PluginModuleAttribute>();
-                    if (moduleName.ExecutingSide.HasFlag(_nodeApplication.ExecutingSide) && !_helpItems.ContainsKey(moduleName.Name))
+                    var moduleName = apps.GetCustomAttribute<PluginAttribute>();
+                    if (!_helpItems.ContainsKey(moduleName.PluginName))
                     {
-                        _helpItems.Add(moduleName.Name, helpClass.Help);
+                        _helpItems.Add(moduleName.PluginName, helpClass.Help);
                     }
                 }
             }
@@ -43,7 +43,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
 
         public override void InitializeServices(IServiceProvider kernel)
         {
-            _appSubsystem = kernel.GetService<IApplicationSubsystem>();
+            _appSubsystem = kernel.GetService<ApplicationSubsystem>();
             _nodeApplication = kernel.GetService<IHostApplication>();
         }
     }

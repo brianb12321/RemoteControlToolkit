@@ -11,7 +11,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
-    [PluginModule(Name = "beep", ExecutingSide = NetworkSide.Proxy | NetworkSide.Server)]
+    [Plugin(PluginName = "beep")]
     [CommandHelp("Generates a sine wave.")]
     public class BeepCommand : RCTApplication
     {

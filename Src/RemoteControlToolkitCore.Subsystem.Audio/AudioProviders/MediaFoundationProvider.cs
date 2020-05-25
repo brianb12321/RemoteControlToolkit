@@ -6,15 +6,9 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Subsystem.Audio.AudioProviders
 {
-    [PluginModule]
-    public class MediaFoundationProvider : IAudioProviderModule
+    [Plugin(PluginName = "MDF")]
+    public class MediaFoundationProvider : PluginModule<AudioOutSubsystem>, IAudioProviderModule
     {
-        public void InitializeServices(IServiceProvider kernel)
-        {
-            
-        }
-
-        public string ProviderName => "MDF";
         public string Description => "A general wrapper for the media foundation system.";
         public bool BasedOnFile => false;
         public string FileExtension { get; }

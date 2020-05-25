@@ -15,7 +15,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
-    [PluginModule(Name = "cpipe", ExecutingSide = NetworkSide.Server | NetworkSide.Proxy)]
+    [Plugin(PluginName = "cpipe")]
     [CommandHelp("Creates and manages operating system pipes.")]
     public class CPipeCommand : RCTApplication
     {

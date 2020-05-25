@@ -15,7 +15,7 @@ using RemoteControlToolkitCore.Common.Plugin;
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-[assembly: PluginLibrary("RemoteControlToolkitCore.Subsystem.Serial", FriendlyName = "RCTC Serial subsystem.", LibraryType = NetworkSide.Server | NetworkSide.Proxy)]
+[assembly: PluginLibrary("RemoteControlToolkitCore.Subsystem.Serial", "RCTC Serial subsystem.")]
 
 // Setting ComVisible to false makes the types in this assembly not visible
 // to COM components.  If you need to access a type in this assembly from
