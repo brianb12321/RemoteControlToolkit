@@ -46,7 +46,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                     }
                 })
                 .Add("help|?", "Displays the help screen.", v => showHelp = true);
-            set.Parse(args.Arguments.Select(a => a.ToString()));
+            set.Parse(args.Arguments);
             if (showHelp)
             {
                 set.WriteOptionDescriptions(context.Out);

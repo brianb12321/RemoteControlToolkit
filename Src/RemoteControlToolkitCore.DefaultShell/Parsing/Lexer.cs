@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Text;
 
-namespace RemoteControlToolkitCore.Common.Commandline.Parsing
+namespace RemoteControlToolkitCore.DefaultShell.Parsing
 {
     public class Lexer : ILexer
     {

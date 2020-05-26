@@ -1,14 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Plugin;
 using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common.Commandline;
-using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
-using RemoteControlToolkitCore.Common.VirtualFileSystem;
 
 namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
 {
@@ -27,7 +21,7 @@ namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
             {
                 var application = _subSystem.Factory.CreateOnApplication(engine.ParentProcess.ClientContext,
                     _subSystem.GetApplication(name), engine.ParentProcess,
-                    new CommandRequest(args.Select(a => new StringCommandElement(a)).ToArray()), engine.ParentProcess.Identity);
+                    new CommandRequest(args), engine.ParentProcess.Identity);
                 application.SetOut(engine.IO.OutputWriter);
                 application.SetIn(engine.IO.InputReader);
                 application.SetError(engine.IO.ErrorWriter);
@@ -38,9 +32,7 @@ namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
                 var application = _subSystem.Factory.CreateOnApplication(engine.ParentProcess.ClientContext,
                     _subSystem.GetApplication("shell"), engine.ParentProcess, new CommandRequest(new[]
                     {
-                        new StringCommandElement("shell"),
-                        new StringCommandElement("-c"),
-                        new StringCommandElement(command)
+                        "shell", "-c", command
                     }), engine.ParentProcess.Identity);
                 application.SetOut(engine.IO.OutputWriter);
                 application.SetIn(engine.IO.InputReader);

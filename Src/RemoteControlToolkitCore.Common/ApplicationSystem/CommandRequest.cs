@@ -1,14 +1,13 @@
 ﻿using System.Linq;
 using System.Text;
-using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 
 namespace RemoteControlToolkitCore.Common.ApplicationSystem
 {
     public class CommandRequest
     {
-        public ICommandElement[] Arguments { get; }
+        public string[] Arguments { get; }
 
-        public CommandRequest(ICommandElement[] args)
+        public CommandRequest(string[] args)
         {
             Arguments = args;
         }
@@ -18,9 +17,9 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             if (Arguments.Count() > 1)
             {
                 StringBuilder sb = new StringBuilder();
-                foreach (ICommandElement element in Arguments.Skip(1))
+                foreach (string element in Arguments.Skip(1))
                 {
-                    sb.Append(element.ToString() + " ");
+                    sb.Append(element + " ");
                 }
 
                 sb.Length--;
@@ -31,9 +30,9 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            foreach (ICommandElement element in Arguments)
+            foreach (string element in Arguments)
             {
-                sb.Append(element.ToString() + " ");
+                sb.Append(element + " ");
             }
 
             sb.Length--;

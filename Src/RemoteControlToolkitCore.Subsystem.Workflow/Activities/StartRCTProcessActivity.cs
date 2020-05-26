@@ -14,14 +14,15 @@ namespace RemoteControlToolkitCore.Subsystem.Workflow.Activities
     [Designer(typeof(StartRCTProcessActivityDesigner))]
     public sealed class StartRCTProcessActivity : CodeActivity<CommandResponse>
     {
-        public InArgument<CommandRequest> Request { get; set; }
+        public InArgument<string> ProcessName { get; set; }
 
         // If your activity returns a value, derive from CodeActivity<TResult>
         // and return the value from the Execute method.
         protected override CommandResponse Execute(CodeActivityContext context)
         {
             // Obtain the runtime value of the Text input argument
-            CommandRequest request = context.GetValue(this.Request);
+            string processName = context.GetValue(this.ProcessName);
+            CommandRequest request = new CommandRequest(processName.Split(' '));
             RctProcess currentProc = context.GetExtension<RctProcess>();
             ApplicationSubsystem subsystem =
                 context.GetExtension<IServiceProvider>().GetService<ApplicationSubsystem>();

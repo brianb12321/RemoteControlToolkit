@@ -13,8 +13,6 @@ using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
-using RemoteControlToolkitCore.Common.Commandline.Parsing;
-using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 using RemoteControlToolkitCore.Common.Commandline.TerminalExtensions;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
@@ -22,6 +20,8 @@ using RemoteControlToolkitCore.Common.Scripting;
 using RemoteControlToolkitCore.Common.Utilities;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
 using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
+using RemoteControlToolkitCore.DefaultShell.Parsing;
+using RemoteControlToolkitCore.DefaultShell.Parsing.CommandElements;
 
 [assembly: PluginLibrary("DefaultShell", "RCT Default Shell")]
 namespace RemoteControlToolkitCore.DefaultShell
@@ -328,7 +328,7 @@ __;_ \ /,//`
                 IParser parser = new Parser(_engine, _scriptContext, currentProc.EnvironmentVariables);
                 var lexedItems = lexer.Lex(command);
                 var parsedItems = parser.Parse(lexedItems);
-                CommandRequest newRequest = new CommandRequest(parsedItems[0].ToArray());
+                CommandRequest newRequest = new CommandRequest(parsedItems[0].Select(e => e.ToString()).ToArray());
                 string newCommand = newRequest.Arguments[0].ToString();
                 //Check if command is built-in.
                 if (_builtInCommands.ContainsKey(newCommand))
@@ -464,31 +464,6 @@ __;_ \ /,//`
             _engine = _scriptingSubsystem.CreateEngine();
             _scriptContext = _engine.CreateContext();
             _appSubsystem = kernel.GetService<ApplicationSubsystem>();
-        }
-
-        public static RctProcess CreateShellWithParent(string command, RctProcess parent, ApplicationSubsystem subsystem)
-        {
-            var request = new CommandRequest(new ICommandElement[]
-            {
-                new CommandNameCommandElement("shell"),
-                new StringCommandElement("-c"),
-                new StringCommandElement(command)
-            });
-            RctProcess shellProcess = parent.ClientContext.ProcessTable.Factory.CreateOnApplication(parent.ClientContext,
-                subsystem.GetApplication("shell"), parent, request, parent.Identity);
-            return shellProcess;
-        }
-        public static RctProcess CreateShell(string command, IInstanceSession session, ApplicationSubsystem subsystem, IPrincipal identity)
-        {
-            var request = new CommandRequest(new ICommandElement[]
-            {
-                new CommandNameCommandElement("shell"),
-                new StringCommandElement("-c"),
-                new StringCommandElement(command)
-            });
-            RctProcess shellProcess = session.ProcessTable.Factory.CreateOnApplication(session,
-                subsystem.GetApplication("shell"), null, request, identity);
-            return shellProcess;
         }
     }
 }

@@ -26,7 +26,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 {
                     for (int i = 1; i < args.Arguments.Length; i++)
                     {
-                        currentProc.Out.WriteLine(args.Arguments[i].ToString());
+                        currentProc.Out.WriteLine(args.Arguments[i]);
                     }
                 }
             }

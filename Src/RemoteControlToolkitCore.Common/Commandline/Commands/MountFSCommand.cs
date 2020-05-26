@@ -26,7 +26,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             OptionSet set = new OptionSet()
                 .Add("help|?", "Displays the help screen.", v => mode = "help")
                 .Add("list", "Displays all the mount points in the VFS.", v => mode = "list");
-            set.Parse(args.Arguments.Select(a => a.ToString()));
+            set.Parse(args.Arguments);
             if(mode == "help")
             {
                 set.WriteOptionDescriptions(context.Out);

@@ -766,7 +766,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 _handler.Clear();
                 _handler.UpdateCursorPosition(0, 0);
                 setupRawMode();
-                editorOpen(args.Arguments[1].ToString(), context);
+                editorOpen(args.Arguments[1], context);
                 editorSetStatusMessage("HELP: Ctrl-Q = quit, Ctrl-S = save");
                 while (!token.IsCancellationRequested)
                 {

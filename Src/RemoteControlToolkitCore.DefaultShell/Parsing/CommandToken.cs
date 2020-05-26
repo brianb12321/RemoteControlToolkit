@@ -1,4 +1,4 @@
-﻿namespace RemoteControlToolkitCore.Common.Commandline.Parsing
+﻿namespace RemoteControlToolkitCore.DefaultShell.Parsing
 {
     public class CommandToken
     {

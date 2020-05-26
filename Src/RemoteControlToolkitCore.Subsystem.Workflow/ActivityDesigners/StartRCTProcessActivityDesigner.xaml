@@ -10,7 +10,7 @@
     </sap:ActivityDesigner.Resources>
     <StackPanel>
         <TextBlock>Process Name</TextBlock>
-        <sapv:ExpressionTextBox Expression="{Binding Path=ModelItem.Request, Mode=TwoWay, Converter={StaticResource ArgumentToExpressionConverter}, ConverterParameter=In }"
+        <sapv:ExpressionTextBox Expression="{Binding Path=ModelItem.ProcessName, Mode=TwoWay, Converter={StaticResource ArgumentToExpressionConverter}, ConverterParameter=In }"
                                 ExpressionType="{x:Type rct:CommandRequest}"
                                 OwnerActivity="{Binding Path=ModelItem}"
                                 HintText="The command request to send."/>

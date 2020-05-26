@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
-using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 using RemoteControlToolkitCore.Common.Scripting;
+using RemoteControlToolkitCore.DefaultShell.Parsing.CommandElements;
 
-namespace RemoteControlToolkitCore.Common.Commandline.Parsing
+namespace RemoteControlToolkitCore.DefaultShell.Parsing
 {
     public class Parser : IParser
     {

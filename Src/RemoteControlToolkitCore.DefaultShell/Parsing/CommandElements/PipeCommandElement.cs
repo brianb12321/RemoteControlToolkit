@@ -1,6 +1,6 @@
 ﻿using RemoteControlToolkitCore.Common.ApplicationSystem;
 
-namespace RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements
+namespace RemoteControlToolkitCore.DefaultShell.Parsing.CommandElements
 {
     public class PipeCommandElement : ICommandElement
     {

@@ -1,7 +1,8 @@
 ﻿using System;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
+using RemoteControlToolkitCore.Common.Commandline;
 
-namespace RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements
+namespace RemoteControlToolkitCore.DefaultShell.Parsing.CommandElements
 {
     public abstract class BaseCommandElement : ICommandElement
     {

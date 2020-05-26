@@ -81,7 +81,7 @@ namespace MailGun
                 })
                 .Add("showHelp|?", "Displays the help screen.", v => showHelp = true);
 
-            options.Parse(args.Arguments.Select(v => v.ToString()));
+            options.Parse(args.Arguments);
             if (showHelp || string.IsNullOrWhiteSpace(server))
             {
                 options.WriteOptionDescriptions(context.Out);

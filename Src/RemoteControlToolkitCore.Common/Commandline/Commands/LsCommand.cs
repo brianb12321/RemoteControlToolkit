@@ -26,7 +26,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             IFileSystem fileSystem =
                 context.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
             string directoryPath =
-                (args.Arguments.Length > 1) ? args.Arguments[1].ToString() : context.WorkingDirectory.ToString();
+                (args.Arguments.Length > 1) ? args.Arguments[1] : context.WorkingDirectory.ToString();
             if (fileSystem.DirectoryExists(directoryPath))
             {
                 var directories = fileSystem.EnumerateDirectoryEntries(directoryPath, "*", SearchOption.TopDirectoryOnly);

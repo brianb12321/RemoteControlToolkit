@@ -1,16 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Pipes;
-using System.Linq;
 using System.Security.Principal;
 using System.ServiceModel;
-using System.Text;
-using System.Windows.Forms;
 using Crayon;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
-using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh.ChannelLayer;
 using RemoteControlToolkitCore.Common.NSsh.ChannelLayer.Console;
@@ -19,7 +14,6 @@ using RemoteControlToolkitCore.Common.NSsh.Utility;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Utilities;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
-using RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {
@@ -66,7 +60,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             try
             {
                 _shellProcess = ProcessTable.Factory.CreateOnApplication(this, subsystem.GetApplication("shell"),
-                    null, new CommandRequest(new ICommandElement[] {new StringCommandElement("shell") }), identity);
+                    null, new CommandRequest(new[] {"shell"}), identity);
             }
             //Load emergency shell.
             catch (Exception)
@@ -88,7 +82,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                         {
                             var application = subsystem.GetApplication(tokens[0]);
                             var process = current.ClientContext.ProcessTable.Factory.CreateOnApplication(current.ClientContext, application,
-                                current, new CommandRequest(tokens.Select(t => new StringCommandElement(t)).ToArray()), current.Identity);
+                                current, new CommandRequest(tokens), current.Identity);
                             process.ThreadError += (sender, e) =>
                             {
                                 current.Error.WriteLine(Output.Red($"Error while executing command: {e.Message}"));

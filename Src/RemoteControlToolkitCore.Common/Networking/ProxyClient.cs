@@ -1,18 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline;
-using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common.Networking
@@ -53,7 +48,7 @@ namespace RemoteControlToolkitCore.Common.Networking
                     _sr = new StreamReader(_networkStream);
                     _sw.AutoFlush = true;
                     _commandShell = ProcessTable.Factory.CreateOnApplication(this, appSubsystem.GetApplication("shell"),
-                        current, new CommandRequest(new ICommandElement[] { new StringCommandElement("shell")}), current.Identity);
+                        current, new CommandRequest(new[] { "shell" }), current.Identity);
                     _commandShell.SetOut(GetClientWriter());
                     _commandShell.SetIn(GetClientReader());
                     _commandShell.SetError(GetClientWriter());

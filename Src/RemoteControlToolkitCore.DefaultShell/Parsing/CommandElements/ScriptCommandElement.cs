@@ -1,6 +1,6 @@
 ﻿using RemoteControlToolkitCore.Common.Scripting;
 
-namespace RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements
+namespace RemoteControlToolkitCore.DefaultShell.Parsing.CommandElements
 {
     public class ScriptCommandElement : BaseCommandElement
     {

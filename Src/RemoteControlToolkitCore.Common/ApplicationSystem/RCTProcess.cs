@@ -9,7 +9,6 @@ using System.Threading;
 using Crayon;
 using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common.Commandline;
-using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Scripting;
@@ -305,7 +304,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                         engine.SetIn(proc.In);
                         engine.SetOut(proc.Out);
                         engine.SetError(proc.Error);
-                        List<ICommandElement> argList = new List<ICommandElement> {new StringCommandElement(fileName)};
+                        List<string> argList = new List<string> {fileName};
                         argList.AddRange(args.Arguments.Length >= 1 ? args.Arguments.Skip(1) : args.Arguments);
                         engine.GetDefaultModule().AddVariable("argv", argList.ToArray());
                         return new CommandResponse(engine.ExecuteProgram(fileName, fileSystem));

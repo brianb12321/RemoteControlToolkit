@@ -26,7 +26,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 .Add("closeAll", "Closes all proxy connections and clears the proxy list.", v => mode = "closeAll")
                 .Add("help|?", "Displays the help screen.", v => mode = "help");
 
-            options.Parse(args.Arguments.Select(a => a.ToString()));
+            options.Parse(args.Arguments);
             if (mode == "help")
             {
                 options.WriteOptionDescriptions(currentProc.Out);

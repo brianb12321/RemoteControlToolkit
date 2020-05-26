@@ -23,7 +23,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             if (args.Arguments.Length > 1)
             {
                 IFileSystem fileSystem = context.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
-                StreamReader sr = new StreamReader(fileSystem.OpenFile(args.Arguments[1].ToString(), FileMode.Open, FileAccess.Read, FileShare.Read));
+                StreamReader sr = new StreamReader(fileSystem.OpenFile(args.Arguments[1], FileMode.Open, FileAccess.Read, FileShare.Read));
                 while (!sr.EndOfStream && !token.IsCancellationRequested)
                 {
                     context.Out.Write((char)sr.Read());

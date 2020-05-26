@@ -29,7 +29,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 .Add("webLocation|w=", "The location to download from.", v => location = v)
                 .Add("path|p=", "The local VFS path to store the downloaded resource.", v => localPath = v)
                 .Add("showHelp|?", "Displays the help screen.", v => showHelp = true);
-            options.Parse(args.Arguments.Select(a => a.ToString()));
+            options.Parse(args.Arguments);
             if (showHelp)
             {
                 options.WriteOptionDescriptions(context.Out);

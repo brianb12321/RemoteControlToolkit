@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RemoteControlToolkitCore.Common.Commandline
+namespace RemoteControlToolkitCore.DefaultShell
 {
     public class ParserException : Exception
     {

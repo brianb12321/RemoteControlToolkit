@@ -60,7 +60,7 @@ namespace NugetPackageManager
                 })
                 .Add("showHelp|?", "Displays the help screen.", v => mode = "showHelp");
 
-            options.Parse(args.Arguments.Select(a => a.ToString()));
+            options.Parse(args.Arguments);
             if (mode == "showHelp")
             {
                 options.WriteOptionDescriptions(context.Out);

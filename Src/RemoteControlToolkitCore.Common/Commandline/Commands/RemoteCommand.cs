@@ -26,7 +26,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 {"help|?", "Displays the help screen.", v => showHelp = true},
                 {"command|c=", "Executes the specified command on the remote server.", v => command = v}
             };
-            var server = options.Parse(args.Arguments.Select(a => a.ToString()));
+            var server = options.Parse(args.Arguments);
             if (showHelp)
             {
                 options.WriteOptionDescriptions(context.Out);

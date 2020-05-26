@@ -70,7 +70,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 })
                 .Add("help|?", "Displays the help screen.", v => mode = "help");
 
-            options.Parse(args.Arguments.Select(a => a.ToString()));
+            options.Parse(args.Arguments);
             if (mode == "showAll")
             {
                 var processes = Process.GetProcesses();

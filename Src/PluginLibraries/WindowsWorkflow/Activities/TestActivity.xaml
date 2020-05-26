@@ -2,7 +2,6 @@
  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
  xmlns:mca="clr-namespace:Microsoft.CSharp.Activities;assembly=System.Activities"
- xmlns:rca="clr-namespace:RemoteControlToolkitCore.Common.ApplicationSystem;assembly=RemoteControlToolkitCore.Common"
  xmlns:rcc="clr-namespace:RemoteControlToolkitCore.Common.Commandline;assembly=RemoteControlToolkitCore.Common"
  xmlns:rswa="clr-namespace:RemoteControlToolkitCore.Subsystem.Workflow.Activities;assembly=RemoteControlToolkitCore.Subsystem.Workflow"
  xmlns:sads="http://schemas.microsoft.com/netfx/2010/xaml/activities/debugger"
@@ -19,7 +18,6 @@
       <x:String>System.Linq</x:String>
       <x:String>System.Text</x:String>
       <x:String>RemoteControlToolkitCore.Common.ApplicationSystem</x:String>
-      <x:String>RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements</x:String>
       <x:String>RemoteControlToolkitCore.Common.Commandline</x:String>
       <x:String>Crayon</x:String>
     </sco:Collection>
@@ -27,7 +25,6 @@
   <TextExpression.ReferencesForImplementation>
     <sco:Collection x:TypeArguments="AssemblyReference">
       <AssemblyReference>Crayon</AssemblyReference>
-      <AssemblyReference>Microsoft.Extensions.DependencyInjection.Abstractions</AssemblyReference>
       <AssemblyReference>NDesk.Options</AssemblyReference>
       <AssemblyReference>System</AssemblyReference>
       <AssemblyReference>System.Activities</AssemblyReference>
@@ -41,8 +38,8 @@
       <AssemblyReference>System.Data</AssemblyReference>
       <AssemblyReference>System.Net.Http</AssemblyReference>
       <AssemblyReference>System.Xml</AssemblyReference>
-      <AssemblyReference>RemoteControlToolkitCore.Common</AssemblyReference>
       <AssemblyReference>RemoteControlToolkitCore.Subsystem.Workflow</AssemblyReference>
+      <AssemblyReference>RemoteControlToolkitCore.Common</AssemblyReference>
       <AssemblyReference>mscorlib</AssemblyReference>
       <AssemblyReference>WindowsWorkflow</AssemblyReference>
     </sco:Collection>
@@ -51,12 +48,7 @@
     <Sequence.Variables>
       <Variable x:TypeArguments="rcc:CommandResponse" Name="commandResult" />
     </Sequence.Variables>
-    <rswa:StartRCTProcessActivity sap2010:WorkflowViewState.IdRef="StartRCTProcessActivity_2">
-      <rswa:StartRCTProcessActivity.Request>
-        <InArgument x:TypeArguments="rca:CommandRequest">
-          <mca:CSharpValue x:TypeArguments="rca:CommandRequest">new CommandRequest(new ICommandElement[] { new StringCommandElement("shell"), new StringCommandElement("-c"), new StringCommandElement("echo \"Hello world\"")})</mca:CSharpValue>
-        </InArgument>
-      </rswa:StartRCTProcessActivity.Request>
+    <rswa:StartRCTProcessActivity ProcessName="{x:Null}" sap2010:WorkflowViewState.IdRef="StartRCTProcessActivity_2">
       <rswa:StartRCTProcessActivity.Result>
         <OutArgument x:TypeArguments="rcc:CommandResponse">
           <mca:CSharpReference x:TypeArguments="rcc:CommandResponse">commandResult</mca:CSharpReference>
@@ -82,22 +74,22 @@
         </rswa:OutWriteLineActivity>
       </If.Else>
     </If>
-    <sads:DebugSymbol.Symbol>d2VEOlxTb3VyY2VcUmVwb3NcUmVtb3RlQ29udHJvbFRvb2xraXRDb3JlXFBsdWdpbkxpYnJhcmllc1xXaW5kb3dzV29ya2Zsb3dcQWN0aXZpdGllc1xUZXN0QWN0aXZpdHkueGFtbAoyA1YOAgEBNgVBJAIBCkIFVAoCAQI5CznzAQIBDT4LPmkCAQtFC0V8AgEDSQlJiAECAQhMCVIlAgEFSWJJhQECAQlPD09qAgEG</sads:DebugSymbol.Symbol>
+    <sads:DebugSymbol.Symbol>d2lEOlxTb3VyY2VcUmVwb3NcUmVtb3RlQ29udHJvbFRvb2xraXRDb3JlXFNyY1xQbHVnaW5MaWJyYXJpZXNcV2luZG93c1dvcmtmbG93XEFjdGl2aXRpZXNcVGVzdEFjdGl2aXR5LnhhbWwJLwNODgIBATMFOSQCAQo6BUwKAgECNgs2aQIBCz0LPXwCAQNBCUGIAQIBCEQJSiUCAQVBYkGFAQIBCUcPR2oCAQY=</sads:DebugSymbol.Symbol>
   </Sequence>
   <sap2010:WorkflowViewState.ViewStateManager>
     <sap2010:ViewStateManager>
-      <sap2010:ViewStateData Id="StartRCTProcessActivity_2" sap:VirtualizedContainerService.HintSize="985,77" />
+      <sap2010:ViewStateData Id="StartRCTProcessActivity_2" sap:VirtualizedContainerService.HintSize="464,77" />
       <sap2010:ViewStateData Id="OutWriteLineActivity_1" sap:VirtualizedContainerService.HintSize="228,77" />
       <sap2010:ViewStateData Id="OutWriteLineActivity_2" sap:VirtualizedContainerService.HintSize="200,77" />
-      <sap2010:ViewStateData Id="If_1" sap:VirtualizedContainerService.HintSize="985,227" />
-      <sap2010:ViewStateData Id="Sequence_1" sap:VirtualizedContainerService.HintSize="1007,468">
+      <sap2010:ViewStateData Id="If_1" sap:VirtualizedContainerService.HintSize="464,227" />
+      <sap2010:ViewStateData Id="Sequence_1" sap:VirtualizedContainerService.HintSize="486,468">
         <sap:WorkflowViewStateService.ViewState>
           <scg:Dictionary x:TypeArguments="x:String, x:Object">
             <x:Boolean x:Key="IsExpanded">True</x:Boolean>
           </scg:Dictionary>
         </sap:WorkflowViewStateService.ViewState>
       </sap2010:ViewStateData>
-      <sap2010:ViewStateData Id="WindowsWorkflow.Activities.TestActivity_1" sap:VirtualizedContainerService.HintSize="1047,548" />
+      <sap2010:ViewStateData Id="WindowsWorkflow.Activities.TestActivity_1" sap:VirtualizedContainerService.HintSize="526,548" />
     </sap2010:ViewStateManager>
   </sap2010:WorkflowViewState.ViewStateManager>
 </Activity>

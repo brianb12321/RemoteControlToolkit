@@ -1,6 +1,6 @@
 ﻿using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
-namespace RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements
+namespace RemoteControlToolkitCore.DefaultShell.Parsing.CommandElements
 {
     public class ResourceCommandElement : BaseCommandElement
     {
