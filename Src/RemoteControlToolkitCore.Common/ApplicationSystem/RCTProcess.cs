@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Security.Principal;
 using System.ServiceModel;
-using System.Text;
 using System.Threading;
 using Crayon;
-using IronPython.Modules;
 using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
@@ -21,8 +18,8 @@ using ThreadState = System.Threading.ThreadState;
 
 namespace RemoteControlToolkitCore.Common.ApplicationSystem
 {
-    public delegate CommandResponse ProcessDelegate(RCTProcess current, CancellationToken token);
-    public class RCTProcess : IExtensibleObject<RCTProcess>
+    public delegate CommandResponse ProcessDelegate(RctProcess current, CancellationToken token);
+    public class RctProcess : IExtensibleObject<RctProcess>
     {
         public uint Pid { get; set; }
         public bool IsBackground { get; set; }
@@ -44,27 +41,27 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             get => EnvironmentVariables["WORKINGDIR"];
             set => EnvironmentVariables["WORKINGDIR"] = value.ToString();
         } 
-        public IExtensionCollection<RCTProcess> Extensions { get; }
+        public IExtensionCollection<RctProcess> Extensions { get; }
         public bool Running => State == ThreadState.Running;
         public ThreadState State => _workingThread.ThreadState;
         public string Name { get; }
-        public RCTProcess Parent { get; }
-        public RCTProcess Child { get; set; }
+        public RctProcess Parent { get; }
+        public RctProcess Child { get; set; }
         public event EventHandler<Exception> ThreadError;
         public event EventHandler<ControlCEventArgs> ControlC;
         public event EventHandler StandardOutDisposed;
         public event EventHandler StandardInDisposed;
         public event EventHandler StandardErrorDisposed;
-        private Thread _workingThread;
-        private CancellationTokenSource cts;
-        private ProcessDelegate _threadStart;
+        private readonly Thread _workingThread;
+        private readonly CancellationTokenSource _cts;
+        private readonly ProcessDelegate _threadStart;
         public CommandResponse ExitCode { get; private set; }
         public Dictionary<string, string> EnvironmentVariables { get; }
         public bool Disposed { get; private set; }
-        private IProcessTable _table;
-        private IExtensionProvider<RCTProcess>[] _extensionProviders;
+        private readonly IProcessTable _table;
+        private readonly IExtensionProvider<RctProcess>[] _extensionProviders;
 
-        private RCTProcess(IProcessTable table, IInstanceSession session, string name, RCTProcess parent, ProcessDelegate threadStart, IPrincipal identity, IExtensionProvider<RCTProcess>[] providers)
+        private RctProcess(IProcessTable table, IInstanceSession session, string name, RctProcess parent, ProcessDelegate threadStart, IPrincipal identity, IExtensionProvider<RctProcess>[] providers)
         {
             _table = table;
             Name = name;
@@ -72,7 +69,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             _threadStart = threadStart;
             ClientContext = session;
             Pid = _table.LatestProcess + 1;
-            Extensions = new ExtensionCollection<RCTProcess>(this);
+            Extensions = new ExtensionCollection<RctProcess>(this);
             _extensionProviders = providers;
             populateExtension();
             //Populate Extensions
@@ -101,12 +98,12 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
 
             _workingThread = new Thread(startThread);
             _workingThread.SetApartmentState(ApartmentState.STA);
-            cts = new CancellationTokenSource();
+            _cts = new CancellationTokenSource();
         }
 
         private void populateExtension()
         {
-            foreach (IExtensionProvider<RCTProcess> provider in _extensionProviders)
+            foreach (IExtensionProvider<RctProcess> provider in _extensionProviders)
             {
                 provider.GetExtension(this);
             }
@@ -140,7 +137,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         {
             try
             {
-                ExitCode = _threadStart?.Invoke((RCTProcess)data, cts.Token);
+                ExitCode = _threadStart?.Invoke((RctProcess)data, _cts.Token);
             }
             catch (ThreadAbortException)
             {
@@ -199,14 +196,14 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 {
                     try
                     {
-                        cts?.Cancel();
+                        _cts?.Cancel();
                     }
                     catch (ObjectDisposedException)
                     {
                         
                     }
                 }
-                cts?.Dispose();
+                _cts?.Dispose();
                 if (DisposeIn)
                 {
                     In?.Close();
@@ -224,7 +221,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                     Error?.Close();
                     StandardErrorDisposed?.Invoke(this, EventArgs.Empty);
                 }
-                foreach (IExtensionProvider<RCTProcess> provider in _extensionProviders)
+                foreach (IExtensionProvider<RctProcess> provider in _extensionProviders)
                 {
                     provider.RemoveExtension(this);
                 }
@@ -235,29 +232,29 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         }
 
 
-        public class RCTPRocessFactory
+        public class RctProcessFactory
         {
-            private IProcessTable _table;
-            private IServiceProvider _provider;
-            public RCTPRocessFactory(IProcessTable table, IServiceProvider provider)
+            private readonly IProcessTable _table;
+            private readonly IServiceProvider _provider;
+            public RctProcessFactory(IProcessTable table, IServiceProvider provider)
             {
                 _table = table;
                 _provider = provider;
             }
-            public RCTProcess Create(IInstanceSession session, string name, ProcessDelegate processDelegate, RCTProcess parent, IPrincipal identity)
+            public RctProcess Create(IInstanceSession session, string name, ProcessDelegate processDelegate, RctProcess parent, IPrincipal identity)
             {
-                RCTProcess process = new RCTProcess(_table, session, name, parent, processDelegate, parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RCTProcess>>().ToArray());
+                RctProcess process = new RctProcess(_table, session, name, parent, processDelegate, parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RctProcess>>().ToArray());
                 return process;
             }
-            public RCTProcess CreateOnApplication(IInstanceSession session, IApplication application, RCTProcess parent, CommandRequest request, IPrincipal identity)
+            public RctProcess CreateOnApplication(IInstanceSession session, IApplication application, RctProcess parent, CommandRequest request, IPrincipal identity)
             {
-                RCTProcess process = new RCTProcess(_table, session, application.ProcessName, parent, (proc, token) => application.Execute(request, proc, token), parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RCTProcess>>().ToArray());
+                RctProcess process = new RctProcess(_table, session, application.ProcessName, parent, (proc, token) => application.Execute(request, proc, token), parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RctProcess>>().ToArray());
                 return process;
             }
 
-            public RCTProcess CreateOnExternalProcess(IInstanceSession session, CommandRequest args, RCTProcess parent, IPrincipal identity)
+            public RctProcess CreateOnExternalProcess(IInstanceSession session, CommandRequest args, RctProcess parent, IPrincipal identity)
             {
-                RCTProcess process = new RCTProcess(_table, session, $"External process: {args.Arguments[0]}", parent, (proc, token) =>
+                RctProcess process = new RctProcess(_table, session, $"External process: {args.Arguments[0]}", parent, (proc, token) =>
                 {
                     try
                     {
@@ -293,14 +290,14 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                         proc.Error.WriteLine(Output.Red($"Error while executing external program: {e.Message}"));
                         return new CommandResponse(CommandResponse.CODE_FAILURE);
                     }
-                }, parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RCTProcess>>().ToArray());
+                }, parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RctProcess>>().ToArray());
                 return process;
             }
 
-            public RCTProcess CreateFromScript(IInstanceSession session, string fileName, CommandRequest args, RCTProcess parent, IFileSystem fileSystem, IScriptingEngine engine,
+            public RctProcess CreateFromScript(IInstanceSession session, string fileName, CommandRequest args, RctProcess parent, IFileSystem fileSystem, IScriptingEngine engine,
                 IPrincipal identity)
             {
-                var process = new RCTProcess(_table, session, fileName, parent,
+                var process = new RctProcess(_table, session, fileName, parent,
                     (proc, newToken) =>
                     {
                         engine.ParentProcess = proc;
@@ -308,12 +305,11 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                         engine.SetIn(proc.In);
                         engine.SetOut(proc.Out);
                         engine.SetError(proc.Error);
-                        List<ICommandElement> argList = new List<ICommandElement>();
-                        argList.Add(new StringCommandElement(fileName));
+                        List<ICommandElement> argList = new List<ICommandElement> {new StringCommandElement(fileName)};
                         argList.AddRange(args.Arguments.Length >= 1 ? args.Arguments.Skip(1) : args.Arguments);
                         engine.GetDefaultModule().AddVariable("argv", argList.ToArray());
                         return new CommandResponse(engine.ExecuteProgram(fileName, fileSystem));
-                    }, parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RCTProcess>>().ToArray());
+                    }, parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RctProcess>>().ToArray());
                 return process;
             }
         }

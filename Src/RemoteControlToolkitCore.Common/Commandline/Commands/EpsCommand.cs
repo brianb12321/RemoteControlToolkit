@@ -22,7 +22,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         private static extern int NtSetInformationProcess(IntPtr hProcess, int processInformationClass, ref int processInformation, int processInformationLength);
 
         public override string ProcessName => "External Process";
-        public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
             string mode = "showAll";
             string name = string.Empty;
@@ -92,7 +92,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 if (useShellExecute) p.StartInfo.CreateNoWindow = createNoWindow;
                 if (runAsRCTProcess)
                 {
-                    RCTProcess proc = context.ClientContext.ProcessTable.Factory.Create(context.ClientContext, $"Ext - {name}",
+                    RctProcess proc = context.ClientContext.ProcessTable.Factory.Create(context.ClientContext, $"Ext - {name}",
                         (current, cancellationToken) =>
                         {
                             string text = string.Empty;

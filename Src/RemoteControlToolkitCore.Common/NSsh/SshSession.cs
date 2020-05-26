@@ -13,19 +13,19 @@ namespace RemoteControlToolkitCore.Common.NSsh
         /// <summary>
         /// Logging support for this class.
         /// </summary>
-        protected ILogger<SshSession> _logger;
+        protected ILogger<SshSession> Logger;
 
-        private NSshServiceConfiguration _config;
+        private readonly NSshServiceConfiguration _config;
 
-        ITransportLayerManager _transportManager;
+        readonly ITransportLayerManager _transportManager;
 
-        IHostApplication _sshService;
+        readonly IHostApplication _sshService;
 
         public SshSession(IHostApplication service, ITransportLayerManager manager, ILogger<SshSession> logger, NSshServiceConfiguration config)
         {
             _sshService = service;
             _transportManager = manager;
-            _logger = logger;
+            Logger = logger;
             _config = config;
         }
 
@@ -54,7 +54,7 @@ namespace RemoteControlToolkitCore.Common.NSsh
             try
             {
                 // Setup idle timeouts
-                _transportManager.OnIdleTimeout += RemoteEndTimedOut;
+                _transportManager.OnIdleTimeout += remoteEndTimedOut;
                 _transportManager.StartIdleTimeout(_config.VersionsExchangedTimeout);
 
                 // Process incoming packets
@@ -63,11 +63,11 @@ namespace RemoteControlToolkitCore.Common.NSsh
             catch (IOException e)
             {
                 // Probably an error writing to a disposed socket, ignore...
-                _logger.LogInformation("Exception processing session: " + e.Message, e);
+                Logger.LogInformation("Exception processing session: " + e.Message, e);
             }
             catch (Exception e)
             {
-                _logger.LogInformation("Exception processing session: " + e.Message, e);
+                Logger.LogInformation("Exception processing session: " + e.Message, e);
                 _transportManager.Disconnect(DisconnectReason.ProtocolError);
             }
             finally
@@ -77,7 +77,7 @@ namespace RemoteControlToolkitCore.Common.NSsh
             }
 
             // Prevent the service from attempting to kill this thread on shutdown
-            _sshService.DeregisterSession(this);
+            _sshService.UnRegisterSession(this);
         }
 
         public void Reject()
@@ -90,21 +90,21 @@ namespace RemoteControlToolkitCore.Common.NSsh
         /// <summary>
         /// Disconnects the remote client if the connection is idle for too long.
         /// </summary>
-        private void RemoteEndTimedOut(object sender, EventArgs e)
+        private void remoteEndTimedOut(object sender, EventArgs e)
         {
             try
             {
-                _logger.LogInformation("Remote client " + _clientSocket .ToString() + " idle for too long in state " + _transportManager.State + ", disconnecting.");
+                Logger.LogInformation("Remote client " + _clientSocket + " idle for too long in state " + _transportManager.State + ", disconnecting.");
                 _transportManager.Disconnect(DisconnectReason.ByApplication);
             }
             catch (IOException ex)
             {
                 // Probably an error writing to a disposed socket, ignore...
-                _logger.LogInformation("Exception processing session: " + ex.Message, ex);
+                Logger.LogInformation("Exception processing session: " + ex.Message, ex);
             }
             catch (Exception ex)
             {
-                _logger.LogInformation("Exception processing session: " + ex.Message, ex);
+                Logger.LogInformation("Exception processing session: " + ex.Message, ex);
             }
         }
 

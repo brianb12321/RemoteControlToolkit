@@ -13,7 +13,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
     {
         public override string ProcessName => "Echo Command";
 
-        public override CommandResponse Execute(CommandRequest args, RCTProcess currentProc, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess currentProc, CancellationToken token)
         {
             //Check if StdIn has data.
             if (currentProc.In.Peek() != -1)

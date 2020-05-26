@@ -23,7 +23,7 @@ namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
 
         private void addExFunction(IScriptingEngine engine, IScriptExecutionContext context)
         {
-            context.AddVariable("ex_application", new Func<string, string[], RCTProcess>((name, args) =>
+            context.AddVariable("ex_application", new Func<string, string[], RctProcess>((name, args) =>
             {
                 var application = _subSystem.Factory.CreateOnApplication(engine.ParentProcess.ClientContext,
                     _subSystem.GetApplication(name), engine.ParentProcess,

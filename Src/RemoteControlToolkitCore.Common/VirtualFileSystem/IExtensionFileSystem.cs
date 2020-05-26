@@ -6,12 +6,12 @@ using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
 namespace RemoteControlToolkitCore.Common.VirtualFileSystem
 {
-    public interface IExtensionFileSystem : IExtension<RCTProcess>
+    public interface IExtensionFileSystem : IExtension<RctProcess>
     {
         IFileSystem GetFileSystem();
     }
 
-    public class ExtensionFileSystemProvder : IExtensionProvider<RCTProcess>
+    public class ExtensionFileSystemProvder : IExtensionProvider<RctProcess>
     {
         private readonly FileSystemSubsystem _subsystem;
         private IExtensionFileSystem _fileSystem;
@@ -20,13 +20,13 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem
         {
             _subsystem = subsystem;
         }
-        public void GetExtension(RCTProcess context)
+        public void GetExtension(RctProcess context)
         {
             _fileSystem = new ExtensionFileSystem(_subsystem.GetFileSystem());
             context.Extensions.Add(_fileSystem);
         }
 
-        public void RemoveExtension(RCTProcess context)
+        public void RemoveExtension(RctProcess context)
         {
             context.Extensions.Remove(_fileSystem);
         }

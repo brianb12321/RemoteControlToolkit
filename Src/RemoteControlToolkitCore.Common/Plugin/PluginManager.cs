@@ -29,6 +29,11 @@ namespace RemoteControlToolkitCore.Common.Plugin
             return library;
         }
 
+        public PluginLibrary LoadFromType(Type type)
+        {
+            return LoadFromAssembly(Assembly.GetAssembly(type));
+        }
+
         public IPluginModule<TSubsystem> ActivatePluginModule<TSubsystem>(string name) where TSubsystem : PluginSubsystem
         {
             foreach (PluginLibrary library in _loadedLibraries.Values)

@@ -5,18 +5,18 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem
 {
     public class ExtensionFileSystem : IExtensionFileSystem
     {
-        private RCTProcess _owner;
-        private IFileSystem _fileSystem;
+        private RctProcess _owner;
+        private readonly IFileSystem _fileSystem;
         public ExtensionFileSystem(IFileSystem fileSystem)
         {
             _fileSystem = fileSystem;
         }
-        public void Attach(RCTProcess owner)
+        public void Attach(RctProcess owner)
         {
             _owner = owner;
         }
 
-        public void Detach(RCTProcess owner)
+        public void Detach(RctProcess owner)
         {
             
         }

@@ -21,7 +21,7 @@ namespace RemoteControlToolkitCore.Subsystem.Workflow
         private WorkflowSubsystem _subsystem;
         private IServiceProvider _provider;
         public override string ProcessName => "Windows Workflow Service";
-        public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
             AutoResetEvent blocker = new AutoResetEvent(false);
             string mode = "help";

@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio.FileSystems;
@@ -13,34 +11,43 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
 {
     public class ExProcFileSystem : FileSystem
     {
-        private Dictionary<string, Action<Process, StreamWriter>> _functions;
+        private readonly Dictionary<string, Action<Process, StreamWriter>> _functions;
 
         public ExProcFileSystem()
         {
-            _functions = new Dictionary<string, Action<Process, StreamWriter>>();
-            _functions.Add("priority", (p, w) => w.WriteLine(p.BasePriority.ToString()));
-            _functions.Add("exited", (p, w) => w.WriteLine(p.HasExited));
-            _functions.Add("name", (p, w) => w.WriteLine(p.ProcessName));
-            _functions.Add("machineName", (p, w) => w.WriteLine(p.MachineName));
-            _functions.Add("startTime", (p, w) => w.WriteLine($"{p.StartTime.ToShortDateString()} - {p.StartTime.ToShortTimeString()}"));
-            _functions.Add("handle", (p, w) => w.WriteLine(p.Handle.ToString("X8")));
-            _functions.Add("mainWindowHandle", (p, w) => w.WriteLine(p.MainWindowHandle.ToString("X8")));
-            _functions.Add("handleCount", (p, w) => w.WriteLine(p.HandleCount));
-            _functions.Add("modules", (p, w) =>
+            _functions = new Dictionary<string, Action<Process, StreamWriter>>
             {
-                foreach (ProcessModule module in p.Modules)
+                {"priority", (p, w) => w.WriteLine(p.BasePriority.ToString())},
+                {"exited", (p, w) => w.WriteLine(p.HasExited)},
+                {"name", (p, w) => w.WriteLine(p.ProcessName)},
+                {"machineName", (p, w) => w.WriteLine(p.MachineName)},
                 {
-                    w.WriteLine($"{module.FileName}: 0x{module.BaseAddress.ToString("X8")}");
-                }
-            });
-            _functions.Add("threads", (p, w) =>
-            {
-                foreach (ProcessThread thread in p.Threads)
+                    "startTime",
+                    (p, w) => w.WriteLine($"{p.StartTime.ToShortDateString()} - {p.StartTime.ToShortTimeString()}")
+                },
+                {"handle", (p, w) => w.WriteLine(p.Handle.ToString("X8"))},
+                {"mainWindowHandle", (p, w) => w.WriteLine(p.MainWindowHandle.ToString("X8"))},
+                {"handleCount", (p, w) => w.WriteLine(p.HandleCount)},
                 {
-                    w.WriteLine($"{thread.Id}: {thread.ThreadState}");
-                }
-            });
-            _functions.Add("windowTitle", (p, w) => w.WriteLine(p.MainWindowTitle));
+                    "modules", (p, w) =>
+                    {
+                        foreach (ProcessModule module in p.Modules)
+                        {
+                            w.WriteLine($"{module.FileName}: 0x{module.BaseAddress.ToString("X8")}");
+                        }
+                    }
+                },
+                {
+                    "threads", (p, w) =>
+                    {
+                        foreach (ProcessThread thread in p.Threads)
+                        {
+                            w.WriteLine($"{thread.Id}: {thread.ThreadState}");
+                        }
+                    }
+                },
+                {"windowTitle", (p, w) => w.WriteLine(p.MainWindowTitle)}
+            };
         }
         protected override void CreateDirectoryImpl(UPath path)
         {
@@ -113,8 +120,7 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
                 string file = path.GetNameWithoutExtension();
                 Process p = Process.GetProcessById(id);
                 MemoryStream ms = new MemoryStream();
-                StreamWriter sw = new StreamWriter(ms);
-                sw.AutoFlush = true;
+                StreamWriter sw = new StreamWriter(ms) {AutoFlush = true};
                 _functions[file](p, sw);
                 ms.Seek(0, SeekOrigin.Begin);
                 return ms;
@@ -169,7 +175,7 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
             {
                 foreach (Process p in Process.GetProcesses())
                 {
-                    paths.Add($"/{p.Id.ToString()}");
+                    paths.Add($"/{p.Id}");
                 }
 
                 return paths;

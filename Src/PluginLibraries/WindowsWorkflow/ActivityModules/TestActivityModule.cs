@@ -18,7 +18,7 @@ namespace WindowsWorkflow.ActivityModules
     public class TestActivityModule : PluginModule<WorkflowSubsystem>, IWorkflowPluginModule
     {
 
-        public Activity ExecuteActivity(string arg, RCTProcess currentProc)
+        public Activity ExecuteActivity(string arg, RctProcess currentProc)
         {
             return new TestActivity();
         }

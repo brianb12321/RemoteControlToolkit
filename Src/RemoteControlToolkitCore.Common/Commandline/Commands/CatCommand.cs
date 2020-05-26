@@ -18,7 +18,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
     public class CatCommand : RCTApplication
     {
         public override string ProcessName => "Cat";
-        public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
             if (args.Arguments.Length > 1)
             {

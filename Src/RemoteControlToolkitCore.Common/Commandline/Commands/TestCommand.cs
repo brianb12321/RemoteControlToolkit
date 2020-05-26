@@ -15,7 +15,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
     public class TestCommand : RCTApplication
     {
         public override string ProcessName => "Test";
-        public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
             context.Out.Write("Do you like cookies? ");
             char answer = (char)context.In.Read();

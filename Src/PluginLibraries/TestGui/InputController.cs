@@ -13,9 +13,9 @@ namespace TestGui
     {
         private readonly TextBox _textBox;
         private readonly LogPanel _logPanel;
-        private readonly RCTProcess _process;
+        private readonly RctProcess _process;
 
-        public InputController(TextBox textBox, LogPanel logPanel, RCTProcess process)
+        public InputController(TextBox textBox, LogPanel logPanel, RctProcess process)
         {
             _textBox = textBox;
             _logPanel = logPanel;

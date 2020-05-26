@@ -61,10 +61,10 @@ namespace RemoteControlToolkitCoreServer
 
         public void PostConfigureServices(IServiceProvider provider, IHostApplication application)
         {
-            application.PluginManager.LoadFromAssembly(Assembly.GetAssembly(typeof(DefaultShell)));
-            application.PluginManager.LoadFromAssembly(Assembly.GetAssembly(typeof(AudioCommand)));
-            application.PluginManager.LoadFromAssembly(Assembly.GetAssembly(typeof(WorkflowCommand)));
-            application.PluginManager.LoadFromAssembly(Assembly.GetAssembly(typeof(RCTSerialDevice)));
+            application.PluginManager.LoadFromType(typeof(DefaultShell));
+            application.PluginManager.LoadFromType(typeof(AudioCommand));
+            application.PluginManager.LoadFromType(typeof(WorkflowCommand));
+            application.PluginManager.LoadFromType(typeof(RCTSerialDevice));
             provider.GetService<ApplicationSubsystem>().InitializeSubsystem();
             provider.GetService<AudioOutSubsystem>().InitializeSubsystem();
             provider.GetService<FileSystemSubsystem>().InitializeSubsystem();;

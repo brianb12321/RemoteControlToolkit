@@ -14,6 +14,7 @@ namespace RemoteControlToolkitCore.Common.Plugin
     {
         PluginLibrary LoadPluginFile(string filePath);
         PluginLibrary LoadFromAssembly(Assembly assembly);
+        PluginLibrary LoadFromType(Type type);
         IPluginModule<TSubsystem> ActivatePluginModule<TSubsystem>(string name) where TSubsystem : PluginSubsystem;
 
         IEnumerable<IPluginModule<TSubsystem>> ActivateAllPluginModules<TSubsystem>()

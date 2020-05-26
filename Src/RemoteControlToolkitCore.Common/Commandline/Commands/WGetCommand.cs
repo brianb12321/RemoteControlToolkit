@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Crayon;
@@ -22,7 +20,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
     {
         private IFileSystem _fileSystem;
         public override string ProcessName => "WGet";
-        public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
             bool showHelp = false;
             string location = string.Empty;
@@ -63,33 +61,31 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             outWriter.WriteLine("Got response!");
             outWriter.WriteLine($"Response with HTTP code {response.StatusCode}.");
             outWriter.WriteLine("Reading response body...");
-            using (var stream = await response.Content.ReadAsStreamAsync())
-                using(var fileStream = _fileSystem.OpenFile(localPath, FileMode.Create, FileAccess.Write))
+            using var stream = await response.Content.ReadAsStreamAsync();
+            using var fileStream = _fileSystem.OpenFile(localPath, FileMode.Create, FileAccess.Write);
+            outWriter.WriteLine("Opened local VFS file for writing.");
+            var totalRead = 0L;
+            var buffer = new byte[4096];
+            var isMoreToRead = true;
+            do
             {
-                outWriter.WriteLine("Opened local VFS file for writing.");
-                var totalRead = 0L;
-                var buffer = new byte[4096];
-                var isMoreToRead = true;
-                do
+                token.ThrowIfCancellationRequested();
+                var read = await stream.ReadAsync(buffer, 0, buffer.Length, token);
+                if (read == 0)
                 {
-                    token.ThrowIfCancellationRequested();
-                    var read = await stream.ReadAsync(buffer, 0, buffer.Length, token);
-                    if (read == 0)
-                    {
-                        isMoreToRead = false;
-                    }
-                    else
-                    {
-                        var data = new byte[read];
-                        buffer.ToList().CopyTo(0, data, 0, read);
-                        await fileStream.WriteAsync(data, 0, data.Length, token);
-                        await fileStream.FlushAsync(token);
-                        totalRead += read;
-                        progress.Report((totalRead * 1d) / (totalRead * 1d) * 100);
-                    }
-                } while (isMoreToRead);
-                fileStream.Close();
-            }
+                    isMoreToRead = false;
+                }
+                else
+                {
+                    var data = new byte[read];
+                    buffer.ToList().CopyTo(0, data, 0, read);
+                    await fileStream.WriteAsync(data, 0, data.Length, token);
+                    await fileStream.FlushAsync(token);
+                    totalRead += read;
+                    progress.Report((totalRead * 1d) / (totalRead * 1d) * 100);
+                }
+            } while (isMoreToRead);
+            fileStream.Close();
         }
         public override void InitializeServices(IServiceProvider kernel)
         {

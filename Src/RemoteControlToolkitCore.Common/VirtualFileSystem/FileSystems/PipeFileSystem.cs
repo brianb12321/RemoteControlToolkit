@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Pipes;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using IronPython.Modules;
 using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
@@ -19,7 +15,7 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
     /// </summary>
     public class PipeFileSystem : FileSystem
     {
-        private IPipeService _pipeService;
+        private readonly IPipeService _pipeService;
 
         private enum PipeKind
         {
@@ -29,52 +25,62 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
             NamedClient
         }
 
-        private Dictionary<PipeKind, Func<UPath, IEnumerable<UPath>>> _pipeFunctions;
+        private readonly Dictionary<PipeKind, Func<UPath, IEnumerable<UPath>>> _pipeFunctions;
 
         public PipeFileSystem(IPipeService service)
         {
             _pipeService = service;
-            _pipeFunctions = new Dictionary<PipeKind, Func<UPath, IEnumerable<UPath>>>();
-            _pipeFunctions.Add(PipeKind.AnonymousServer, (path) =>
+            _pipeFunctions = new Dictionary<PipeKind, Func<UPath, IEnumerable<UPath>>>
             {
-                List<UPath> pipes = new List<UPath>();
-                for (int i = 0; i < _pipeService.GetServerAnonymousPipes().Length; i++)
                 {
-                    pipes.Add(UPath.Combine(path, $"{i}"));
-                }
+                    PipeKind.AnonymousServer, (path) =>
+                    {
+                        List<UPath> pipes = new List<UPath>();
+                        for (int i = 0; i < _pipeService.GetServerAnonymousPipes().Length; i++)
+                        {
+                            pipes.Add(UPath.Combine(path, $"{i}"));
+                        }
 
-                return pipes;
-            });
-            _pipeFunctions.Add(PipeKind.AnonymousClient, (path) =>
-            {
-                List<UPath> pipes = new List<UPath>();
-                for (int i = 0; i < _pipeService.GetClientAnonymousPipes().Length; i++)
+                        return pipes;
+                    }
+                },
                 {
-                    pipes.Add(UPath.Combine(path, $"{i}"));
-                }
+                    PipeKind.AnonymousClient, (path) =>
+                    {
+                        List<UPath> pipes = new List<UPath>();
+                        for (int i = 0; i < _pipeService.GetClientAnonymousPipes().Length; i++)
+                        {
+                            pipes.Add(UPath.Combine(path, $"{i}"));
+                        }
 
-                return pipes;
-            });
-            _pipeFunctions.Add(PipeKind.NamedServer, (path) =>
-            {
-                List<UPath> pipes = new List<UPath>();
-                for (int i = 0; i < _pipeService.GetServerNamedPipes().Length; i++)
+                        return pipes;
+                    }
+                },
                 {
-                    pipes.Add(UPath.Combine(path, $"{i}"));
-                }
+                    PipeKind.NamedServer, (path) =>
+                    {
+                        List<UPath> pipes = new List<UPath>();
+                        for (int i = 0; i < _pipeService.GetServerNamedPipes().Length; i++)
+                        {
+                            pipes.Add(UPath.Combine(path, $"{i}"));
+                        }
 
-                return pipes;
-            });
-            _pipeFunctions.Add(PipeKind.NamedClient, (path) =>
-            {
-                List<UPath> pipes = new List<UPath>();
-                for (int i = 0; i < _pipeService.GetClientNamedPipes().Length; i++)
+                        return pipes;
+                    }
+                },
                 {
-                    pipes.Add(UPath.Combine(path, $"{i}"));
-                }
+                    PipeKind.NamedClient, (path) =>
+                    {
+                        List<UPath> pipes = new List<UPath>();
+                        for (int i = 0; i < _pipeService.GetClientNamedPipes().Length; i++)
+                        {
+                            pipes.Add(UPath.Combine(path, $"{i}"));
+                        }
 
-                return pipes;
-            });
+                        return pipes;
+                    }
+                }
+            };
         }
 
         protected override void CreateDirectoryImpl(UPath path)
@@ -117,19 +123,14 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
 
         protected override bool FileExistsImpl(UPath path)
         {
-            switch (path.GetDirectory().FullName)
+            return path.GetDirectory().FullName switch
             {
-                case "/as":
-                    return _pipeService.AnonymousServerPipeExists(int.Parse(path.GetNameWithoutExtension()));
-                case "/ac":
-                    return _pipeService.AnonymousClientPipeExists(int.Parse(path.GetNameWithoutExtension()));
-                case "/ns":
-                    return _pipeService.NamedServerPipeExists(int.Parse(path.GetNameWithoutExtension()));
-                case "/nc":
-                    return _pipeService.NamedClientPipeExists(int.Parse(path.GetNameWithoutExtension()));
-                default:
-                    return false;
-            }
+                "/as" => _pipeService.AnonymousServerPipeExists(int.Parse(path.GetNameWithoutExtension())),
+                "/ac" => _pipeService.AnonymousClientPipeExists(int.Parse(path.GetNameWithoutExtension())),
+                "/ns" => _pipeService.NamedServerPipeExists(int.Parse(path.GetNameWithoutExtension())),
+                "/nc" => _pipeService.NamedClientPipeExists(int.Parse(path.GetNameWithoutExtension())),
+                _ => false
+            };
         }
 
         protected override void MoveFileImpl(UPath srcPath, UPath destPath)
@@ -235,7 +236,7 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem.FileSystems
 
     public class UnClosableStream : Stream
     {
-        private Stream _baseStream;
+        private readonly Stream _baseStream;
 
         public UnClosableStream(Stream baseStream)
         {

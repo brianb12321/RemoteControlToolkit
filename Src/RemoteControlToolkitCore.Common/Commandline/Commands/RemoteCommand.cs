@@ -17,14 +17,15 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
     {
         private IServerPool _serverPool;
         public override string ProcessName => "Remote Command";
-        public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
-            int serverId = 0;
             bool showHelp = false;
             string command = string.Empty;
-            OptionSet options = new OptionSet();
-            options.Add("help|?", "Displays the help screen.", v => showHelp = true);
-            options.Add("command|c=", "Executes the specified command on the remote server.", v => command = v);
+            OptionSet options = new OptionSet
+            {
+                {"help|?", "Displays the help screen.", v => showHelp = true},
+                {"command|c=", "Executes the specified command on the remote server.", v => command = v}
+            };
             var server = options.Parse(args.Arguments.Select(a => a.ToString()));
             if (showHelp)
             {
@@ -38,7 +39,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 context.ControlC += (sender, e) =>
                 {
                     e.CloseProcess = false;
-                    ((RCTProcess)sender).Child.InvokeControlC();
+                    ((RctProcess)sender).Child.InvokeControlC();
                 };
                 var selectedServer = _serverPool.GetServers()[id];
                 var remoteStreamWriter = selectedServer.GetClientWriter();

@@ -46,12 +46,12 @@ namespace RemoteControlToolkitCore.Common.Scripting
             return CurrentScriptScope.GetVariable<T>(name);
         }
 
-        void IExtension<RCTProcess>.Attach(RCTProcess owner)
+        void IExtension<RctProcess>.Attach(RctProcess owner)
         {
             
         }
 
-        void IExtension<RCTProcess>.Detach(RCTProcess owner)
+        void IExtension<RctProcess>.Detach(RctProcess owner)
         {
             
         }

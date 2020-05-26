@@ -18,7 +18,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         private IServerPool _pool;
         public override string ProcessName => "Proxy Control";
 
-        public override CommandResponse Execute(CommandRequest args, RCTProcess currentProc, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess currentProc, CancellationToken token)
         {
             string mode = string.Empty;
             OptionSet options = new OptionSet()

@@ -25,7 +25,7 @@ namespace MailGun
     public class MailGunCommand : RCTApplication
     {
         public override string ProcessName => "Mail Gun Command.";
-        public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
             IFileSystem fileSystem = context.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
             bool showHelp = false;
@@ -147,7 +147,7 @@ namespace MailGun
             }
             return new CommandResponse(CommandResponse.CODE_SUCCESS);
         }
-        private SecureString getPassword(RCTProcess context)
+        private SecureString getPassword(RctProcess context)
         {
             SecureString password = new SecureString();
             //Check if IO is redirected.

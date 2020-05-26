@@ -1,56 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
 using Microsoft.Extensions.DependencyInjection;
 using NDesk.Options;
-using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.NSsh;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.NSsh.Services;
-using RemoteControlToolkitCore.Common.Proxy;
-using RemoteControlToolkitCore.Common.Utilities;
 
 [assembly: PluginLibrary("CommonPlugin","Common Plugin")]
 namespace RemoteControlToolkitCore.Common
 {
     public class Application : IHostApplication
     {
-        private TcpListener _listener;
-        private TcpListener _proxyListener;
-        private ILogger<Application> _logger;
-        private IServerPool _proxyClients;
-        private ILogger<ProxyNetworkInstance> _proxyLogger;
-        private ILogger<ProxyClient> _proxyClientLogger;
-        private IServiceProvider _provider;
+        private readonly ILogger<Application> _logger;
+        private readonly ILogger<ProxyNetworkInstance> _proxyLogger;
+        private readonly IServiceProvider _provider;
         private Thread _clientThread;
-        private Thread _proxyThread;
-        private bool proxyMode = false;
-        private string proxyAddress = string.Empty;
-        private int proxyPort = 8080;
-        private NSshServiceConfiguration _config;
+        private bool _proxyMode;
+        private string _proxyAddress = string.Empty;
+        private int _proxyPort = 8080;
+        private readonly NSshServiceConfiguration _config;
         private bool _shutdown;
 
         public NetworkSide ExecutingSide { get; }
         public IAppBuilder Builder { get; }
         public IPluginManager PluginManager { get; }
         private long _connectionsReceived;
-        private List<TcpListener> _listenSockets = new List<TcpListener>();
-        private Dictionary<ISshSession, Thread> _sessions = new Dictionary<ISshSession, Thread>();
+        private readonly List<TcpListener> _listenSockets = new List<TcpListener>();
+        private readonly Dictionary<ISshSession, Thread> _sessions = new Dictionary<ISshSession, Thread>();
 
         public Application(ILogger<Application> logger,
             ILogger<ProxyNetworkInstance> proxyLogger,
-            ILogger<ProxyClient> proxyClientLogger,
             IServiceProvider provider,
-            IServerPool pool,
             NetworkSide side,
             IAppBuilder builder,
             IKeySetupService keySetup,
@@ -58,10 +45,8 @@ namespace RemoteControlToolkitCore.Common
             NSshServiceConfiguration config)
         {
             _logger = logger;
-            _proxyClientLogger = proxyClientLogger;
             _proxyLogger = proxyLogger;
             _provider = provider;
-            _proxyClients = pool;
             ExecutingSide = side;
             Builder = builder;
             _config = config;
@@ -72,15 +57,15 @@ namespace RemoteControlToolkitCore.Common
         {
             _shutdown = false;
             OptionSet options = new OptionSet()
-                .Add("p|proxy", "Connect to a proxy server.", v => proxyMode = true)
-                .Add("proxyAddress|a=", "The address to connect to.", v => proxyAddress = v)
-                .Add("proxyPort|o=", "The port to connect to.", v => proxyPort = int.Parse(v));
+                .Add("p|proxy", "Connect to a proxy server.", v => _proxyMode = true)
+                .Add("proxyAddress|a=", "The address to connect to.", v => _proxyAddress = v)
+                .Add("proxyPort|o=", "The port to connect to.", v => _proxyPort = int.Parse(v));
 
             options.Parse(args);
-            if (proxyMode)
+            if (_proxyMode)
             {
                 TcpClient client = new TcpClient();
-                client.Connect(proxyAddress, proxyPort);
+                client.Connect(_proxyAddress, _proxyPort);
                 ProxyClient instance = new ProxyClient(client, _provider);
                 _proxyLogger.LogInformation("Connected to proxy server.");
                 instance.Start();
@@ -149,7 +134,7 @@ namespace RemoteControlToolkitCore.Common
                         session.ClientSocket = client;
                         session.SocketStream = new NetworkStream(client);
 
-                        int sameIPAddressCount =
+                        int sameIpAddressCount =
                            (from sess in _sessions.Keys
                             where ((IPEndPoint)sess.ClientSocket.RemoteEndPoint).Address.ToString() == ((IPEndPoint)client.RemoteEndPoint).Address.ToString()
                             select sess).Count();
@@ -162,7 +147,7 @@ namespace RemoteControlToolkitCore.Common
                             Thread rejectSessionThread = new Thread(session.Reject);
                             rejectSessionThread.Start();
                         }
-                        else if (sameIPAddressCount >= _config.MaximumSameIPAddressConnections)
+                        else if (sameIpAddressCount >= _config.MaximumSameIPAddressConnections)
                         {
                             _logger.LogWarning("Rejecting connection from " + client.RemoteEndPoint + " due to maximum client connections for "
                               + " same IP address of " + _config.MaximumSameIPAddressConnections + " limit being reached.");
@@ -205,7 +190,7 @@ namespace RemoteControlToolkitCore.Common
             }
         }
 
-        public void DeregisterSession(ISshSession session)
+        public void UnRegisterSession(ISshSession session)
         {
             lock (this)
             {

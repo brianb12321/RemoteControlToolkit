@@ -9,17 +9,16 @@ using IronPython.Hosting;
 using Microsoft.Scripting;
 using Microsoft.Scripting.Hosting;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
-using RemoteControlToolkitCore.Common.NSsh.Utility;
 using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
 namespace RemoteControlToolkitCore.Common.Scripting
 {
     public class IronPythonScriptingEngine : IScriptingEngine
     {
-        private Dictionary<string, IScriptExecutionContext> _storedContexts = new Dictionary<string, IScriptExecutionContext>();
+        private readonly Dictionary<string, IScriptExecutionContext> _storedContexts = new Dictionary<string, IScriptExecutionContext>();
         public ScriptEngine ScriptingEngine { get; private set; }
         public ScriptIO IO => ScriptingEngine.Runtime.IO;
-        public RCTProcess ParentProcess { get; set; }
+        public RctProcess ParentProcess { get; set; }
         public CancellationToken Token { get; set; }
 
         public IronPythonScriptingEngine()
@@ -49,10 +48,10 @@ namespace RemoteControlToolkitCore.Common.Scripting
 
         public IScriptExecutionContext ExecuteFile(string path, IScriptExecutionContext context)
         {
-            IronPythonScriptExecutionContext ironPythonContext = null;
-            if (context is IronPythonScriptExecutionContext)
+            IronPythonScriptExecutionContext ironPythonContext;
+            if (context is IronPythonScriptExecutionContext executionContext)
             {
-                ironPythonContext = (IronPythonScriptExecutionContext)context;
+                ironPythonContext = executionContext;
             }
             else throw new ScriptException("context must be an IronPython context.");
             AddPath(Path.GetDirectoryName(Path.GetFullPath(path)));
@@ -62,10 +61,10 @@ namespace RemoteControlToolkitCore.Common.Scripting
         }
         public T ExecuteString<T>(string content, IScriptExecutionContext context)
         {
-            IronPythonScriptExecutionContext ironPythonContext = null;
-            if (context is IronPythonScriptExecutionContext)
+            IronPythonScriptExecutionContext ironPythonContext;
+            if (context is IronPythonScriptExecutionContext executionContext)
             {
-                ironPythonContext = (IronPythonScriptExecutionContext)context;
+                ironPythonContext = executionContext;
             }
             else throw new ScriptException("context must be an IronPython context.");
             return ScriptingEngine.Execute(content, ironPythonContext.CurrentScriptScope);

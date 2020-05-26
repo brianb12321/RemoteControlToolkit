@@ -14,13 +14,13 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
     [Plugin(PluginName = "mountfs")]
     [CommandHelp("Manages the mount points of the file system.")]
-    public class MountFSCommand : RCTApplication
+    public class MountFsCommand : RCTApplication
     {
-        private MountFileSystem _fileSystem { get; set; }
+        private MountFileSystem FileSystem { get; set; }
 
         public override string ProcessName => "Mount Filesystem";
 
-        public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
             string mode = "list";
             OptionSet set = new OptionSet()
@@ -32,22 +32,20 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 set.WriteOptionDescriptions(context.Out);
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }
-            else if (mode == "list")
+
+            if (mode == "list")
             {
-                var mounts = _fileSystem.GetMounts();
+                var mounts = FileSystem.GetMounts();
                 context.Out.WriteLine(mounts.ShowDictionary());
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }
-            else
-            {
-                set.WriteOptionDescriptions(context.Out);
-                return new CommandResponse(CommandResponse.CODE_SUCCESS);
-            }
+            set.WriteOptionDescriptions(context.Out);
+            return new CommandResponse(CommandResponse.CODE_SUCCESS);
         }
 
         public override void InitializeServices(IServiceProvider kernel)
         {
-            _fileSystem = (MountFileSystem)kernel.GetRequiredService<FileSystemSubsystem>().GetFileSystem();
+            FileSystem = (MountFileSystem)kernel.GetRequiredService<FileSystemSubsystem>().GetFileSystem();
         }
     }
 }

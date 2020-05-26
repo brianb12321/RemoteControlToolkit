@@ -9,10 +9,10 @@ namespace RemoteControlToolkitCore.Common.Networking
 {
     public class PipeService : IPipeService
     {
-        private List<AnonymousPipeServerStream> _anonymousServerPipes;
-        private List<AnonymousPipeClientStream> _anonymousClientPipes;
-        private List<NamedPipeServerStream> _namedServerPipes;
-        private List<NamedPipeClientStream> _namedClientPipes;
+        private readonly List<AnonymousPipeServerStream> _anonymousServerPipes;
+        private readonly List<AnonymousPipeClientStream> _anonymousClientPipes;
+        private readonly List<NamedPipeServerStream> _namedServerPipes;
+        private readonly List<NamedPipeClientStream> _namedClientPipes;
 
         public PipeService()
         {

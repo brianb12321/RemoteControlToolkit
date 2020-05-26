@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Text;
-using System.Threading;
 using ConsoleGUI.Api;
 using ConsoleGUI.Data;
 using ConsoleGUI.Space;
@@ -8,12 +6,10 @@ using RemoteControlToolkitCore.Common.Commandline;
 
 namespace RemoteControlToolkitCore.Common.Gui
 {
-    public class RCTConsoleHandler : IConsole
+    public class RctConsoleHandler : IConsole
     {
         private readonly ITerminalHandler _handler;
-        private StringBuilder _renderBuffer;
-        private int count = 0;
-        public RCTConsoleHandler(ITerminalHandler handler)
+        public RctConsoleHandler(ITerminalHandler handler)
         {
             _handler = handler;
         }

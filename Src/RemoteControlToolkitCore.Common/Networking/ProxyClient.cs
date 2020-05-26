@@ -24,10 +24,10 @@ namespace RemoteControlToolkitCore.Common.Networking
         public string Username { get; }
         public IProcessTable ProcessTable { get; }
 
-        private RCTProcess _proxyProcess;
-        private RCTProcess _commandShell;
-        private ILogger<ProxyClient> _logger;
-        private NetworkStream _networkStream;
+        private readonly RctProcess _proxyProcess;
+        private RctProcess _commandShell;
+        private readonly ILogger<ProxyClient> _logger;
+        private readonly NetworkStream _networkStream;
         private StreamReader _sr;
         private StreamWriter _sw;
 
@@ -70,11 +70,10 @@ namespace RemoteControlToolkitCore.Common.Networking
                 {
                     Close();
                 }
-                return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }, null, new ClaimsPrincipal(new GenericIdentity("bob")));
             initializeEnvironmentVariables(_proxyProcess);
         }
-        private void initializeEnvironmentVariables(RCTProcess process)
+        private void initializeEnvironmentVariables(RctProcess process)
         {
             _logger.LogInformation("Initializing environment variables.");
             process.EnvironmentVariables.Add("PROXY_MODE", "true");

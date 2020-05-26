@@ -4,7 +4,7 @@ using RemoteControlToolkitCore.Common.Networking;
 
 namespace RemoteControlToolkitCore.Common.Scripting
 {
-    public interface IScriptExecutionContext : IExtension<RCTProcess>
+    public interface IScriptExecutionContext : IExtension<RctProcess>
     {
         bool ContainsVariable(string name);
         T GetVariable<T>(string name);

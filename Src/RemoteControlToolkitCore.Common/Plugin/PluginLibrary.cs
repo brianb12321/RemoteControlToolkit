@@ -1,12 +1,8 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
-using RemoteControlToolkitCore.Common.Commandline.Parsing;
 
 namespace RemoteControlToolkitCore.Common.Plugin
 {
@@ -15,7 +11,7 @@ namespace RemoteControlToolkitCore.Common.Plugin
     /// </summary>
     public class PluginLibrary
     {
-        private readonly Assembly _pluginAssembly;
+        private Assembly _pluginAssembly;
         private readonly IPluginManager _parentPluginManager;
         private PluginLibraryAttribute _pluginLibraryAttribute;
         public string DisplayName => _pluginLibraryAttribute.DisplayName;
@@ -23,14 +19,21 @@ namespace RemoteControlToolkitCore.Common.Plugin
 
         public PluginLibrary(string pluginAssembly, IPluginManager parentPluginManager)
         {
-            _parentPluginManager = parentPluginManager;
-
+            if (string.IsNullOrWhiteSpace(pluginAssembly))
+                throw new ArgumentException("An assembly must be provided to load a new plugin library.",
+                    nameof(pluginAssembly));
             Assembly assembly = Assembly.LoadFrom(pluginAssembly);
+            loadAssembly(assembly);
+            _parentPluginManager = parentPluginManager;
+        }
+
+        void loadAssembly(Assembly assembly)
+        {
             var attribute = getPluginLibraryAttribute(assembly);
             if (attribute != null)
             {
-                if (string.IsNullOrWhiteSpace(pluginAssembly)) throw new ArgumentException("An assembly must be provided to load a new plugin library.", nameof(pluginAssembly));
                 _pluginAssembly = assembly;
+                _pluginLibraryAttribute = getPluginLibraryAttribute(assembly);
                 populateInformation();
             }
             else
@@ -38,12 +41,11 @@ namespace RemoteControlToolkitCore.Common.Plugin
                 throw new PluginLoadException($"Plugin file \"{assembly.GetName().Name}\" does not have PluginLibraryAttribute.");
             }
         }
-        //Dangerous constructor, but necessary. The plugin library will be forcefully created.
+
         public PluginLibrary(Assembly assembly, IPluginManager parentPluginManager)
         {
+            loadAssembly(assembly);
             _parentPluginManager = parentPluginManager;
-            _pluginLibraryAttribute = getPluginLibraryAttribute(assembly);
-            _pluginAssembly = assembly;
         }
 
         private PluginLibraryAttribute getPluginLibraryAttribute(Assembly assembly)

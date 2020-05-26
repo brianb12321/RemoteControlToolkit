@@ -6,8 +6,8 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
 {
     public class ProcessTable : IProcessTable
     {
-        public RCTProcess.RCTPRocessFactory Factory { get; private set; }
-        private ConcurrentDictionary<uint, RCTProcess> _activeProcesses;
+        public RctProcess.RctProcessFactory Factory { get; private set; }
+        private readonly ConcurrentDictionary<uint, RctProcess> _activeProcesses;
 
         public uint LatestProcess
         {
@@ -20,18 +20,18 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
 
         public ProcessTable(IServiceProvider provider)
         {
-            Factory = new RCTProcess.RCTPRocessFactory(this, provider);
-            _activeProcesses = new ConcurrentDictionary<uint, RCTProcess>();
+            Factory = new RctProcess.RctProcessFactory(this, provider);
+            _activeProcesses = new ConcurrentDictionary<uint, RctProcess>();
         }
 
-        public void AddProcess(RCTProcess process)
+        public void AddProcess(RctProcess process)
         {
             _activeProcesses.TryAdd(process.Pid, process);
         }
 
         public void CancelProcess(uint pid)
         {
-            if (_activeProcesses.TryRemove(pid, out RCTProcess process))
+            if (_activeProcesses.TryRemove(pid, out RctProcess process))
             {
                 process.Close();
             }
@@ -40,19 +40,19 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
 
         public void AbortProcess(uint pid)
         {
-            if (_activeProcesses.TryRemove(pid, out RCTProcess process))
+            if (_activeProcesses.TryRemove(pid, out RctProcess process))
             {
                 process.Abort();
             }
-            else throw new ProcessException($"Unable to lookup proccess with id {pid}");
+            else throw new ProcessException($"Unable to lookup process with id {pid}");
         }
 
         public void RemoveProcess(uint pid)
         {
-            if (_activeProcesses.TryRemove(pid, out RCTProcess process))
+            if (_activeProcesses.TryRemove(pid, out _))
             {
             }
-            else throw new ProcessException($"Unable to lookup proccess with id {pid}");
+            else throw new ProcessException($"Unable to lookup process with id {pid}");
         }
 
         public bool ProcessExists(uint pid)
@@ -75,6 +75,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 }
                 catch
                 {
+                    // ignored
                 }
             }
         }

@@ -19,7 +19,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
 
         public override string ProcessName => "Help Command";
 
-        public override CommandResponse Execute(CommandRequest args, RCTProcess currentProc, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess currentProc, CancellationToken token)
         {
             Dictionary<string, string> _helpItems = new Dictionary<string, string>();
             var serverData = Assembly.GetEntryAssembly()?.GetName();

@@ -15,7 +15,6 @@ using NuGet.Packaging.Signing;
 using NuGet.Protocol.Core.Types;
 using NuGet.Resolver;
 using NuGet.Versioning;
-using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
@@ -31,7 +30,7 @@ namespace NugetPackageManager
     {
         public override string ProcessName { get; }
 
-        public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
             context.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
             string mode = "showHelp";
@@ -273,7 +272,7 @@ namespace NugetPackageManager
 
         private class Logger : ILogger
         {
-            private TextWriter _textWriter;
+            private readonly TextWriter _textWriter;
 
             public Logger(TextWriter textWriter)
             {

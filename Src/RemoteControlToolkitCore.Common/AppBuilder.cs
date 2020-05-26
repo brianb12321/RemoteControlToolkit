@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
-using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -10,14 +8,13 @@ using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.NSsh.Services;
 using RemoteControlToolkitCore.Common.Plugin;
-using RemoteControlToolkitCore.Common.Proxy;
 
 namespace RemoteControlToolkitCore.Common
 {
     public class AppBuilder : IAppBuilder
     {
-        private List<IApplicationStartup> _startups;
-        private IServiceCollection _services;
+        private readonly List<IApplicationStartup> _startups;
+        private readonly IServiceCollection _services;
         private IPluginManager _pluginManager;
         private ILoggerFactory _loggerFactory;
         public NetworkSide ExecutingSide => NetworkSide.Server;
@@ -35,8 +32,7 @@ namespace RemoteControlToolkitCore.Common
             {
                 return new Application(provider.GetService<ILogger<Application>>(),
                     provider.GetService<ILogger<ProxyNetworkInstance>>(),
-                    provider.GetService<ILogger<ProxyClient>>(),
-                    provider, provider.GetService<IServerPool>(), ExecutingSide, this, 
+                    provider, ExecutingSide, this, 
                     provider.GetService<IKeySetupService>(), 
                     _pluginManager,
                     provider.GetService<NSshServiceConfiguration>());

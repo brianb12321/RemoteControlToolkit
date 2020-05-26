@@ -33,7 +33,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
 
         public override string ProcessName => "Audio Command";
 
-        public override CommandResponse Execute(CommandRequest args, RCTProcess currentProc, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess currentProc, CancellationToken token)
         {
             Stream fileStream = Stream.Null;
             IWavePlayer player = null;

@@ -4,8 +4,8 @@ namespace RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements
 {
     public class ScriptCommandElement : BaseCommandElement
     {
-        private IScriptingEngine _engine;
-        private IScriptExecutionContext _context;
+        private readonly IScriptingEngine _engine;
+        private readonly IScriptExecutionContext _context;
 
         public ScriptCommandElement(string value, IScriptingEngine engine, IScriptExecutionContext context)
         {

@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using NDesk.Options;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
@@ -16,7 +13,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
     public class BeepCommand : RCTApplication
     {
         public override string ProcessName => "Beep";
-        public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
             int frequency = 1000;
             int duration = 1000;

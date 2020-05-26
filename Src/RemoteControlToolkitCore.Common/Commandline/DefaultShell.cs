@@ -33,11 +33,9 @@ namespace RemoteControlToolkitCore.Common.Commandline
         private ApplicationSubsystem _appSubsystem;
         private IHostApplication _nodeApplication;
         private string _motd = "I love cookies!";
-        private IServiceProvider _services;
         private ILogger<DefaultShell> _logger;
         private ITerminalHandler _shellExt;
-        private IFileSystem _fileSystem;
-        private RCTProcess _process;
+        private RctProcess _process;
         private bool _promptAnyways;
         private Dictionary<string, Func<CommandRequest, CommandResponse>> _builtInCommands;
         private List<(string art, string artist)> _bannerArts;
@@ -45,32 +43,34 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         private void loadBannerArt()
         {
-            _bannerArts = new List<(string art, string artist)>();
-            _bannerArts.Add((@"
+            _bannerArts = new List<(string art, string artist)>
+            {
+                (@"
                  _
      .,-;-;-,. /'_\
    _/_/_/_|_\_\) /
  '-<_><_><_><_>=/\
    `/_/====/_/-'\_\
-    ""     ""    """.Cyan(), "Joan Stark"));
-            _bannerArts.Add((@"
+    ""     ""    """.Cyan(), "Joan Stark"),
+                (@"
 .--.
 |__| .-------.
 |=.| |.-----.|
 |--| || KCK ||
 |  | |'-----'|
 |__|~')_____('
-".Cyan(), "KCK"));
-            _bannerArts.Add((@"
+".Cyan(), "KCK"),
+                (@"
 .`.     _ _
 __;_ \ /,//`
 --, `._) (
  '//,,,  |
       )_/
      /_|
-".Cyan(), "sk"));
+".Cyan(), "sk")
+            };
         }
-        private void setupInternalCommands(RCTProcess currentProc)
+        private void setupInternalCommands(RctProcess currentProc)
         {
             _builtInCommands.Add("cls", (args2) =>
             {
@@ -154,7 +154,7 @@ __;_ \ /,//`
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             });
         }
-        public override CommandResponse Execute(CommandRequest args, RCTProcess currentProc, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess currentProc, CancellationToken token)
         {
             bool printNewLine = false;
             _shellExt = currentProc.ClientContext.GetExtension<ITerminalHandler>();
@@ -186,10 +186,9 @@ __;_ \ /,//`
                         currentProc.Out.WriteLine("\u001b]e");
                         continue;
                     }
-                    currentProc.EnvironmentVariables["?"] = executeCommand(newCommand, currentProc, token).Code.ToString();
+                    currentProc.EnvironmentVariables["?"] = executeCommand(newCommand, currentProc).Code.ToString();
                     currentProc.Out.WriteLine("\u001b]e");
                 }
-                return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }
 
             if (string.IsNullOrWhiteSpace(command))
@@ -220,15 +219,15 @@ __;_ \ /,//`
                     if (string.IsNullOrWhiteSpace(newCommand)) continue;
                     if (newCommand.StartsWith("`"))
                     {
-                        handleMultipleCommands(token, currentProc, sb);
+                        handleMultipleCommands(currentProc, sb);
                         if (printNewLine) currentProc.Out.WriteLine();
                         continue;
                     }
-                    currentProc.EnvironmentVariables["?"] = executeCommand(newCommand, currentProc, token).Code.ToString();
+                    currentProc.EnvironmentVariables["?"] = executeCommand(newCommand, currentProc).Code.ToString();
                 }
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }
-            else return executeCommand(command, currentProc, token);
+            else return executeCommand(command, currentProc);
         }
 
         (string art, string artist) getBannerArt()
@@ -239,9 +238,9 @@ __;_ \ /,//`
         StringBuilder drawBanner()
         {
             StringBuilder bannerBuilder = new StringBuilder();
-            var bannerArt = getBannerArt();
-            bannerBuilder.AppendLine(bannerArt.art);
-            bannerBuilder.AppendLine($"Art by {bannerArt.artist}");
+            var (art, artist) = getBannerArt();
+            bannerBuilder.AppendLine(art);
+            bannerBuilder.AppendLine($"Art by {artist}");
             bannerBuilder.AppendLine();
             bannerBuilder.AppendLine("┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓");
             bannerBuilder.AppendLine("┃  Welcome to RCT shell! For a list of commands, enter help   ┃");
@@ -258,7 +257,7 @@ __;_ \ /,//`
             }
             return bannerBuilder;
         }
-        private void setupScriptingEngine(TextWriter outWriter, TextWriter errorWriter, TextReader inReader, RCTProcess currentProc, CancellationToken token)
+        private void setupScriptingEngine(TextWriter outWriter, TextWriter errorWriter, TextReader inReader, RctProcess currentProc, CancellationToken token)
         {
             _engine.ParentProcess = currentProc;
             _engine.Token = token;
@@ -266,36 +265,36 @@ __;_ \ /,//`
             _engine.SetOut(outWriter);
             _engine.SetError(errorWriter);
         }
-        private void handleMultipleCommands(CancellationToken token, RCTProcess currentProc, StringBuilder sb)
+        private void handleMultipleCommands(RctProcess currentProc, StringBuilder sb)
         {
-            List<string> _commands = new List<string>();
+            List<string> commands = new List<string>();
             while (true)
             {
                 sb.Clear();
                 if (!currentProc.InRedirected || _promptAnyways) currentProc.Out.Write("> ");
-                string batchCommand = currentProc.In.ReadLine();
+                var batchCommand = currentProc.In.ReadLine();
                 if (string.IsNullOrWhiteSpace(batchCommand)) continue;
                 if (batchCommand.Contains("`"))
                 {
                     break;
                 }
-                _commands.Add(batchCommand);
+                commands.Add(batchCommand);
             }
 
-            foreach (var command in _commands)
+            foreach (var command in commands)
             {
-                currentProc.EnvironmentVariables["?"] = executeCommand(command, currentProc, token).Code.ToString();
+                currentProc.EnvironmentVariables["?"] = executeCommand(command, currentProc).Code.ToString();
             }
         }
 
-        private void CurrentProc_ControlC(object sender, ControlCEventArgs e)
+        private static void CurrentProc_ControlC(object sender, ControlCEventArgs e)
         {
-            RCTProcess currentProc = (RCTProcess) sender;
+            RctProcess currentProc = (RctProcess) sender;
             currentProc.Child?.InvokeControlC();
             e.CloseProcess = false;
         }
 
-        public CommandResponse executeCommand(string command, RCTProcess currentProc, CancellationToken token)
+        private CommandResponse executeCommand(string command, RctProcess currentProc)
         {
             if (command.StartsWith("::"))
             {
@@ -310,7 +309,7 @@ __;_ \ /,//`
                     }, currentProc, currentProc.Identity);
                 _process.ThreadError += (sender, e) =>
                 {
-                    currentProc.Error.WriteLine(Output.Red($"Error while running script: {e.Message}"));
+                    currentProc.Error.WriteLine($"Error while running script: {e.Message}".Red());
                 };
                 _process.SetOut(currentProc.Out);
                 _process.SetError(currentProc.Error);
@@ -321,12 +320,11 @@ __;_ \ /,//`
                 return _process.ExitCode;
             }
             ILexer lexer = new Lexer();
-            IReadOnlyList<IReadOnlyList<ICommandElement>> parsedItems = null;
             try
             {
                 IParser parser = new Parser(_engine, _scriptContext, currentProc.EnvironmentVariables);
                 var lexedItems = lexer.Lex(command);
-                parsedItems = parser.Parse(lexedItems);
+                var parsedItems = parser.Parse(lexedItems);
                 CommandRequest newRequest = new CommandRequest(parsedItems[0].ToArray());
                 string newCommand = newRequest.Arguments[0].ToString();
                 //Check if command is built-in.
@@ -337,7 +335,7 @@ __;_ \ /,//`
                             _builtInCommands[newCommand](newRequest), currentProc, currentProc.Identity);
                     _process.ThreadError += (sender, e) =>
                     {
-                        currentProc.Error.WriteLine(Output.Red($"Error while executing built-in command: {e.Message}"));
+                        currentProc.Error.WriteLine($"Error while executing built-in command: {e.Message}".Red());
                     };
                 }
 
@@ -367,7 +365,7 @@ __;_ \ /,//`
                             currentProc.Error.WriteLine(Output.Red($"Error while executing command: {e.Message}"));
                         };
                     }
-                    catch (RctProcessException ex)
+                    catch (RctProcessException)
                     {
                         currentProc.Error.WriteLine(Output.Red("No such command, script, or built-in function exists."));
                         return new CommandResponse(CommandResponse.CODE_FAILURE);
@@ -377,7 +375,7 @@ __;_ \ /,//`
                 //Redirect IO
                 try
                 {
-                    redirectIO(parser, currentProc);
+                    redirectIo(parser, currentProc);
                 }
                 catch (Exception ex)
                 {
@@ -401,11 +399,11 @@ __;_ \ /,//`
             }
         }
 
-        void addProcessExtensions(RCTProcess process)
+        private void addProcessExtensions(RctProcess process)
         {
             process.Extensions.Add(_scriptContext);
         }
-        private void redirectIO(IParser parser, RCTProcess currentProc)
+        private void redirectIo(IParser parser, RctProcess currentProc)
         {
             IFileSystem workingDirFileSystem = currentProc.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
             if (parser.OutputRedirected == RedirectionMode.File)
@@ -414,7 +412,7 @@ __;_ \ /,//`
             }
             else if (parser.OutputRedirected == RedirectionMode.VFS)
             {
-                StreamWriter sw = StreamWriter.Null;
+                StreamWriter sw;
                 if (parser.OutputAppendMode)
                 {
                     sw = new StreamWriter(
@@ -435,7 +433,7 @@ __;_ \ /,//`
                 _engine.SetOut(currentProc.Out);
                 _engine.SetError(currentProc.Error);
             }
-            StreamReader sr = StreamReader.Null;
+            StreamReader sr;
             if (parser.InputRedirected == RedirectionMode.File)
             {
                 sr = new StreamReader(parser.Input);
@@ -456,7 +454,6 @@ __;_ \ /,//`
         public override void InitializeServices(IServiceProvider kernel)
         {
             _nodeApplication = kernel.GetService<IHostApplication>();
-            _fileSystem = kernel.GetService<FileSystemSubsystem>().GetFileSystem();
             _logger = kernel.GetService<ILogger<DefaultShell>>();
             _logger.LogInformation("Shell initialized.");
             _builtInCommands = new Dictionary<string, Func<CommandRequest, CommandResponse>>();
@@ -464,10 +461,9 @@ __;_ \ /,//`
             _engine = _scriptingSubsystem.CreateEngine();
             _scriptContext = _engine.CreateContext();
             _appSubsystem = kernel.GetService<ApplicationSubsystem>();
-            _services = kernel;
         }
 
-        public static RCTProcess CreateShellWithParent(string command, RCTProcess parent, ApplicationSubsystem subsystem)
+        public static RctProcess CreateShellWithParent(string command, RctProcess parent, ApplicationSubsystem subsystem)
         {
             var request = new CommandRequest(new ICommandElement[]
             {
@@ -475,11 +471,11 @@ __;_ \ /,//`
                 new StringCommandElement("-c"),
                 new StringCommandElement(command)
             });
-            RCTProcess shellProcess = parent.ClientContext.ProcessTable.Factory.CreateOnApplication(parent.ClientContext,
+            RctProcess shellProcess = parent.ClientContext.ProcessTable.Factory.CreateOnApplication(parent.ClientContext,
                 subsystem.GetApplication("shell"), parent, request, parent.Identity);
             return shellProcess;
         }
-        public static RCTProcess CreateShell(string command, IInstanceSession session, ApplicationSubsystem subsystem, IPrincipal identity)
+        public static RctProcess CreateShell(string command, IInstanceSession session, ApplicationSubsystem subsystem, IPrincipal identity)
         {
             var request = new CommandRequest(new ICommandElement[]
             {
@@ -487,7 +483,7 @@ __;_ \ /,//`
                 new StringCommandElement("-c"),
                 new StringCommandElement(command)
             });
-            RCTProcess shellProcess = session.ProcessTable.Factory.CreateOnApplication(session,
+            RctProcess shellProcess = session.ProcessTable.Factory.CreateOnApplication(session,
                 subsystem.GetApplication("shell"), null, request, identity);
             return shellProcess;
         }

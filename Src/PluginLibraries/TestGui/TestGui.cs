@@ -21,7 +21,7 @@ namespace TestGui
     public class TestGui : RCTApplication
     {
         public override string ProcessName => "Test Gui";
-        public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
 			var clock = new TextBlock();
 
@@ -289,7 +289,7 @@ namespace TestGui
 				}
 			}, new Rect(0, 7, 17, 5));
 			var handler = context.ClientContext.GetExtension<ITerminalHandler>();
-			ConsoleManager.Console = new RCTConsoleHandler(handler);
+			ConsoleManager.Console = new RctConsoleHandler(handler);
             ConsoleManager.Setup();
 			ConsoleManager.Resize(new Size((int)handler.TerminalColumns, (int)handler.TerminalRows));
             ConsoleManager.Content = dockPanel;

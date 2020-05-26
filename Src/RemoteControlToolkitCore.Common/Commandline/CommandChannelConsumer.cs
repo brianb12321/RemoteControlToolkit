@@ -17,12 +17,12 @@ namespace RemoteControlToolkitCore.Common.Commandline
     public class CommandChannelConsumer : BaseConsoleChannelConsumer, IChannelCommandConsumer
     {
         private readonly IImpersonationProvider _provider;
-        private ILogger<BaseProcessConsole> _logger;
-        private ILogger<TerminalHandler> _terminalLogger;
-        private ApplicationSubsystem _subsystem;
-        private IExtensionProvider<IInstanceSession>[] _providers;
-        private FileSystemSubsystem _fileSystemSubsystem;
-        private IServiceProvider _serviceProvider;
+        private readonly ILogger<BaseProcessConsole> _logger;
+        private readonly ILogger<TerminalHandler> _terminalLogger;
+        private readonly ApplicationSubsystem _subsystem;
+        private readonly IExtensionProvider<IInstanceSession>[] _providers;
+        private readonly FileSystemSubsystem _fileSystemSubsystem;
+        private readonly IServiceProvider _serviceProvider;
         public CommandChannelConsumer(ILogger<BaseConsoleChannelConsumer> logger, ILogger<TerminalHandler> terminalLogger, IImpersonationProvider provider, FileSystemSubsystem fileSystemSubsystem, ILogger<BaseProcessConsole> consoleLogger, ApplicationSubsystem subsystem, IServiceProvider serviceProvider) : base(logger)
         {
             _fileSystemSubsystem = fileSystemSubsystem;

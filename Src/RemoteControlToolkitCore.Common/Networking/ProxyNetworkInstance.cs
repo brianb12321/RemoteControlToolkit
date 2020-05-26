@@ -1,40 +1,29 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
-using RemoteControlToolkitCore.Common.Commandline;
-using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
-using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Proxy;
-using RemoteControlToolkitCore.Common.VirtualFileSystem;
 
 namespace RemoteControlToolkitCore.Common.Networking
 {
     public class ProxyNetworkInstance : IInstanceSession
     {
         public IExtensionCollection<IInstanceSession> Extensions { get; }
-        private readonly ILogger<ProxyNetworkInstance> _logger;
         public Guid ClientUniqueID { get; }
         public string Username { get; }
         private readonly IServerPool _pool;
         private readonly TcpClient _client;
-        private NetworkStream _networkStream;
-        private readonly RCTProcess _proxyProcess;
-        private StreamReader _sr;
-        private StreamWriter _sw;
+        private readonly NetworkStream _networkStream;
+        private readonly RctProcess _proxyProcess;
+        private readonly StreamReader _sr;
+        private readonly StreamWriter _sw;
 
         public ProxyNetworkInstance(TcpClient client, IServiceProvider provider)
         {
             _proxyProcess = null;
             _networkStream = null;
-            _logger = provider.GetService<ILogger<ProxyNetworkInstance>>();
             _pool = provider.GetService<IServerPool>();
             ClientUniqueID = Guid.NewGuid();
             Extensions = new ExtensionCollection<IInstanceSession>(this);
@@ -42,8 +31,7 @@ namespace RemoteControlToolkitCore.Common.Networking
             _client = client;
             _networkStream = _client.GetStream();
             _sr = new StreamReader(_networkStream);
-            _sw = new StreamWriter(_networkStream);
-            _sw.AutoFlush = true;
+            _sw = new StreamWriter(_networkStream) {AutoFlush = true};
         }
 
         public StreamReader GetClientReader()

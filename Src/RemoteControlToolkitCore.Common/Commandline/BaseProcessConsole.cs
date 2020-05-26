@@ -33,7 +33,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         public string Username { get; }
         public ITerminalHandler TerminalHandler { get; }
         public IExtensionCollection<IInstanceSession> Extensions { get; }
-        private readonly RCTProcess _shellProcess;
+        private readonly RctProcess _shellProcess;
         private readonly TerminalHandler _terminalHandler;
 
         public BaseProcessConsole(ILogger<BaseProcessConsole> logger,
@@ -58,7 +58,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 provider.GetExtension(this);
             }
             var outStream = GetClientWriter();
-            _terminalHandler = new TerminalHandler(Pipe, outStream, terminalConfig, terminalLogger);
+            _terminalHandler = new TerminalHandler(Pipe, outStream, terminalConfig);
             TerminalHandler = _terminalHandler;
             var consoleInStream = new ConsoleTextReader(_terminalHandler);
             _shellProcess = ProcessTable.Factory.CreateOnApplication(this, subsystem.GetApplication("shell"),
@@ -71,7 +71,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             Extensions.Add(_terminalHandler);
         }
 
-        private void initializeEnvironmentVariables(RCTProcess process, List<EnvironmentPayload> environmentPayloads)
+        private void initializeEnvironmentVariables(RctProcess process, List<EnvironmentPayload> environmentPayloads)
         {
             _logger.LogInformation("Initializing environment variables.");
             process.EnvironmentVariables.Add("PROXY_MODE", "false");

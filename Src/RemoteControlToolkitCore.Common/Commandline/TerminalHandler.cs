@@ -1,18 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.ServiceModel;
 using System.Text;
-using System.Threading.Tasks;
-using Crayon;
-using Microsoft.Extensions.Logging;
-using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline.TerminalExtensions;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
-using RemoteControlToolkitCore.Common.NSsh.Utility;
-using RemoteControlToolkitCore.Common.Utilities;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {
@@ -33,13 +26,12 @@ namespace RemoteControlToolkitCore.Common.Commandline
         public event EventHandler<string> ReadLineCompleted;
         private uint _terminalRows = 36;
         private uint _terminalColumns = 130;
-        private uint _scrollOffset = 0;
-        private uint _maxChars = 272;
+        private uint _scrollOffset;
+        private readonly uint _maxChars = 272;
         private int _cursorX;
         private int _cursorY;
-        private StringBuilder _renderBuffer = new StringBuilder();
-        private Dictionary<string, KeyBindingDelegate> _keyBindings;
-        private ILogger<TerminalHandler> _logger;
+        private readonly StringBuilder _renderBuffer = new StringBuilder();
+        private readonly Dictionary<string, KeyBindingDelegate> _keyBindings;
         public List<string> History { get; }
 
         public string TerminalName
@@ -76,22 +68,16 @@ namespace RemoteControlToolkitCore.Common.Commandline
             }
         }
 
-        private MemoryStream _stdIn;
-        private Stream _stdOut;
-        private TextWriter _textOut;
-        private StreamReader _textIn;
+        private readonly MemoryStream _stdIn;
+        private readonly TextWriter _textOut;
+        private readonly StreamReader _textIn;
         private int _originalCol;
 
-        private int originalRow
-        {
-            get => _originalRow - (int)_scrollOffset;
-            set => _originalRow = value;
-        }
+        private int OriginalRow => _originalRow - (int)_scrollOffset;
 
         private int _originalRow;
-        public TerminalHandler(MemoryStream stdIn, TextWriter stdOut, PseudoTerminalPayload terminalConfig, ILogger<TerminalHandler> logger)
+        public TerminalHandler(MemoryStream stdIn, TextWriter stdOut, PseudoTerminalPayload terminalConfig)
         {
-            _logger = logger;
             _stdIn = stdIn;
             _textOut = stdOut;
             _textIn = new StreamReader(_stdIn);
@@ -104,13 +90,18 @@ namespace RemoteControlToolkitCore.Common.Commandline
             }
             TerminalModes = new PseudoTerminalMode();
             Extensions = new ExtensionCollection<ITerminalHandler>(this);
-            _keyBindings = new Dictionary<string, KeyBindingDelegate>();
-            _keyBindings.Add("\u001b[11~", (StringBuilder sb, StringBuilder renderBuffer, ref int cursorPosition) =>
+            _keyBindings = new Dictionary<string, KeyBindingDelegate>
             {
-                sb.Clear();
-                cursorPosition = 0;
-                return true;
-            });
+                {
+                    // ReSharper disable once RedundantAssignment
+                    "\u001b[11~", (StringBuilder sb, StringBuilder renderBuffer, ref int cursorPosition) =>
+                    {
+                        sb.Clear();
+                        cursorPosition = 0;
+                        return true;
+                    }
+                }
+            };
             //Add History functionality.
             Extensions.Add(new TerminalHistory());
         }
@@ -156,12 +147,12 @@ namespace RemoteControlToolkitCore.Common.Commandline
             if (TerminalModes.ECHO)
             {
                 //Restore saved cursor position.
-                _renderBuffer.Append(UpdateCursorPosition(_originalCol, originalRow, true));
+                _renderBuffer.Append(UpdateCursorPosition(_originalCol, OriginalRow, true));
                 //Clear lines
                 _renderBuffer.Append(ClearScreenCursorDown(true));
-                _renderBuffer.Append(UpdateCursorPosition(_originalCol, originalRow, true));
+                _renderBuffer.Append(UpdateCursorPosition(_originalCol, OriginalRow, true));
                 _renderBuffer.Append(sb);
-                _renderBuffer.Append(UpdateCursorPosition(_originalCol, originalRow, true));
+                _renderBuffer.Append(UpdateCursorPosition(_originalCol, OriginalRow, true));
                 //Reposition cursor
                 if (cursorPosition > 0)
                 {
@@ -208,11 +199,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
             //Clean out memory pipe's buffer
             cleanOutBuffers(sb);
             ReadLineInvoked?.Invoke(this, EventArgs.Empty);
-            var cursorDimensions = GetCursorPosition();
-            _originalCol = int.Parse(cursorDimensions.column);
+            var (row, column) = GetCursorPosition();
+            _originalCol = int.Parse(column);
             _cursorX = _originalCol;
             _scrollOffset = 0;
-            _originalRow = int.Parse(cursorDimensions.row);
+            _originalRow = int.Parse(row);
             _cursorY = _originalRow;
             char text;
             int cursorPosition = sb.Length;
@@ -318,7 +309,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         public string ReadToEnd()
         {
             StringBuilder sb = new StringBuilder();
-            string text = string.Empty;
+            string text;
             while ((text = ReadLine()) != ((char) 26).ToString())
             {
                 sb.AppendLine(text);

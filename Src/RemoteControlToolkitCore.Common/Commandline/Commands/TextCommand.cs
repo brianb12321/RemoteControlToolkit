@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Runtime.Remoting.Channels;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Crayon;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -22,146 +19,144 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
     [CommandHelp("RCT's own text editor.")]
     public class TextCommand : RCTApplication
     {
-        private ILogger<TextCommand> _logger;
         private IFileSystem _fileSystem;
-        private int _cursorX = 0;
-        private int _renderX = 0;
-        private int _cursorY = 0;
-        private int _rowOff = 0;
-        private int _colOff = 0;
+        private int _cursorX;
+        private int _renderX;
+        private int _cursorY;
+        private int _rowOff;
+        private int _colOff;
         private int _quitTimes = QUIT_TIME;
-        private bool _dirty = false;
+        private bool _dirty;
         private string _statusMessage = string.Empty;
         private TimeSpan _statusTime = TimeSpan.Zero;
         private ITerminalHandler _handler;
-        private RCTProcess _process;
+        private RctProcess _process;
         private StringBuilder _buffer;
-        private List<TextRow> _rows;
+        private List<textRow> _rows;
         private string _fileName = string.Empty;
         private string _filePath = string.Empty;
-        private List<EditorSyntax> _syntaxDatabase;
-        private EditorSyntax _currentSyntax;
+        private List<editorSyntax> _syntaxDatabase;
+        private editorSyntax _currentSyntax;
         private const int TAB_STOP = 8;
         private const int QUIT_TIME = 3;
 
-        private int ScreenRows
-        {
-            get => (int)_handler.TerminalRows - 2;
-        }
-        private class TextRow
+        private int ScreenRows => (int)_handler.TerminalRows - 2;
+
+        private class textRow
         {
             public string Text { get; set; }
             public string Render { get; set; } = string.Empty;
-            public editorHighlight[] HL;
+            public EditorHighlight[] Hl;
         }
-        private class EditorSyntax
+        private class editorSyntax
         {
+            // ReSharper disable once UnusedAutoPropertyAccessor.Local
             public string FileType { get; set; }
 
-            public highlightFlags Flags { get; set; }
+            public HighlightFlags Flags { get; set; }
             public string[] FileMatch { get; set; }
             public string[] Keywords { get; set; }
             public string SingleLineCommentStart { get; set; }
         };
 
-        enum editorKey
+        enum EditorKey
         {
-            BACKSPACE = 127,
-            ARROW_LEFT = 1,
-            ARROW_RIGHT = 2,
-            ARROW_UP = 3,
-            ARROW_DOWN = 4,
-            HOME_KEY = 5,
-            END_KEY = 6,
-            DELETE_KEY = 7
+            Backspace = 127,
+            ArrowLeft = 1,
+            ArrowRight = 2,
+            ArrowUp = 3,
+            ArrowDown = 4,
+            HomeKey = 5,
+            EndKey = 6,
+            DeleteKey = 7
         };
-        enum editorHighlight
+        enum EditorHighlight
         {
-            HL_NORMAL = 0,
-            HL_NUMBER,
-            HL_STRING,
-            HL_COMMENT,
-            HL_KEYWORD1,
-            HL_KEYWORD2,
+            HlNormal = 0,
+            HlNumber,
+            HlString,
+            HlComment,
+            HlKeyword1,
+            HlKeyword2,
         };
         [Flags]
-        enum highlightFlags
+        enum HighlightFlags
         {
-            HL_HIGHLIGHT_NUMBERS = 1,
-            HL_HIGHLIGHT_STRINGS = 2
+            HlHighlightNumbers = 1,
+            HlHighlightStrings = 2
         }
 
 
         public override string ProcessName => "Text";
-        void editorUpdateSyntax(TextRow row)
+        void editorUpdateSyntax(textRow row)
         {
-            row.HL = new editorHighlight[row.Render.Length];
+            row.Hl = new EditorHighlight[row.Render.Length];
             if (_currentSyntax == null) return;
             string scs = _currentSyntax.SingleLineCommentStart;
-            int scs_len = scs.Length >= 1 ? scs.Length : 0;
+            int scsLen = scs.Length >= 1 ? scs.Length : 0;
             string[] keywords = _currentSyntax.Keywords;
-            bool prev_sep = true;
-            int in_string = 0;
-            for (int i = 0; i < row.HL.Length; i++)
+            bool prevSep = true;
+            int inString = 0;
+            for (int i = 0; i < row.Hl.Length; i++)
             {
-                row.HL[i] = editorHighlight.HL_NORMAL;
+                row.Hl[i] = EditorHighlight.HlNormal;
             }
             int j = 0;
             while (j < row.Render.Length)
             {
                 char c = row.Render[j];
-                editorHighlight prev_hl = (j > 0) ? row.HL[j - 1] : editorHighlight.HL_NORMAL;
-                if (scs_len >= 1 && in_string <= 0)
+                EditorHighlight prevHl = (j > 0) ? row.Hl[j - 1] : EditorHighlight.HlNormal;
+                if (scsLen >= 1 && inString <= 0)
                 {
                     if (c.ToString() == scs)
                     {
                         for (int commentCount = j; commentCount < row.Render.Length; commentCount++)
                         {
-                            row.HL[commentCount] = editorHighlight.HL_COMMENT;
+                            row.Hl[commentCount] = EditorHighlight.HlComment;
                         }
                         break;
                     }
                 }
-                if (_currentSyntax.Flags.HasFlag(highlightFlags.HL_HIGHLIGHT_STRINGS))
+                if (_currentSyntax.Flags.HasFlag(HighlightFlags.HlHighlightStrings))
                 {
-                    if (in_string >= 1)
+                    if (inString >= 1)
                     {
-                        row.HL[j] = editorHighlight.HL_STRING;
+                        row.Hl[j] = EditorHighlight.HlString;
                         if (c == '\\' && j + 1 < row.Render.Length)
                         {
-                            row.HL[j + 1] = editorHighlight.HL_STRING;
+                            row.Hl[j + 1] = EditorHighlight.HlString;
                             j += 2;
                             continue;
                         }
-                        if (c == in_string) in_string = 0;
+                        if (c == inString) inString = 0;
                         j++;
-                        prev_sep = true;
+                        prevSep = true;
                         continue;
                     }
                     else
                     {
                         if (c == '"' || c == '\'')
                         {
-                            in_string = c;
-                            row.HL[j] = editorHighlight.HL_STRING;
+                            inString = c;
+                            row.Hl[j] = EditorHighlight.HlString;
                             j++;
                             continue;
                         }
                     }
                 }
 
-                if (_currentSyntax.Flags.HasFlag(highlightFlags.HL_HIGHLIGHT_NUMBERS))
+                if (_currentSyntax.Flags.HasFlag(HighlightFlags.HlHighlightNumbers))
                 {
-                    if ((char.IsDigit(c) && (prev_sep || prev_hl == editorHighlight.HL_NUMBER)) ||
-                        (c == '.' && prev_hl == editorHighlight.HL_NUMBER))
+                    if ((char.IsDigit(c) && (prevSep || prevHl == EditorHighlight.HlNumber)) ||
+                        (c == '.' && prevHl == EditorHighlight.HlNumber))
                     {
-                        row.HL[j] = editorHighlight.HL_NUMBER;
+                        row.Hl[j] = EditorHighlight.HlNumber;
                         j++;
-                        prev_sep = false;
+                        prevSep = false;
                         continue;
                     }
 
-                    if (prev_sep)
+                    if (prevSep)
                     {
                         int k;
                         for (k = 0; keywords[k] != null; k++)
@@ -176,8 +171,8 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                                 {
                                     for (int keywordCounter = j; keywordCounter < ((row.Render.Length > separatorCount) ? separatorCount : row.Render.Length); keywordCounter++)
                                     {
-                                        row.HL[keywordCounter] =
-                                            kw2 ? editorHighlight.HL_KEYWORD2 : editorHighlight.HL_KEYWORD1;
+                                        row.Hl[keywordCounter] =
+                                            kw2 ? EditorHighlight.HlKeyword2 : EditorHighlight.HlKeyword1;
                                     }
 
                                     j += klen;
@@ -187,12 +182,12 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                         }
                         if (keywords[k] != null)
                         {
-                            prev_sep = false;
+                            prevSep = false;
                             continue;
                         }
                     }
 
-                    prev_sep = is_separator(c);
+                    prevSep = is_separator(c);
                     j++;
                 }
             }
@@ -209,92 +204,18 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         }
         int editorSyntaxToColor(int hl)
         {
-            switch (hl)
+            return hl switch
             {
-                case (int)editorHighlight.HL_NUMBER: return 31;
-                case (int)editorHighlight.HL_STRING: return 35;
-                case (int)editorHighlight.HL_COMMENT: return 36;
-                case (int)editorHighlight.HL_KEYWORD1: return 33;
-                case (int)editorHighlight.HL_KEYWORD2: return 32;
-                default: return 37;
-            }
+                (int) EditorHighlight.HlNumber => 31,
+                (int) EditorHighlight.HlString => 35,
+                (int) EditorHighlight.HlComment => 36,
+                (int) EditorHighlight.HlKeyword1 => 33,
+                (int) EditorHighlight.HlKeyword2 => 32,
+                _ => 37
+            };
         }
 
-        string editorPrompt(string prompt, Action<string, char> callback)
-        {
-            StringBuilder buf = new StringBuilder();
-            int buflen = 0;
-            while (true)
-            {
-                editorSetStatusMessage(prompt);
-                editorRefreshScreen();
-                char[] c = editorReadKey();
-                if (c[0] == (char)editorKey.DELETE_KEY || c[0] == (char)editorKey.BACKSPACE)
-                {
-                    if (buflen != 0) buf[--buflen] = '\0';
-                }
-                else if (c[0] == '\x1b')
-                {
-                    editorSetStatusMessage("");
-                    callback?.Invoke(buf.ToString(), c[0]);
-                    buf = null;
-                    return string.Empty;
-                }
-                else if (c[0] == '\r')
-                {
-                    if (buflen != 0)
-                    {
-                        editorSetStatusMessage("");
-                        callback?.Invoke(buf.ToString(), c[0]);
-                        break;
-                    }
-                }
-                else if (!char.IsControl(c[0]))
-                {
-                    buf.Insert(++buflen, c[0]);
-                }
-                callback?.Invoke(buf.ToString(), c[0]);
-            }
-            return buf.ToString();
-        }
-
-        void editorFindCallback(string query, char key)
-        {
-            if (key == '\r' || key == '\x1b')
-            {
-                return;
-            }
-            int i;
-            for (i = 0; i < _rows.Count; i++)
-            {
-                TextRow row = _rows[i];
-                int match = row.Render.IndexOf(query, StringComparison.CurrentCulture);
-                if (match != -1)
-                {
-                    _cursorY = i;
-                    _cursorX = editorRowRxToCx(row, match - row.Render.Length);
-                    _rowOff = _rows.Count;
-                    break;
-                }
-            }
-        }
-        void editorFind()
-        {
-            int saved_cx = _cursorX;
-            int saved_cy = _cursorY;
-            int saved_coloff = _colOff;
-            int saved_rowoff = _rowOff;
-            string query = editorPrompt("Search: %s (ESC to cancel)", editorFindCallback);
-            if (query == string.Empty) return;
-            else
-            {
-                _cursorX = saved_cx;
-                _cursorY = saved_cy;
-                _colOff = saved_coloff;
-                _rowOff = saved_rowoff;
-            }
-        }
-        void editorRowInsertChar(TextRow row, int at, char c)
+        void editorRowInsertChar(textRow row, int at, char c)
         {
             if (at < 0 || at > row.Text.Length) at = row.Text.Length;
             row.Text = row.Text.Insert(at, c.ToString());
@@ -305,21 +226,21 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         {
             if (_cursorX == 0)
             {
-                _rows.Insert(_cursorY, new TextRow() {Text = string.Empty});
+                _rows.Insert(_cursorY, new textRow() {Text = string.Empty});
                 editorUpdateRow(_rows[_cursorY]);
             }
             else
             {
-                TextRow row = _rows[_cursorY];
+                textRow row = _rows[_cursorY];
                 if (_cursorX == row.Text.Length)
                 {
-                    _rows.Insert(_cursorY + 1, new TextRow() { Text = string.Empty });
+                    _rows.Insert(_cursorY + 1, new textRow() { Text = string.Empty });
                     editorUpdateRow(_rows[_cursorY + 1]);
                 }
                 else
                 {
-                    if (row.Text.Length < _cursorX) _rows.Insert(_cursorY + 1, new TextRow() { Text = string.Empty });
-                    else _rows.Insert(_cursorY + 1, new TextRow()
+                    if (row.Text.Length < _cursorX) _rows.Insert(_cursorY + 1, new textRow() { Text = string.Empty });
+                    else _rows.Insert(_cursorY + 1, new textRow()
                     {
                         Text = row.Text.Substring(_cursorX)
                     });
@@ -333,7 +254,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             _cursorY++;
             _cursorX = 0;
         }
-        void editorFreeRow(TextRow row)
+        void editorFreeRow(textRow row)
         {
             _rows.Remove(row);
         }
@@ -343,7 +264,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             editorFreeRow(_rows[at]);
             _dirty = true;
         }
-        void editorRowAppendString(TextRow row, string s)
+        void editorRowAppendString(textRow row, string s)
         {
             row.Text = row.Text.Insert((row.Text.Length - 1 >= 0) ? row.Text.Length - 1 : 0, s);
             editorUpdateRow(row);
@@ -355,16 +276,17 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         {
             if (_cursorY == _rows.Count)
             {
-                _rows.Add(new TextRow() {Text = string.Empty});
+                _rows.Add(new textRow() {Text = string.Empty});
                 _dirty = true;
             }
             editorRowInsertChar(_rows[_cursorY], _cursorX, c);
             _cursorX++;
         }
 
-        void editorDrawMessageBar()
+        private void editorDrawMessageBar()
         {
             _buffer.Append("\u001b[K");
+            // ReSharper disable once RedundantAssignment
             string newMessage = _statusMessage;
             int msglen = _statusMessage.Length;
             if (msglen > _handler.TerminalColumns) msglen = (int)_handler.TerminalColumns;
@@ -410,20 +332,8 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             _buffer.Append("\u001b[m");
             _buffer.Append("\r\n");
         }
-        int editorRowRxToCx(TextRow row, int rx)
-        {
-            int cur_rx = 0;
-            int cx;
-            for (cx = 0; cx < row.Text.Length; cx++)
-            {
-                if (row.Text[cx] == '\t')
-                    cur_rx += (TAB_STOP - 1) - (cur_rx % TAB_STOP);
-                cur_rx++;
-                if (cur_rx > rx) return cx;
-            }
-            return cx;
-        }
-        int editorRowCxToRx(TextRow row, int cx)
+
+        int editorRowCxToRx(textRow row, int cx)
         {
             int rx = 0;
             int j;
@@ -436,12 +346,11 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             return rx;
         }
 
-        void editorUpdateRow(TextRow row)
+        void editorUpdateRow(textRow row)
         {
             StringBuilder renderBuilder = new StringBuilder();
             row.Render = string.Empty;
             int j;
-            int tabs = 0;
             if (string.IsNullOrEmpty(row.Text))
             {
                 renderBuilder.Append(' ');
@@ -449,7 +358,9 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             }
             for (j = 0; j < row.Text.Length; j++)
             {
-                if (row.Text[j] == '\t') tabs++;
+                if (row.Text[j] == '\t')
+                {
+                }
             }
 
             int idx = 0;
@@ -481,7 +392,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             _handler.TerminalModes.OPOST = false;
             _handler.TerminalModes.SIGTSTP = false;
         }
-        private void editorRowDelChar(TextRow row, int at)
+        private void editorRowDelChar(textRow row, int at)
         {
             if (at < 0 || at >= row.Text.Length) return;
             if (at == row.Text.Length - 1) row.Text = row.Text.Remove(at);
@@ -493,7 +404,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         {
             if (_cursorY == _rows.Count) return;
             if (_cursorX == 0 && _cursorY == 0) return;
-            TextRow row = _rows[_cursorY];
+            textRow row = _rows[_cursorY];
             if (_cursorX > 0)
             {
                 editorRowDelChar(row, _cursorX - 1);
@@ -508,12 +419,6 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             }
         }
 
-        char[] editorReadKey()
-        {
-            char[] buffer = new char[4];
-            _process.In.Read(buffer, 0, buffer.Length);
-            return buffer;
-        }
         /*** input ***/
         void editorProcessKeypress()
         {
@@ -530,13 +435,13 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                         switch (buffer)
                         {
                             case '1':
-                                c = (char) editorKey.HOME_KEY;
+                                c = (char) EditorKey.HomeKey;
                                 break;
                             case '4':
-                                c = (char) editorKey.END_KEY;
+                                c = (char) EditorKey.EndKey;
                                 break;
                             case '3':
-                                c = (char) editorKey.DELETE_KEY;
+                                c = (char) EditorKey.DeleteKey;
                                 break;
                         }
 
@@ -547,16 +452,16 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                         switch (buffer)
                         {
                             case 'A':
-                                c = (char)editorKey.ARROW_UP;
+                                c = (char)EditorKey.ArrowUp;
                                 break;
                             case 'B':
-                                c = (char)editorKey.ARROW_DOWN;
+                                c = (char)EditorKey.ArrowDown;
                                 break;
                             case 'C':
-                                c = (char)editorKey.ARROW_RIGHT;
+                                c = (char)EditorKey.ArrowRight;
                                 break;
                             case 'D':
-                                c = (char)editorKey.ARROW_LEFT;
+                                c = (char)EditorKey.ArrowLeft;
                                 break;
                         }
                     }
@@ -594,18 +499,18 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                     editorSave();
                     break;
 
-                case (char)editorKey.BACKSPACE:
-                case (char)editorKey.DELETE_KEY:
+                case (char)EditorKey.Backspace:
+                case (char)EditorKey.DeleteKey:
                 case '\b':
-                    if (c == (char)editorKey.DELETE_KEY) editorMoveCursor((char)editorKey.ARROW_RIGHT);
+                    if (c == (char)EditorKey.DeleteKey) editorMoveCursor((char)EditorKey.ArrowRight);
                     editorDelChar();
                     break;
-                case (char)editorKey.ARROW_LEFT:
-                case (char)editorKey.ARROW_DOWN:
-                case (char)editorKey.ARROW_RIGHT:
-                case (char)editorKey.ARROW_UP:
-                case (char)editorKey.HOME_KEY:
-                case (char)editorKey.END_KEY:
+                case (char)EditorKey.ArrowLeft:
+                case (char)EditorKey.ArrowDown:
+                case (char)EditorKey.ArrowRight:
+                case (char)EditorKey.ArrowUp:
+                case (char)EditorKey.HomeKey:
+                case (char)EditorKey.EndKey:
                     editorMoveCursor(c);
                     break;
                 default:
@@ -618,10 +523,10 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         }
         void editorMoveCursor(char key)
         {
-            TextRow currentRow = (_cursorY >= _rows.Count) ? null : _rows[_cursorY];
+            textRow currentRow = (_cursorY >= _rows.Count) ? null : _rows[_cursorY];
             switch (key)
             {
-                case (char)editorKey.ARROW_LEFT:
+                case (char)EditorKey.ArrowLeft:
                     if (_cursorX != 0)
                         _cursorX--;
                     else if (_cursorY > 0)
@@ -630,7 +535,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                         _cursorX = _rows[_cursorY].Text.Length;
                     }
                     break;
-                case (char)editorKey.ARROW_RIGHT:
+                case (char)EditorKey.ArrowRight:
                     if (currentRow != null && _cursorX < currentRow.Text.Length)
                     {
                         _cursorX++;
@@ -641,22 +546,22 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                         _cursorX = 0;
                     }
                     break;
-                case (char)editorKey.ARROW_UP:
+                case (char)EditorKey.ArrowUp:
                     if (_cursorY != 0)
                         _cursorY--;
                     break;
-                case (char)editorKey.ARROW_DOWN:
+                case (char)EditorKey.ArrowDown:
                     if (_cursorY < _rows.Count)
                         _cursorY++;
                     break;
-                case (char)editorKey.HOME_KEY:
+                case (char)EditorKey.HomeKey:
                     _cursorX = 0;
                     break;
-                case (char)editorKey.END_KEY:
+                case (char)EditorKey.EndKey:
                     if (_cursorY < _rows.Count)
                         _cursorX = _rows[_cursorY].Text.Length;
                     break;
-                case (char)editorKey.DELETE_KEY:
+                case (char)EditorKey.DeleteKey:
 
                     break;
             }
@@ -699,9 +604,9 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                     {
                         if (len > _handler.TerminalColumns) len = (int)_handler.TerminalColumns;
                         string c = _rows[fileRow].Render.Substring(_colOff);
-                        editorHighlight[] hl;
-                        hl = _rows[fileRow].HL.Skip(_colOff).ToArray();
-                        int current_color = -1;
+                        EditorHighlight[] hl;
+                        hl = _rows[fileRow].Hl.Skip(_colOff).ToArray();
+                        int currentColor = -1;
                         int j;
                         for (j = 0; j < len; j++)
                         {
@@ -711,26 +616,26 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                                 _buffer.Append("\u001b[7m");
                                 _buffer.Append(sym);
                                 _buffer.Append("\u001b[m");
-                                if (current_color != -1)
+                                if (currentColor != -1)
                                 {
-                                    _buffer.Append($"\u001b[{current_color}m");
+                                    _buffer.Append($"\u001b[{currentColor}m");
                                 }
                             }
-                            else if (hl[j] == editorHighlight.HL_NORMAL)
+                            else if (hl[j] == EditorHighlight.HlNormal)
                             {
-                                if (current_color != -1)
+                                if (currentColor != -1)
                                 {
                                     _buffer.Append("\u001b[39m");
-                                    current_color = -1;
+                                    currentColor = -1;
                                 }
                                 _buffer.Append(c[j], 1);
                             }
                             else
                             {
                                 int color = editorSyntaxToColor((int)hl[j]);
-                                if (color != current_color)
+                                if (color != currentColor)
                                 {
-                                    current_color = color;
+                                    currentColor = color;
                                     string code = $"\u001b[{color}m";
                                     _buffer.Append(code);
                                 }
@@ -763,7 +668,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             }
             if (_cursorY >= _rowOff + ScreenRows)
             {
-                _rowOff = _cursorY - (int)ScreenRows + 1;
+                _rowOff = _cursorY - ScreenRows + 1;
             }
             if (_renderX < _colOff)
             {
@@ -791,22 +696,22 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         private string editorRowsToString()
         {
             StringBuilder builder = new StringBuilder();
-            foreach (TextRow row in _rows)
+            foreach (textRow row in _rows)
             {
                 builder.AppendLine(row.Text);
             }
 
             return builder.ToString();
         }
-        private void editorOpen(string file, RCTProcess currentProc)
+        private void editorOpen(string file, RctProcess currentProc)
         {
             UPath path = new UPath(file);
             if(!path.IsAbsolute) path = UPath.Combine(currentProc.WorkingDirectory, path);
-            _rows = new List<TextRow>();
+            _rows = new List<textRow>();
             StreamReader sr = new StreamReader(_fileSystem.OpenFile(path, FileMode.OpenOrCreate, FileAccess.Read));
             while (!sr.EndOfStream)
             {
-                var text = new TextRow()
+                var text = new textRow()
                 {
                     Text = sr.ReadLine()
                 };
@@ -830,13 +735,13 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 editorUpdateSyntax(_rows[filerow]);
             }
         }
-        public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
             try
             {
-                _syntaxDatabase = new List<EditorSyntax>
+                _syntaxDatabase = new List<editorSyntax>
                 {
-                    new EditorSyntax()
+                    new editorSyntax()
                     {
                         FileType = "Python",
                         FileMatch = new[] {".py"},
@@ -846,7 +751,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                             "switch", "if", "while", "for", "break", "continue", "return", "elif", "import",
                             "static", "enum", "class", "case", "from", "void|", null
                         },
-                        Flags = highlightFlags.HL_HIGHLIGHT_NUMBERS | highlightFlags.HL_HIGHLIGHT_STRINGS
+                        Flags = HighlightFlags.HlHighlightNumbers | HighlightFlags.HlHighlightStrings
                     }
                 };
                 _process = context;
@@ -899,7 +804,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
 
         public override void InitializeServices(IServiceProvider kernel)
         {
-            _logger = kernel.GetService<ILogger<TextCommand>>();
+            
         }
     }
 }

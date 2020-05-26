@@ -21,7 +21,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteControlToolkitCore.Su
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestGui", "Src\PluginLibraries\TestGui\TestGui.csproj", "{5A2531C4-78FC-4FF6-B241-46763194295E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCore.Common.Gui", "RemoteControlToolkitCore.Common.Gui\RemoteControlToolkitCore.Common.Gui.csproj", "{47112540-9DE2-44F0-AFD5-495D86129C8A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCore.Common.Gui", "Src\RemoteControlToolkitCore.Common.Gui\RemoteControlToolkitCore.Common.Gui.csproj", "{47112540-9DE2-44F0-AFD5-495D86129C8A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailGun", "Src\PluginLibraries\MailGun\MailGun\MailGun.csproj", "{5E9D8ADB-6B6B-453A-BFD1-64D9F664C659}"
 EndProject

@@ -56,8 +56,8 @@
     <Compile Include="TestGui.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\RemoteControlToolkitCore.Common.Gui\RemoteControlToolkitCore.Common.Gui.csproj">
-      <Project>{47112540-9DE2-44F0-AFD5-495D86129C8A}</Project>
+    <ProjectReference Include="..\..\RemoteControlToolkitCore.Common.Gui\RemoteControlToolkitCore.Common.Gui.csproj">
+      <Project>{47112540-9de2-44f0-afd5-495d86129c8a}</Project>
       <Name>RemoteControlToolkitCore.Common.Gui</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\RemoteControlToolkitCore.Common\RemoteControlToolkitCore.Common.csproj">

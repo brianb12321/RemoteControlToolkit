@@ -21,7 +21,7 @@ namespace RemoteControlToolkitCore.Subsystem.Workflow.Activities
         {
             // Obtain the runtime value of the Text input argument
             string text = context.GetValue(this.Text);
-            RCTProcess currentProc = context.GetExtension<RCTProcess>();
+            RctProcess currentProc = context.GetExtension<RctProcess>();
             currentProc.Out.WriteLine(text);
         }
     }

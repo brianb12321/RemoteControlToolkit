@@ -16,7 +16,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
 
 
         public abstract string ProcessName { get; }
-        public abstract CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token);
+        public abstract CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token);
 
 
         public virtual void Dispose()

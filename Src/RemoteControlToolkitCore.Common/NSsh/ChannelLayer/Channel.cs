@@ -29,29 +29,30 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
         private readonly ILogger<Channel> _logger;
 
         private PseudoTerminalPayload _terminalPayload;
-        private List<EnvironmentPayload> _environmentPayloads;
+        private readonly List<EnvironmentPayload> _environmentPayloads;
         public Guid ChannelGuid { get; private set; }
 
         private uint _transmitWindowSize;
 
+        // ReSharper disable once NotAccessedField.Local
         private uint _transmitMaximumPacketSize;
 
-        private uint _receiveWindowSize;
+        private readonly uint _receiveWindowSize;
 
-        private uint _receiveMaximumPacketSize;
+        private readonly uint _receiveMaximumPacketSize;
 
-        private Queue<Packet> _incomingData = new Queue<Packet>();
+        private readonly Queue<Packet> _incomingData = new Queue<Packet>();
 
-        private AutoResetEvent _incomingDataArrived = new AutoResetEvent(false);
+        private readonly AutoResetEvent _incomingDataArrived = new AutoResetEvent(false);
 
-        private Queue<Packet> _outgoingData = new Queue<Packet>();
+        private readonly Queue<Packet> _outgoingData = new Queue<Packet>();
 
-        private AutoResetEvent _outgoingDataArrived = new AutoResetEvent(false);
+        private readonly AutoResetEvent _outgoingDataArrived = new AutoResetEvent(false);
 
         private IChannelConsumer _channelConsumer;
 
         private ChannelRequestType _consumerType;
-        private IServiceProvider _provider;
+        private readonly IServiceProvider _provider;
 
         public Channel(ILogger<Channel> logger, IServiceProvider provider)
         {
@@ -143,7 +144,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
                 _incomingDataArrived.Set();
             }
 
-            if (Closed != null) Closed(this, EventArgs.Empty);
+            Closed?.Invoke(this, EventArgs.Empty);
         }
 
         public void AdjustTransmitWindow(ChannelWindowAdjustPacket packet)
@@ -377,7 +378,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
                 _incomingDataArrived.Set();
             }
 
-            if (Closed != null) Closed(this, EventArgs.Empty);
+            Closed?.Invoke(this, EventArgs.Empty);
         }
 
         #endregion

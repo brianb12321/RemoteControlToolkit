@@ -21,7 +21,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
     {
         private const int TAB = 5;
         public override string ProcessName => "LS";
-        public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
             IFileSystem fileSystem =
                 context.Extensions.Find<IExtensionFileSystem>().GetFileSystem();

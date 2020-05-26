@@ -12,7 +12,7 @@ namespace RemoteControlToolkitCore.Common.Scripting
     public interface IScriptingEngine : IDisposable
     {
         #region Engine Methods
-        RCTProcess ParentProcess { get; set; }
+        RctProcess ParentProcess { get; set; }
         CancellationToken Token { get; set; }
         void SetIn(TextReader reader);
         void SetOut(TextWriter writer);

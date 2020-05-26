@@ -6,6 +6,6 @@ namespace RemoteControlToolkitCore.Subsystem.Workflow
 {
     public interface IWorkflowPluginModule : IPluginModule<WorkflowSubsystem>
     {
-        Activity ExecuteActivity(string args, RCTProcess currentProc);
+        Activity ExecuteActivity(string args, RctProcess currentProc);
     }
 }

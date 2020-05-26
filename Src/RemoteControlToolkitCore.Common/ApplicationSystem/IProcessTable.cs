@@ -2,9 +2,9 @@
 {
     public interface IProcessTable
     {
-        RCTProcess.RCTPRocessFactory Factory { get; }
+        RctProcess.RctProcessFactory Factory { get; }
         uint LatestProcess { get; }
-        void AddProcess(RCTProcess process);
+        void AddProcess(RctProcess process);
         void CancelProcess(uint pid);
         void AbortProcess(uint pid);
         void RemoveProcess(uint pid);

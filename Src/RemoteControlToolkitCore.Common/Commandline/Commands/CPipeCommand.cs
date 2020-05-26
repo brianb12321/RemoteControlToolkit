@@ -21,7 +21,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
     {
         private IPipeService _pipeService;
         public override string ProcessName => "CPipe";
-        public override CommandResponse Execute(CommandRequest args, RCTProcess context, CancellationToken token)
+        public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
             string mode = "help";
             string name = string.Empty;
@@ -84,15 +84,15 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             else if (mode == "createNamed")
             {
                 context.Out.WriteLine($"Creating named pipe with name \"{name}\'");
-                var pipe = _pipeService.OpenNamedPipe(PipeDirection.InOut, name);
-                context.Out.WriteLine($"Pipe successfully created at position {pipe.position}!".BrightGreen());
-                pipe.stream.WaitForConnectionAsync();
+                var (position, stream) = _pipeService.OpenNamedPipe(PipeDirection.InOut, name);
+                context.Out.WriteLine($"Pipe successfully created at position {position}!".BrightGreen());
+                stream.WaitForConnectionAsync(token);
             }
             else if (mode == "createAnonymous")
             {
                 context.Out.WriteLine("Creating anonymous pipe.");
-                var pipe = _pipeService.OpenAnonymousPipe(PipeDirection.In);
-                context.Out.WriteLine($"Pipe successfully created with handle \"{pipe.stream.GetClientHandleAsString()}\", position {pipe.position}!".BrightGreen());
+                var (position, stream) = _pipeService.OpenAnonymousPipe(PipeDirection.In);
+                context.Out.WriteLine($"Pipe successfully created with handle \"{stream.GetClientHandleAsString()}\", position {position}!".BrightGreen());
             }
             else if (mode == "closeAnonymous")
             {
@@ -121,14 +121,14 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             else if (mode == "connectAnonymous")
             {
                 context.Out.WriteLine("Connecting to anonymous pipe.");
-                var pipe = _pipeService.ConnectToPipe(name, direction);
-                context.Out.WriteLine($"Successfully connected to anonymous pipe. Pipe index = {pipe.position}!".BrightGreen());
+                var (position, _) = _pipeService.ConnectToPipe(name, direction);
+                context.Out.WriteLine($"Successfully connected to anonymous pipe. Pipe index = {position}!".BrightGreen());
             }
             else if (mode == "connectNamed")
             {
                 context.Out.WriteLine("Connecting to named pipe.");
-                var pipe = _pipeService.ConnectToNamedPipe(name, pipeName, direction, timeout);
-                context.Out.WriteLine($"Successfully connected to named pipe. Pipe Index = {pipe.position}".BrightGreen());
+                var (position, _) = _pipeService.ConnectToNamedPipe(name, pipeName, direction, timeout);
+                context.Out.WriteLine($"Successfully connected to named pipe. Pipe Index = {position}".BrightGreen());
             }
             return new CommandResponse(CommandResponse.CODE_SUCCESS);
         }

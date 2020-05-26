@@ -8,7 +8,7 @@ namespace RemoteControlToolkitCore.Common
 {
     public interface IHostApplication : IDisposable
     {
-        void DeregisterSession(ISshSession session);
+        void UnRegisterSession(ISshSession session);
         void Run(string[] args);
         NetworkSide ExecutingSide { get; }
         IAppBuilder Builder { get; }
