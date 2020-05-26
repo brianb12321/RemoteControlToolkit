@@ -10,9 +10,11 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem
     public class FileSystemSubsystem : PluginSubsystem
     {
         private IFileSystem _fileSystem;
-        public FileSystemSubsystem(IPluginManager pluginManager) : base(pluginManager)
+        private readonly IServiceProvider _provider;
+        public FileSystemSubsystem(IPluginManager pluginManager, IServiceProvider provider) : base(pluginManager)
         {
-            
+            _provider = provider;
+
         }
 
         public override void InitializeSubsystem()
@@ -23,6 +25,7 @@ namespace RemoteControlToolkitCore.Common.VirtualFileSystem
             {
                 if (fileSystem.AutoMount)
                 {
+                    fileSystem.InitializeServices(_provider);
                     var fs = fileSystem.MountFileSystem(null);
                     mfs.Mount(fs.MountPoint, fs.FileSystem);
                 }

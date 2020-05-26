@@ -28,7 +28,10 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             return app;
         }
 
-        
+        public bool ApplicationExists(string name)
+        {
+            return GetAllInstalledApplications().Any(a => a.PluginName == name);
+        }
 
         public PluginAttribute[] GetAllInstalledApplications()
         {

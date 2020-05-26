@@ -9,12 +9,14 @@ using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
 using RemoteControlToolkitCore.Common.Scripting;
 using RemoteControlToolkitCore.Common.Commandline;
+using RemoteControlToolkitCore.Common.Commandline.Commands;
 using RemoteControlToolkitCore.Common.DeviceBus;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Proxy;
+using RemoteControlToolkitCore.DefaultShell;
 using RemoteControlToolkitCore.Subsystem.Audio;
 using RemoteControlToolkitCore.Subsystem.Serial;
 using RemoteControlToolkitCore.Subsystem.Workflow;
@@ -62,6 +64,7 @@ namespace RemoteControlToolkitCoreServer
         public void PostConfigureServices(IServiceProvider provider, IHostApplication application)
         {
             application.PluginManager.LoadFromType(typeof(DefaultShell));
+            application.PluginManager.LoadFromType(typeof(HelpCommand));
             application.PluginManager.LoadFromType(typeof(AudioCommand));
             application.PluginManager.LoadFromType(typeof(WorkflowCommand));
             application.PluginManager.LoadFromType(typeof(RCTSerialDevice));

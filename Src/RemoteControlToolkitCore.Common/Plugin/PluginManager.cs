@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace RemoteControlToolkitCore.Common.Plugin
 {
@@ -11,22 +13,42 @@ namespace RemoteControlToolkitCore.Common.Plugin
     public class PluginManager : IPluginManager
     {
         private readonly Dictionary<string, PluginLibrary> _loadedLibraries;
-        public PluginManager()
+        private readonly ILogger<PluginManager> _logger;
+        public PluginManager(ILogger<PluginManager> logger)
         {
+            _logger = logger;
             _loadedLibraries = new Dictionary<string, PluginLibrary>();
         }
         public PluginLibrary LoadPluginFile(string filePath)
         {
-            PluginLibrary library = new PluginLibrary(filePath, this);
-            _loadedLibraries.Add(library.UniqueName, library);
-            return library;
+            try
+            {
+                _logger.LogInformation($"Loading plugin file from \"{Path.GetFullPath(filePath)}\"");
+                PluginLibrary library = new PluginLibrary(filePath, this);
+                _logger.LogInformation($"Plugin file \"{library.DisplayName}\" successfully loaded.");
+                _loadedLibraries.Add(library.UniqueName, library);
+                return library;
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning($"Unable to load plugin file: {e.Message}");
+                throw;
+            }
         }
 
         public PluginLibrary LoadFromAssembly(Assembly assembly)
         {
-            PluginLibrary library = new PluginLibrary(assembly, this);
-            _loadedLibraries.Add(library.UniqueName, library);
-            return library;
+            try
+            {
+                PluginLibrary library = new PluginLibrary(assembly, this);
+                _loadedLibraries.Add(library.UniqueName, library);
+                return library;
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning($"Unable to load plugin assembly: {e.Message}");
+                throw;
+            }
         }
 
         public PluginLibrary LoadFromType(Type type)

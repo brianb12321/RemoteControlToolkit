@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common.Scripting
 {
     public class ScriptingSubsystem : PluginSubsystem
     {
-        private List<string> _paths = new List<string>();
+        private readonly List<string> _paths;
+        private readonly IServiceProvider _provider;
 
-        public ScriptingSubsystem(IPluginManager manager) : base(manager)
+        public ScriptingSubsystem(IPluginManager manager, IServiceProvider provider) : base(manager)
         {
-
+            _provider = provider;
+            _paths = new List<string>();
         }
 
         private void addPaths(IScriptingEngine engine)
@@ -23,11 +23,13 @@ namespace RemoteControlToolkitCore.Common.Scripting
                 engine.AddPath(path);
             }
         }
+
         private void populateGlobalScope(IScriptingEngine engine)
         {
             foreach (IScriptExtensionModule module in PluginManager.ActivateAllPluginModules<ScriptingSubsystem>().Select(m => m as IScriptExtensionModule))
             {
-                module.ConfigureDefaultEngine(engine);
+                module?.InitializeServices(_provider);
+                module?.ConfigureDefaultEngine(engine);
             }
         }
 

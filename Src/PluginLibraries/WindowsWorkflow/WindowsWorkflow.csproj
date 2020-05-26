@@ -66,7 +66,6 @@
     <ProjectReference Include="..\..\RemoteControlToolkitCore.Common\RemoteControlToolkitCore.Common.csproj">
       <Project>{d1634ef0-3d18-4a45-99df-f5ec988ea5f4}</Project>
       <Name>RemoteControlToolkitCore.Common</Name>
-      <Private>False</Private>
     </ProjectReference>
     <ProjectReference Include="..\..\RemoteControlToolkitCore.Subsystem.Workflow\RemoteControlToolkitCore.Subsystem.Workflow.csproj">
       <Project>{7b5dd69b-6c3d-4d97-b4ca-c5dbc6f2d0eb}</Project>

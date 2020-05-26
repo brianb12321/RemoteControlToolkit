@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -47,7 +48,18 @@ namespace RemoteControlToolkitCore.Common
 
         public IAppBuilder UsePluginManager<TPluginManagerImpl>() where TPluginManagerImpl : IPluginManager
         {
-            _pluginManager = (IPluginManager)Activator.CreateInstance(typeof(TPluginManagerImpl));
+            ConstructorInfo constructor =
+                typeof(TPluginManagerImpl).GetConstructor(new Type[] {typeof(ILogger<TPluginManagerImpl>)});
+            //Check if plugin manager requires a logger.
+            if (constructor != null)
+            {
+                _pluginManager = (IPluginManager) Activator.CreateInstance(typeof(TPluginManagerImpl), _loggerFactory.CreateLogger<TPluginManagerImpl>());
+            }
+            else
+            {
+                _pluginManager = (IPluginManager) Activator.CreateInstance(typeof(TPluginManagerImpl));
+            }
+
             return this;
         }
 
@@ -73,11 +85,9 @@ namespace RemoteControlToolkitCore.Common
                     {
                         _pluginManager.LoadPluginFile(assemblyPath);
                     }
-                    catch (PluginLoadException e)
+                    catch
                     {
-                        //Create temporary logger.
-                        ILogger<AppBuilder> logger = _loggerFactory.CreateLogger<AppBuilder>();
-                        logger.LogWarning($"Unable to load plugin file: {e.Message}");
+                        //Ignore
                     }
                 }
             }

@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
+using System.Linq;
 using System.Security.Principal;
 using System.ServiceModel;
 using System.Text;
 using System.Windows.Forms;
+using Crayon;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
@@ -61,8 +63,50 @@ namespace RemoteControlToolkitCore.Common.Commandline
             _terminalHandler = new TerminalHandler(Pipe, outStream, terminalConfig);
             TerminalHandler = _terminalHandler;
             var consoleInStream = new ConsoleTextReader(_terminalHandler);
-            _shellProcess = ProcessTable.Factory.CreateOnApplication(this, subsystem.GetApplication("shell"),
-                null, new CommandRequest(new ICommandElement[] {new StringCommandElement("shell") }), identity);
+            try
+            {
+                _shellProcess = ProcessTable.Factory.CreateOnApplication(this, subsystem.GetApplication("shell"),
+                    null, new CommandRequest(new ICommandElement[] {new StringCommandElement("shell") }), identity);
+            }
+            //Load emergency shell.
+            catch (Exception)
+            {
+                _logger.LogWarning("There was an error starting a shell, using emergency shell.");
+                _shellProcess = ProcessTable.Factory.Create(this, "shell", (current, token) =>
+                {
+                    current.Out.WriteLine("There was a critical error loading a shell. You have been provided with an emergency shell.".Yellow());
+                    current.Out.WriteLine("No extensions will be loaded into any child processes.");
+                    current.Out.WriteLine("You may request any application by typing its name.");
+                    current.Out.WriteLine();
+                    while (!token.IsCancellationRequested)
+                    {
+                        current.Out.Write("> ");
+                        string command = current.In.ReadLine();
+                        if (string.IsNullOrWhiteSpace(command)) continue;
+                        string[] tokens = command.Split(' ');
+                        try
+                        {
+                            var application = subsystem.GetApplication(tokens[0]);
+                            var process = current.ClientContext.ProcessTable.Factory.CreateOnApplication(current.ClientContext, application,
+                                current, new CommandRequest(tokens.Select(t => new StringCommandElement(t)).ToArray()), current.Identity);
+                            process.ThreadError += (sender, e) =>
+                            {
+                                current.Error.WriteLine(Output.Red($"Error while executing command: {e.Message}"));
+                            };
+                            process.Start();
+                            process.WaitForExit();
+                            current.EnvironmentVariables["?"] = process.ExitCode.ToString();
+                        }
+                        catch (RctProcessException)
+                        {
+                            current.Error.WriteLine(Output.Red("No such command, script, or built-in function exists."));
+                            current.EnvironmentVariables["?"] = "-1";
+                        }
+                    }
+                    return new CommandResponse(CommandResponse.CODE_SUCCESS);
+                    
+                }, null, identity);
+            }
             _shellProcess.SetOut(outStream);
             _shellProcess.SetError(outStream);
             _shellProcess.SetIn(consoleInStream);

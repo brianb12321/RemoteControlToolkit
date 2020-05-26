@@ -7,7 +7,7 @@ namespace RemoteControlToolkitCore.Common.Scripting
     {
         public static IServiceCollection AddScriptingEngine(this IServiceCollection services)
         {
-            services.AddSingleton<ScriptingSubsystem>(provider => new ScriptingSubsystem(provider.GetRequiredService<IHostApplication>().PluginManager));
+            services.AddSingleton(provider => new ScriptingSubsystem(provider.GetRequiredService<IHostApplication>().PluginManager, provider));
             return services;
         }
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -19,22 +20,41 @@ namespace RemoteControlToolkitCore.Common.Plugin
 
         public PluginLibrary(string pluginAssembly, IPluginManager parentPluginManager)
         {
+            //Convert path to absolute.
+            string absolutePath = Path.GetFullPath(pluginAssembly);
+
+            //Check for illegal arguments.
             if (string.IsNullOrWhiteSpace(pluginAssembly))
                 throw new ArgumentException("An assembly must be provided to load a new plugin library.",
                     nameof(pluginAssembly));
-            Assembly assembly = Assembly.LoadFrom(pluginAssembly);
-            loadAssembly(assembly);
-            _parentPluginManager = parentPluginManager;
+
+            //Load assembly
+            Assembly assembly = Assembly.LoadFrom(absolutePath);
+            if (checkIfAssemblyIsValid(assembly))
+            {
+                loadAssembly(assembly);
+                _parentPluginManager = parentPluginManager;
+            }
+            else
+            {
+                throw new PluginLoadException($"Plugin file \"{assembly.GetName().Name}\" does not have PluginLibraryAttribute.");
+            }
         }
 
-        void loadAssembly(Assembly assembly)
+        private bool checkIfAssemblyIsValid(Assembly assembly)
         {
             var attribute = getPluginLibraryAttribute(assembly);
+            return attribute != null;
+        }
+        private void loadAssembly(Assembly assembly)
+        {
+            //Get plugin attribute
+            var attribute = getPluginLibraryAttribute(assembly);
+            //Attribute exists
             if (attribute != null)
             {
                 _pluginAssembly = assembly;
-                _pluginLibraryAttribute = getPluginLibraryAttribute(assembly);
-                populateInformation();
+                _pluginLibraryAttribute = attribute;
             }
             else
             {
@@ -52,12 +72,6 @@ namespace RemoteControlToolkitCore.Common.Plugin
         {
             PluginLibraryAttribute attribute = assembly.GetCustomAttribute<PluginLibraryAttribute>();
             return attribute;
-        }
-        private void populateInformation()
-        {
-            //Load attribute from assembly.
-            _pluginLibraryAttribute = getPluginLibraryAttribute(_pluginAssembly);
-            if(_pluginLibraryAttribute == null) throw new PluginLoadException($"Plugin file \"{_pluginAssembly.GetName().Name}\" does not have PluginLibraryAttribute.");
         }
         /// <summary>
         /// Gets all plugin attributes from the library.
@@ -84,10 +98,20 @@ namespace RemoteControlToolkitCore.Common.Plugin
         /// <returns>All the plugin attributes found.</returns>
         public IEnumerable<PluginAttribute> GetPluginAttributes<TType>()
         {
+            List<PluginAttribute> attributes = new List<PluginAttribute>();
             foreach (Type type in _pluginAssembly.GetTypes())
             {
-                if (typeof(TType).IsAssignableFrom(type)) yield return type.GetCustomAttribute<PluginAttribute>();
+                if (typeof(TType).IsInterface)
+                {
+                    if (typeof(TType).IsAssignableFrom(type))
+                    {
+                        PluginAttribute currentAttribute = type.GetCustomAttribute<PluginAttribute>();
+                        if(currentAttribute != null) attributes.Add(currentAttribute);
+                    }
+                }
             }
+
+            return attributes;
         }
         /// <summary>
         /// Returns all type information associated with the name of the module being searched for. All types will be returned.

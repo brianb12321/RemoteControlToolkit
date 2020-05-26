@@ -6,10 +6,12 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using Crayon;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NDesk.Options;
+using Microsoft.Extensions.DependencyInjection;
+using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
+using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Commandline.Parsing;
 using RemoteControlToolkitCore.Common.Commandline.Parsing.CommandElements;
@@ -21,7 +23,8 @@ using RemoteControlToolkitCore.Common.Utilities;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
 using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
-namespace RemoteControlToolkitCore.Common.Commandline
+[assembly: PluginLibrary("DefaultShell", "RCT Default Shell")]
+namespace RemoteControlToolkitCore.DefaultShell
 {
     [Plugin(PluginName = "shell")]
     [CommandHelp("The main entry point for executing commands.")]

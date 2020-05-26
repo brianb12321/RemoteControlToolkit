@@ -18,7 +18,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\RemoteControlToolkitCoreServer\bin\Debug\net48\Plugins\MailGun\net47\</OutputPath>
+    <OutputPath>..\..\..\RemoteControlToolkitCoreServer\bin\Debug\net48\Plugins\MailGun\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -82,13 +82,13 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\RemoteControlToolkitCore.Common\RemoteControlToolkitCore.Common.csproj">
-      <Project>{D1634EF0-3D18-4A45-99DF-F5EC988EA5F4}</Project>
-      <Name>RemoteControlToolkitCore.Common</Name>
-    </ProjectReference>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <ProjectReference Include="..\..\..\RemoteControlToolkitCore.Common\RemoteControlToolkitCore.Common.csproj">
+      <Project>{d1634ef0-3d18-4a45-99df-f5ec988ea5f4}</Project>
+      <Name>RemoteControlToolkitCore.Common</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
