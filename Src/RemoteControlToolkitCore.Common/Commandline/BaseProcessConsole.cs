@@ -31,6 +31,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         public IExtensionCollection<IInstanceSession> Extensions { get; }
         private readonly RctProcess _shellProcess;
         private readonly TerminalHandler _terminalHandler;
+        private readonly ChannelStreamWriter _channelStreamWriter;
 
         public BaseProcessConsole(ILogger<BaseProcessConsole> logger,
             ApplicationSubsystem subsystem,
@@ -46,6 +47,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             ClientUniqueID = Guid.NewGuid();
             Pipe = new BlockingMemoryStream();
             Producer = producer;
+            _channelStreamWriter = new ChannelStreamWriter(Producer);
             Extensions = new ExtensionCollection<IInstanceSession>(this);
             _logger = logger;
             ProcessTable = new ProcessTable(serviceProvider);
@@ -145,9 +147,14 @@ namespace RemoteControlToolkitCore.Common.Commandline
             return new StreamReader(Pipe);
         }
 
+        public Stream OpenNetworkStream()
+        {
+            return _channelStreamWriter;
+        }
+
         public TextWriter GetClientWriter()
         {
-           return new ChannelTextWriter(Producer);
+           return new ChannelTextWriter(_channelStreamWriter);
         }
 
         public T GetExtension<T>() where T : IExtension<IInstanceSession>

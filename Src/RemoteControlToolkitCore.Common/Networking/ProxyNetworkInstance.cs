@@ -39,6 +39,11 @@ namespace RemoteControlToolkitCore.Common.Networking
             return _sr;
         }
 
+        public Stream OpenNetworkStream()
+        {
+            return _networkStream;
+        }
+
         public TextWriter GetClientWriter()
         {
             return _sw;

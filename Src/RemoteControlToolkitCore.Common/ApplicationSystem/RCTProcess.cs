@@ -260,7 +260,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                         string data = proc.In.ReadToEnd();
                         Process extProcess = new Process();
                         extProcess.StartInfo.UseShellExecute = false;
-                        extProcess.StartInfo.FileName = args.Arguments[0].ToString().Substring(2);
+                        extProcess.StartInfo.FileName = args.Arguments[0].Substring(2);
                         extProcess.StartInfo.Arguments = args.GetArguments();
                         extProcess.StartInfo.RedirectStandardError = true;
                         extProcess.StartInfo.RedirectStandardOutput = true;

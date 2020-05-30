@@ -28,6 +28,7 @@
     <ProjectReference Include="..\RemoteControlToolkitCore.Common\RemoteControlToolkitCore.Common.csproj" />
     <ProjectReference Include="..\RemoteControlToolkitCore.DefaultShell\RemoteControlToolkitCore.DefaultShell.csproj" />
     <ProjectReference Include="..\RemoteControlToolkitCore.Subsystem.Audio\RemoteControlToolkitCore.Subsystem.Audio.csproj" />
+    <ProjectReference Include="..\RemoteControlToolkitCore.Subsystem.Roslyn\RemoteControlToolkitCore.Subsystem.Roslyn.csproj" />
     <ProjectReference Include="..\RemoteControlToolkitCore.Subsystem.Serial\RemoteControlToolkitCore.Subsystem.Serial.csproj" />
     <ProjectReference Include="..\RemoteControlToolkitCore.Subsystem.Workflow\RemoteControlToolkitCore.Subsystem.Workflow.csproj" />
   </ItemGroup>

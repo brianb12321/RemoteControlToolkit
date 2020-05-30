@@ -11,6 +11,7 @@ namespace RemoteControlToolkitCore.Common.Networking
         Guid ClientUniqueID { get; }
         string Username { get; }
         StreamReader GetClientReader();
+        Stream OpenNetworkStream();
         TextWriter GetClientWriter();
         IProcessTable ProcessTable { get; }
         T GetExtension<T>() where T : IExtension<IInstanceSession>;

@@ -9,8 +9,8 @@ namespace RemoteControlToolkitCore.Common.Plugin
     [AttributeUsage(AttributeTargets.Assembly)]
     public class PluginLibraryAttribute : Attribute
     {
-        public string DisplayName { get; set; }
-        public string UniqueName { get; set; }
+        public string DisplayName { get; }
+        public string UniqueName { get; }
 
         public PluginLibraryAttribute(string uniqueName, string displayName)
         {

@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Net;
-using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
 using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
@@ -20,6 +18,7 @@ using RemoteControlToolkitCore.DefaultShell;
 using RemoteControlToolkitCore.Subsystem.Audio;
 using RemoteControlToolkitCore.Subsystem.Serial;
 using RemoteControlToolkitCore.Subsystem.Workflow;
+using RemoteControlToolkitCore.Subsystem.Roslyn;
 
 namespace RemoteControlToolkitCoreServer
 {
@@ -68,6 +67,7 @@ namespace RemoteControlToolkitCoreServer
             application.PluginManager.LoadFromType(typeof(AudioCommand));
             application.PluginManager.LoadFromType(typeof(WorkflowCommand));
             application.PluginManager.LoadFromType(typeof(RCTSerialDevice));
+            application.PluginManager.LoadFromType(typeof(AsmGen));
             provider.GetService<ApplicationSubsystem>().InitializeSubsystem();
             provider.GetService<AudioOutSubsystem>().InitializeSubsystem();
             provider.GetService<FileSystemSubsystem>().InitializeSubsystem();;
