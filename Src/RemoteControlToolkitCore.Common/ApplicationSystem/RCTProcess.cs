@@ -261,7 +261,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                     _parent,
                     _action,
                     _parent?.Identity ?? _principal, 
-                    _extensions.ToArray());
+                    _extensions.ToArray(), _apartmentState);
             }
 
             public IProcessBuilder SetProcessName(string name)

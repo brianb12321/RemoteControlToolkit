@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -26,6 +27,7 @@ namespace RemoteControlToolkitCore.Common.Utilities
                 return string.Empty;
             }
         }
+
         public static string ShowDictionary<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary, Func<TValue, string> valueSelector)
         {
             if (dictionary.Count > 0)
