@@ -2,6 +2,7 @@
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Plugin;
 using Microsoft.Extensions.DependencyInjection;
+using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
 using RemoteControlToolkitCore.Common.Commandline;
 
 namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
@@ -9,19 +10,18 @@ namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
     [Plugin]
     public class SystemCommands : PluginModule<ScriptingSubsystem>, IScriptExtensionModule
     {
-        private ApplicationSubsystem _subSystem;
+        private ProcessFactorySubsystem _subSystem;
         public override void InitializeServices(IServiceProvider kernel)
         {
-            _subSystem = kernel.GetService<ApplicationSubsystem>();
+            _subSystem = kernel.GetService<ProcessFactorySubsystem>();
         }
 
         private void addExFunction(IScriptingEngine engine, IScriptExecutionContext context)
         {
             context.AddVariable("ex_application", new Func<string, string[], RctProcess>((name, args) =>
             {
-                var application = _subSystem.Factory.CreateOnApplication(engine.ParentProcess.ClientContext,
-                    _subSystem.GetApplication(name), engine.ParentProcess,
-                    new CommandRequest(args), engine.ParentProcess.Identity);
+                var application = _subSystem.CreateProcess("Application", new CommandRequest(args),
+                    engine.ParentProcess, engine.ParentProcess.ClientContext.ProcessTable);
                 application.SetOut(engine.IO.OutputWriter);
                 application.SetIn(engine.IO.InputReader);
                 application.SetError(engine.IO.ErrorWriter);
@@ -29,11 +29,11 @@ namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
             }));
             context.AddVariable("ex", new Func<string, CommandResponse>((command) =>
             {
-                var application = _subSystem.Factory.CreateOnApplication(engine.ParentProcess.ClientContext,
-                    _subSystem.GetApplication("shell"), engine.ParentProcess, new CommandRequest(new[]
+                var application = _subSystem.CreateProcess("Application", new CommandRequest(new []
                     {
                         "shell", "-c", command
-                    }), engine.ParentProcess.Identity);
+                    }),
+                    engine.ParentProcess, engine.ParentProcess.ClientContext.ProcessTable);
                 application.SetOut(engine.IO.OutputWriter);
                 application.SetIn(engine.IO.InputReader);
                 application.SetError(engine.IO.ErrorWriter);

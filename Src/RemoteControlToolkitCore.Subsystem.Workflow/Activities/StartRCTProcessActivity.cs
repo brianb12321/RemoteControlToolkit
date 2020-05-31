@@ -6,6 +6,7 @@ using System.Activities;
 using System.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
+using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Subsystem.Workflow.ActivityDesigners;
 
@@ -24,12 +25,11 @@ namespace RemoteControlToolkitCore.Subsystem.Workflow.Activities
             string processName = context.GetValue(this.ProcessName);
             CommandRequest request = new CommandRequest(processName.Split(' '));
             RctProcess currentProc = context.GetExtension<RctProcess>();
-            ApplicationSubsystem subsystem =
-                context.GetExtension<IServiceProvider>().GetService<ApplicationSubsystem>();
+            ProcessFactorySubsystem subsystem =
+                context.GetExtension<IServiceProvider>().GetService<ProcessFactorySubsystem>();
 
-            RctProcess newProc = currentProc.ClientContext.ProcessTable.Factory.CreateOnApplication(
-                currentProc.ClientContext, subsystem.GetApplication(request.Arguments[0].ToString()), currentProc,
-                request, currentProc.Identity);
+            RctProcess newProc = subsystem.CreateProcess("Application", request, currentProc,
+                currentProc.ClientContext.ProcessTable);
 
             newProc.Start();
             newProc.WaitForExit();

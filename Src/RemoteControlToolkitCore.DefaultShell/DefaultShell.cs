@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using Crayon;
@@ -11,17 +10,16 @@ using NDesk.Options;
 using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
+using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Commandline.TerminalExtensions;
-using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Scripting;
 using RemoteControlToolkitCore.Common.Utilities;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
 using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 using RemoteControlToolkitCore.DefaultShell.Parsing;
-using RemoteControlToolkitCore.DefaultShell.Parsing.CommandElements;
 
 [assembly: PluginLibrary("DefaultShell", "RCT Default Shell")]
 namespace RemoteControlToolkitCore.DefaultShell
@@ -32,8 +30,8 @@ namespace RemoteControlToolkitCore.DefaultShell
     {
         private IScriptingEngine _engine;
         private ScriptingSubsystem _scriptingSubsystem;
+        private ProcessFactorySubsystem _processFactory;
         private IScriptExecutionContext _scriptContext;
-        private ApplicationSubsystem _appSubsystem;
         private IHostApplication _nodeApplication;
         private string _motd = "I love cookies!";
         private ILogger<DefaultShell> _logger;
@@ -301,15 +299,18 @@ __;_ \ /,//`
         {
             if (command.StartsWith("::"))
             {
-                _process = currentProc.ClientContext.ProcessTable.Factory.Create(currentProc.ClientContext, "Scripting",
-                    (proc, newToken) =>
+                _process = currentProc.ClientContext.ProcessTable.CreateProcessBuilder()
+                    .SetProcessName("Scripting")
+                    .SetParent(currentProc)
+                    .SetAction((proc, newToken) =>
                     {
                         _engine.ParentProcess = proc;
                         _engine.Token = newToken;
                         setupScriptingEngine(proc.Out, proc.Error, proc.In, proc, newToken);
                         _engine.ExecuteString<dynamic>(command.Substring(2), _scriptContext);
                         return new CommandResponse(CommandResponse.CODE_SUCCESS);
-                    }, currentProc, currentProc.Identity);
+                    })
+                    .Build();
                 _process.ThreadError += (sender, e) =>
                 {
                     currentProc.Error.WriteLine($"Error while running script: {e.Message}".Red());
@@ -329,13 +330,17 @@ __;_ \ /,//`
                 var lexedItems = lexer.Lex(command);
                 var parsedItems = parser.Parse(lexedItems);
                 CommandRequest newRequest = new CommandRequest(parsedItems[0].Select(e => e.ToString()).ToArray());
-                string newCommand = newRequest.Arguments[0].ToString();
+                string newCommand = newRequest.Arguments[0];
                 //Check if command is built-in.
                 if (_builtInCommands.ContainsKey(newCommand))
                 {
-                    _process = currentProc.ClientContext.ProcessTable.Factory.Create(currentProc.ClientContext, "internalCommand",
-                        (proc, delToken) =>
-                            _builtInCommands[newCommand](newRequest), currentProc, currentProc.Identity);
+                    _process = currentProc.ClientContext.ProcessTable.CreateProcessBuilder()
+                        .SetProcessName("internalCommand")
+                        .SetParent(currentProc)
+                        .SetAction((proc, delToken) =>
+                            _builtInCommands[newCommand](newRequest))
+                        .Build();
+                    
                     _process.ThreadError += (sender, e) =>
                     {
                         currentProc.Error.WriteLine($"Error while executing built-in command: {e.Message}".Red());
@@ -346,10 +351,9 @@ __;_ \ /,//`
                 else if (newCommand.StartsWith("./"))
                 {
                     string fileName = newCommand.Substring(2);
-                    _process = currentProc.ClientContext.ProcessTable.Factory.CreateFromScript(
-                        currentProc.ClientContext, fileName, newRequest, currentProc,
-                        currentProc.Extensions.Find<IExtensionFileSystem>().GetFileSystem(), _engine,
-                        currentProc.Identity);
+                    newRequest.Arguments.SetValue(fileName, 0);
+                    _process = _processFactory.CreateProcess("Scripting", newRequest, currentProc,
+                        currentProc.ClientContext.ProcessTable);
 
                     _process.ThreadError += (sender, e) =>
                     {
@@ -360,9 +364,9 @@ __;_ \ /,//`
                 {
                     try
                     {
-                        var application = _appSubsystem.GetApplication(newCommand);
-                        _process = currentProc.ClientContext.ProcessTable.Factory.CreateOnApplication(currentProc.ClientContext, application,
-                            currentProc, newRequest, currentProc.Identity);
+                        _process = _processFactory.CreateProcess("Application", newRequest, currentProc,
+                            currentProc.ClientContext.ProcessTable);
+
                         _process.ThreadError += (sender, e) =>
                         {
                             currentProc.Error.WriteLine(Output.Red($"Error while executing command: {e.Message}"));
@@ -457,13 +461,13 @@ __;_ \ /,//`
         public override void InitializeServices(IServiceProvider kernel)
         {
             _nodeApplication = kernel.GetService<IHostApplication>();
+            _processFactory = kernel.GetService<ProcessFactorySubsystem>();
             _logger = kernel.GetService<ILogger<DefaultShell>>();
             _logger.LogInformation("Shell initialized.");
             _builtInCommands = new Dictionary<string, Func<CommandRequest, CommandResponse>>();
             _scriptingSubsystem = kernel.GetService<ScriptingSubsystem>();
             _engine = _scriptingSubsystem.CreateEngine();
             _scriptContext = _engine.CreateContext();
-            _appSubsystem = kernel.GetService<ApplicationSubsystem>();
         }
     }
 }

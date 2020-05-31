@@ -92,25 +92,30 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 if (useShellExecute) p.StartInfo.CreateNoWindow = createNoWindow;
                 if (runAsRCTProcess)
                 {
-                    RctProcess proc = context.ClientContext.ProcessTable.Factory.Create(context.ClientContext, $"Ext - {name}",
-                        (current, cancellationToken) =>
+                    RctProcess proc = context.ClientContext.ProcessTable.CreateProcessBuilder()
+                        .SetProcessName($"Ext - {name}")
+                        .SetParent(context)
+                        .SetAction((current, cancellationToken) =>
                         {
                             string text = string.Empty;
                             if (redirectStandardIn)
                             {
                                 text = current.In.ReadToEnd();
                             }
+
                             p.Start();
-                            if(redirectStandardIn) p.StandardInput.WriteLine(text);
-                            if(redirectStandardOut) p.BeginOutputReadLine();
-                            if(redirectStandardError) p.BeginErrorReadLine();
+                            if (redirectStandardIn) p.StandardInput.WriteLine(text);
+                            if (redirectStandardOut) p.BeginOutputReadLine();
+                            if (redirectStandardError) p.BeginErrorReadLine();
                             if (waitForExit)
                             {
                                 token.Register(() => p.Kill());
                                 p.WaitForExit();
                             }
+
                             return new CommandResponse((p.HasExited) ? p.ExitCode : 0);
-                        }, context, context.Identity);
+                        })
+                        .Build();
                     proc.Start();
                     proc.WaitForExit();
                     return proc.ExitCode;

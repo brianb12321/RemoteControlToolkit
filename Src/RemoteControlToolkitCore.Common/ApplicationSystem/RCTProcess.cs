@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Principal;
 using System.ServiceModel;
 using System.Threading;
-using Crayon;
 using Microsoft.Extensions.DependencyInjection;
+using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
-using RemoteControlToolkitCore.Common.Scripting;
 using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 using ThreadState = System.Threading.ThreadState;
 
@@ -60,7 +58,14 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         private readonly IProcessTable _table;
         private readonly IExtensionProvider<RctProcess>[] _extensionProviders;
 
-        private RctProcess(IProcessTable table, IInstanceSession session, string name, RctProcess parent, ProcessDelegate threadStart, IPrincipal identity, IExtensionProvider<RctProcess>[] providers)
+        private RctProcess(IProcessTable table,
+            IInstanceSession session,
+            string name,
+            RctProcess parent,
+            ProcessDelegate threadStart,
+            IPrincipal identity,
+            IExtensionProvider<RctProcess>[] providers,
+            ApartmentState apartmentState)
         {
             _table = table;
             Name = name;
@@ -96,7 +101,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             }
 
             _workingThread = new Thread(startThread);
-            _workingThread.SetApartmentState(ApartmentState.STA);
+            _workingThread.SetApartmentState(apartmentState);
             _cts = new CancellationTokenSource();
         }
 
@@ -231,85 +236,80 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         }
 
 
-        public class RctProcessFactory
+        public class RctProcessBuilder : IProcessBuilder
         {
             private readonly IProcessTable _table;
             private readonly IServiceProvider _provider;
-            public RctProcessFactory(IProcessTable table, IServiceProvider provider)
+            private string _processName;
+            private ProcessDelegate _action;
+            private RctProcess _parent;
+            private IPrincipal _principal;
+            private IInstanceSession _session;
+            private ApartmentState _apartmentState = ApartmentState.STA;
+            private readonly List<IExtensionProvider<RctProcess>> _extensions;
+            public RctProcessBuilder(IProcessTable table)
             {
                 _table = table;
-                _provider = provider;
-            }
-            public RctProcess Create(IInstanceSession session, string name, ProcessDelegate processDelegate, RctProcess parent, IPrincipal identity)
-            {
-                RctProcess process = new RctProcess(_table, session, name, parent, processDelegate, parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RctProcess>>().ToArray());
-                return process;
-            }
-            public RctProcess CreateOnApplication(IInstanceSession session, IApplication application, RctProcess parent, CommandRequest request, IPrincipal identity)
-            {
-                RctProcess process = new RctProcess(_table, session, application.ProcessName, parent, (proc, token) => application.Execute(request, proc, token), parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RctProcess>>().ToArray());
-                return process;
+                _extensions = new List<IExtensionProvider<RctProcess>>();
             }
 
-            public RctProcess CreateOnExternalProcess(IInstanceSession session, CommandRequest args, RctProcess parent, IPrincipal identity)
+            public RctProcess Build()
             {
-                RctProcess process = new RctProcess(_table, session, $"External process: {args.Arguments[0]}", parent, (proc, token) =>
-                {
-                    try
-                    {
-                        string data = proc.In.ReadToEnd();
-                        Process extProcess = new Process();
-                        extProcess.StartInfo.UseShellExecute = false;
-                        extProcess.StartInfo.FileName = args.Arguments[0].Substring(2);
-                        extProcess.StartInfo.Arguments = args.GetArguments();
-                        extProcess.StartInfo.RedirectStandardError = true;
-                        extProcess.StartInfo.RedirectStandardOutput = true;
-                        extProcess.StartInfo.RedirectStandardInput = true;
-                        extProcess.OutputDataReceived += (sender, e) =>
-                        {
-                            proc.Out.WriteLine(e.Data);
-                        };
-                        extProcess.ErrorDataReceived += (sender, e) =>
-                        {
-                            proc.Out.WriteLine(e.Data);
-                        };
-                        token.Register(() =>
-                        {
-                            extProcess.Kill();
-                        });
-                        extProcess.Start();
-                        extProcess.BeginOutputReadLine();
-                        extProcess.BeginErrorReadLine();
-                        extProcess.StandardInput.WriteLine(data);
-                        extProcess.WaitForExit();
-                        return new CommandResponse(extProcess.ExitCode);
-                    }
-                    catch (Exception e)
-                    {
-                        proc.Error.WriteLine(Output.Red($"Error while executing external program: {e.Message}"));
-                        return new CommandResponse(CommandResponse.CODE_FAILURE);
-                    }
-                }, parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RctProcess>>().ToArray());
-                return process;
+                return new RctProcess(_table,
+                    _parent?.ClientContext ?? _session,
+                    _processName,
+                    _parent,
+                    _action,
+                    _parent?.Identity ?? _principal, 
+                    _extensions.ToArray());
             }
 
-            public RctProcess CreateFromScript(IInstanceSession session, string fileName, CommandRequest args, RctProcess parent, IFileSystem fileSystem, IScriptingEngine engine,
-                IPrincipal identity)
+            public IProcessBuilder SetProcessName(string name)
             {
-                var process = new RctProcess(_table, session, fileName, parent,
-                    (proc, newToken) =>
-                    {
-                        engine.ParentProcess = proc;
-                        engine.Token = newToken;
-                        engine.SetIn(proc.In);
-                        engine.SetOut(proc.Out);
-                        engine.SetError(proc.Error);
-                        List<string> argList = new List<string> {fileName};
-                        argList.AddRange(args.Arguments.Length >= 1 ? args.Arguments.Skip(1) : args.Arguments);
-                        engine.GetDefaultModule().AddVariable("argv", argList.ToArray());
-                        return new CommandResponse(engine.ExecuteProgram(fileName, fileSystem));
-                    }, parent?.Identity ?? identity, _provider.GetServices<IExtensionProvider<RctProcess>>().ToArray());
-                return process;
+                _processName = name;
+                return this;
+            }
+
+            public IProcessBuilder SetAction(ProcessDelegate action)
+            {
+                _action = action;
+                return this;
+            }
+
+            public IProcessBuilder SetParent(RctProcess process)
+            {
+                _parent = process;
+                return this;
+            }
+
+            public IProcessBuilder SetSecurityPrincipal(IPrincipal principal)
+            {
+                _principal = principal;
+                return this;
+            }
+
+            public IProcessBuilder SetInstanceSession(IInstanceSession session)
+            {
+                _session = session;
+                return this;
+            }
+
+            public IProcessBuilder SetThreadApartmentMode(ApartmentState mode)
+            {
+                _apartmentState = mode;
+                return this;
+            }
+
+            public IProcessBuilder AddProcessExtension(IExtensionProvider<RctProcess> extension)
+            {
+                _extensions.Add(extension);
+                return this;
+            }
+
+            public IProcessBuilder AddProcessExtensions(IEnumerable<IExtensionProvider<RctProcess>> extensions)
+            {
+                _extensions.AddRange(extensions);
+                return this;
             }
         }
     }

@@ -6,6 +6,7 @@ using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
 using Microsoft.Extensions.DependencyInjection;
+using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
 using RemoteControlToolkitCore.Common.NSsh.ChannelLayer;
 using RemoteControlToolkitCore.Common.NSsh.ChannelLayer.Console;
 using RemoteControlToolkitCore.Common.NSsh.Services;
@@ -19,11 +20,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
         private readonly IImpersonationProvider _provider;
         private readonly ILogger<BaseProcessConsole> _logger;
         private readonly ILogger<TerminalHandler> _terminalLogger;
-        private readonly ApplicationSubsystem _subsystem;
+        private readonly ProcessFactorySubsystem _subsystem;
         private readonly IExtensionProvider<IInstanceSession>[] _providers;
         private readonly FileSystemSubsystem _fileSystemSubsystem;
         private readonly IServiceProvider _serviceProvider;
-        public CommandChannelConsumer(ILogger<BaseConsoleChannelConsumer> logger, ILogger<TerminalHandler> terminalLogger, IImpersonationProvider provider, FileSystemSubsystem fileSystemSubsystem, ILogger<BaseProcessConsole> consoleLogger, ApplicationSubsystem subsystem, IServiceProvider serviceProvider) : base(logger)
+        public CommandChannelConsumer(ILogger<BaseConsoleChannelConsumer> logger, ILogger<TerminalHandler> terminalLogger, IImpersonationProvider provider, FileSystemSubsystem fileSystemSubsystem, ILogger<BaseProcessConsole> consoleLogger, ProcessFactorySubsystem subsystem, IServiceProvider serviceProvider) : base(logger)
         {
             _fileSystemSubsystem = fileSystemSubsystem;
             _provider = provider;
@@ -40,7 +41,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             ClaimsIdentity identity = new ClaimsIdentity();
             identity.AddClaim(new Claim(ClaimTypes.Role, "Administrator"));
             principal.AddIdentity(identity);
-            return new BaseProcessConsole(_logger, _subsystem, _providers, _fileSystemSubsystem, Channel, InitialTerminalConfiguration, InitialEnvironmentVariables, _serviceProvider, principal, _terminalLogger);
+            return new BaseProcessConsole(_logger, _subsystem, _providers, _fileSystemSubsystem, Channel, InitialTerminalConfiguration, InitialEnvironmentVariables, principal, _terminalLogger);
         }
 
         public string Command { get; set; }

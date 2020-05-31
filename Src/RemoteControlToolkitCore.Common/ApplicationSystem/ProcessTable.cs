@@ -1,13 +1,18 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
 
 namespace RemoteControlToolkitCore.Common.ApplicationSystem
 {
     public class ProcessTable : IProcessTable
     {
-        public RctProcess.RctProcessFactory Factory { get; private set; }
         private readonly ConcurrentDictionary<uint, RctProcess> _activeProcesses;
+
+        public IProcessBuilder CreateProcessBuilder()
+        {
+            return new RctProcess.RctProcessBuilder(this);
+        }
 
         public uint LatestProcess
         {
@@ -18,9 +23,8 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             }
         }
 
-        public ProcessTable(IServiceProvider provider)
+        public ProcessTable()
         {
-            Factory = new RctProcess.RctProcessFactory(this, provider);
             _activeProcesses = new ConcurrentDictionary<uint, RctProcess>();
         }
 

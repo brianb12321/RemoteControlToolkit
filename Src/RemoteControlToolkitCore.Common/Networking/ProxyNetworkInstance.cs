@@ -20,14 +20,14 @@ namespace RemoteControlToolkitCore.Common.Networking
         private readonly StreamReader _sr;
         private readonly StreamWriter _sw;
 
-        public ProxyNetworkInstance(TcpClient client, IServiceProvider provider)
+        public ProxyNetworkInstance(TcpClient client, IServerPool pool)
         {
             _proxyProcess = null;
             _networkStream = null;
-            _pool = provider.GetService<IServerPool>();
+            _pool = pool;
             ClientUniqueID = Guid.NewGuid();
             Extensions = new ExtensionCollection<IInstanceSession>(this);
-            ProcessTable = new ProcessTable(provider);
+            ProcessTable = new ProcessTable();
             _client = client;
             _networkStream = _client.GetStream();
             _sr = new StreamReader(_networkStream);

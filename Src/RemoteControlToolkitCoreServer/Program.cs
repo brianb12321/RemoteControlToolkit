@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
+using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
 using RemoteControlToolkitCore.Common.Scripting;
 using RemoteControlToolkitCore.Common.Commandline;
@@ -69,6 +70,7 @@ namespace RemoteControlToolkitCoreServer
             application.PluginManager.LoadFromType(typeof(RCTSerialDevice));
             application.PluginManager.LoadFromType(typeof(AsmGen));
             provider.GetService<ApplicationSubsystem>().InitializeSubsystem();
+            provider.GetService<ProcessFactorySubsystem>().InitializeSubsystem();;
             provider.GetService<AudioOutSubsystem>().InitializeSubsystem();
             provider.GetService<FileSystemSubsystem>().InitializeSubsystem();;
             provider.GetService<ScriptingSubsystem>().InitializeSubsystem();

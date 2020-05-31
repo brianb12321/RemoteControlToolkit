@@ -8,13 +8,13 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
     public class ApplicationSubsystem : PluginSubsystem
     {
         private readonly IServiceProvider _provider;
-        public RctProcess.RctProcessFactory Factory { get; }
+        public RctProcess.RctProcessBuilder Factory { get; }
 
         public ApplicationSubsystem(IPluginManager pluginManager, IServiceProvider provider) : base(pluginManager)
         {
             _provider = provider;
-            var table = new ProcessTable(provider);
-            Factory = new RctProcess.RctProcessFactory(table, provider);
+            var table = new ProcessTable();
+            Factory = new RctProcess.RctProcessBuilder(table);
         }
 
         public IApplication GetApplication(string name)
@@ -22,7 +22,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             IApplication app = (IApplication)PluginManager.ActivatePluginModule<ApplicationSubsystem>(name);
             if (app == null)
             {
-                throw new RctProcessException("No such application, script.");
+                throw new RctProcessException($"The application \"{name}\" does not exist.");
             }
             app.InitializeServices(_provider);
             return app;
