@@ -13,7 +13,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
 {
     public delegate bool KeyBindingDelegate(StringBuilder buffer, StringBuilder renderBuffer, ref int cursorPosition);
     /// <summary>
-    /// Provides helper methods for reading and writing to and from the terminal.
+    /// Represents an allocated pseudo-terminal control device.
     /// </summary>
     public interface ITerminalHandler : IExtension<IInstanceSession>, IExtensibleObject<ITerminalHandler>
     {

@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.IO.Packaging;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using AudioSwitcher.AudioApi.CoreAudio;
 using Crayon;
 using Microsoft.Extensions.DependencyInjection;
 using NAudio.Wave;
@@ -19,7 +22,8 @@ using RemoteControlToolkitCore.Common.Utilities;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
 using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 using YoutubeExplode;
-using YoutubeExplode.Models.MediaStreams;
+using YoutubeExplode.Videos;
+using YoutubeExplode.Videos.Streams;
 
 [assembly: PluginLibrary("AudioSubsystem", "Audio Subsystem")]
 namespace RemoteControlToolkitCore.Subsystem.Audio
@@ -47,6 +51,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
             int sampleRate = 44100;
             int bitDepth = 16;
             int channels = 2;
+            int volume = 0;
             bool showHelp = false;
             OptionSet options = new OptionSet()
                 .Add("pathMode|m=",
@@ -67,6 +72,11 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                 .Add("stop", "Stops all audio playback.", v => mode = "stop")
                 .Add("pause", "Pauses all audio playback.", v => mode = "pause")
                 .Add("resume", "Resume all paused audio playback.", v => mode = "resume")
+                .Add("setVolume=", "Sets the {VOLUME} of the current audio device.", v =>
+                {
+                    mode = "volume";
+                    volume = int.Parse(v);
+                })
                 .Add("wait|w", "Waits for the audio to finish.", v => wait = true)
                 .Add("showAllDevices", "Displays all the registered audio devices.", v => mode = "showAllDevices")
                 .Add("showAllProviders", "Shows all the audio providers.", v => mode = "showAllProviders")
@@ -159,6 +169,14 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                 }
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }
+            else if (mode == "volume")
+            {
+                CoreAudioDevice defaultPlaybackDevice;
+                if(deviceId != "-1") defaultPlaybackDevice = new CoreAudioController().GetDevice(new Guid(deviceId));
+                else defaultPlaybackDevice = new CoreAudioController().DefaultPlaybackDevice;
+                defaultPlaybackDevice.Volume = volume;
+                return new CommandResponse(CommandResponse.CODE_SUCCESS);
+            }
             try
             {
 
@@ -175,21 +193,28 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                     case "REMOTE_YOUTUBE":
                         try
                         {
+                            currentProc.Out.WriteLine("Loading Youtube client.".BrightCyan());
                             var client = new YoutubeClient();
-                            string parsedPath = YoutubeClient.ParseVideoId(path);
-                            var video = client.GetVideoAsync(parsedPath).Result;
-                            var streamInfoSet = client.GetVideoMediaStreamInfosAsync(parsedPath).Result;
-                            // Get the best muxed stream
-                            var streamInfo = streamInfoSet.Muxed.WithHighestVideoQuality();
-                            var format = streamInfo.Container.GetFileExtension();
+                            var videoTitle = client.Videos.GetAsync(path).GetAwaiter().GetResult().Title;
+                            currentProc.Out.WriteLine($"Found Youtube video: \"{videoTitle}\" Retrieving video manifest.".BrightGreen());
+                            var videoManifest = client.Videos.Streams.GetManifestAsync(new VideoId(path)).GetAwaiter()
+                                .GetResult();
+                            currentProc.Out.WriteLine("Attempting to get audio only stream.".BrightCyan());
+                            var audioStreamInfo = videoManifest.GetAudio().FirstOrDefault();
+                            if (audioStreamInfo == null)
+                            {
+                                currentProc.Out.WriteLine("Unable to retrieve audio only stream. Attempting to retrieve muxed stream.".BrightYellow());
+                                audioStreamInfo = videoManifest.GetMuxed().FirstOrDefault();
+                            }
                             // Download video
-                            currentProc.Out.WriteLine($"Downloading Video ({streamInfo.Container}) please wait ... ");
+                            currentProc.Out.WriteLine($"Downloading Video ({audioStreamInfo.Container}) please wait ... ".BrightCyan());
 
                             //using (var progress = new ProgressBar())
-                            var stream = client.GetMediaStreamAsync(streamInfo).Result;
+                            var stream = client.Videos.Streams.GetAsync(audioStreamInfo).GetAwaiter().GetResult();
+                            currentProc.Out.WriteLine("Loading FFMPeg converter...".BrightCyan());
                             var convert = new FFMpegConverter();
                             MemoryStream audioStream = new MemoryStream();
-                            var task = convert.ConvertLiveMedia(stream, format, audioStream, "mp3", new ConvertSettings());
+                            var task = convert.ConvertLiveMedia(stream, audioStreamInfo.Container.Name, audioStream, "mp3", new ConvertSettings());
                             convert.LogReceived += (sender, eventArgs) =>
                             {
                                 ITerminalHandler handler;
@@ -211,7 +236,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                             currentProc.Out.WriteLine();
                             audioStream.Seek(0, SeekOrigin.Begin);
                             fileStream = audioStream;
-                            currentProc.Out.WriteLine($"Loaded file with audio {video.Title}");
+                            currentProc.Out.WriteLine($"Loaded file with audio: \"{videoTitle}\"".BrightGreen());
                         }
                         catch (AggregateException e)
                         {

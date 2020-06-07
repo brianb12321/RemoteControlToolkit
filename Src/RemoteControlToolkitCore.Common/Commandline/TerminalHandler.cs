@@ -9,9 +9,6 @@ using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {
-    /// <summary>
-    /// Provides helper methods for working with a terminal.
-    /// </summary>
     public class TerminalHandler : ITerminalHandler
     {
         
@@ -235,7 +232,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                         break;
                     //Handle backspace
                     case '\u007f':
-                        if (sb.Length > 0)
+                        if (sb.Length > 0 && cursorPosition > 0)
                         {
                             sb.Remove(cursorPosition - 1, 1);
                             cursorPosition--;
