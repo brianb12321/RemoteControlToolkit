@@ -14,14 +14,14 @@ using RemoteControlToolkitCore.Common.NSsh.Types;
 
 namespace RemoteControlToolkitCore.Common.Utilities
 {
-    public class ChannelTextWriter : TextWriter
+    public class ChannelTextWriter : StreamWriter
     {
         public override Encoding Encoding => Encoding.UTF8;
         private ChannelStreamWriter _channel;
         public ITerminalHandler TerminalHandler { get; set; }
         private bool opost = true;
 
-        public ChannelTextWriter(ChannelStreamWriter channel)
+        public ChannelTextWriter(ChannelStreamWriter channel) : base(channel)
         {
             _channel = channel;
             if (TerminalHandler != null)

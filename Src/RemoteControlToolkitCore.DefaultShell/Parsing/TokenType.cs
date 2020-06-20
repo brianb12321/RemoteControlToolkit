@@ -2,6 +2,7 @@
 {
     public enum TokenType
     {
+        Semicolon,
         EnvironmentVariable,
         Word,
         Quote,

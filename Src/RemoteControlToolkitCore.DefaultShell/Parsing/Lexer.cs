@@ -117,6 +117,9 @@ namespace RemoteControlToolkitCore.DefaultShell.Parsing
                     case '$':
                         lexWord(_tokens, ref i, input, TokenType.EnvironmentVariable);
                         break;
+                    case ';':
+                        _tokens.Add(new CommandToken(";", TokenType.Semicolon));
+                        break;
                     case '|':
                         _tokens.Add(new CommandToken("|", TokenType.Pipe));
                         break;

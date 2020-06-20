@@ -20,6 +20,7 @@ namespace RemoteControlToolkitCore.Common.Networking
         bool AnonymousClientPipeExists(int id);
         void CloseAnonymousServerPipe(int id);
         void DisconnectAnonymousClientPipe(int id);
+        void DisconnectAnonymousClientPipe(AnonymousPipeClientStream pipe);
         AnonymousPipeServerStream GetAnonymousPipeServer(int id);
         AnonymousPipeClientStream GetAnonymousPipeClient(int id);
         (int position, NamedPipeServerStream stream) OpenNamedPipe(PipeDirection direction, string name);

@@ -115,8 +115,10 @@ namespace RemoteControlToolkitCore.Common.Commandline
             }
             _shellProcess.SetOut(outStream);
             _shellProcess.SetError(outStream);
-            _shellProcess.SetIn(consoleInStream);
+            _shellProcess.SetIn(consoleInStream, Pipe);
             _shellProcess.Extensions.Add(new ExtensionFileSystem(fileSystemSubsystem.GetFileSystem()));
+            _shellProcess.ThreadError += (sender, e) =>
+                _logger.LogError($"A critical error occurred while running the shell: {e.Message}");
             initializeEnvironmentVariables(_shellProcess, environmentPayloads);
             Extensions.Add(_terminalHandler);
         }
@@ -162,7 +164,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             return _channelStreamWriter;
         }
 
-        public TextWriter GetClientWriter()
+        public StreamWriter GetClientWriter()
         {
            return new ChannelTextWriter(_channelStreamWriter);
         }

@@ -80,14 +80,14 @@ namespace RemoteControlToolkitCore.Common.Scripting
             ScriptingEngine.Runtime.IO.SetInput(new MemoryStream(), reader, Encoding.UTF8);
         }
 
-        public void SetOut(TextWriter writer)
+        public void SetOut(StreamWriter writer)
         {
-            ScriptingEngine.Runtime.IO.SetOutput(new MemoryStream(), writer);
+            ScriptingEngine.Runtime.IO.SetOutput(writer.BaseStream, writer);
         }
 
-        public void SetError(TextWriter writer)
+        public void SetError(StreamWriter writer)
         {
-            ScriptingEngine.Runtime.IO.SetErrorOutput(new MemoryStream(), writer);
+            ScriptingEngine.Runtime.IO.SetErrorOutput(writer.BaseStream, writer);
         }
 
         public IScriptExecutionContext CreateModule(string name)

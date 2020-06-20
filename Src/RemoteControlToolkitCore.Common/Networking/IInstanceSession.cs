@@ -12,7 +12,7 @@ namespace RemoteControlToolkitCore.Common.Networking
         string Username { get; }
         StreamReader GetClientReader();
         Stream OpenNetworkStream();
-        TextWriter GetClientWriter();
+        StreamWriter GetClientWriter();
         IProcessTable ProcessTable { get; }
         T GetExtension<T>() where T : IExtension<IInstanceSession>;
         void AddExtension<T>(T extension) where T : IExtension<IInstanceSession>;

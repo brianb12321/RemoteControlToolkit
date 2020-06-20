@@ -45,9 +45,9 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                     new CommandRequest(fileAndArguments.ToArray()), context, context.ClientContext.ProcessTable);
                 process.ThreadError += (sender, e) =>
                     context.Error.WriteLine($"Error while running process: {e.Message}".Red());
-                process.SetIn(context.In);
-                process.SetOut(context.Out);
-                process.SetError(context.Error);
+                process.SetIn(context.OpenInputStream());
+                process.SetOut(context.OpenOutputStream());
+                process.SetError(context.OpenErrorStream());
                 process.Start();
                 process.WaitForExit();
                 return process.ExitCode;

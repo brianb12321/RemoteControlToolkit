@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -14,6 +15,7 @@ using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Commandline.TerminalExtensions;
+using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Scripting;
 using RemoteControlToolkitCore.Common.Utilities;
@@ -33,10 +35,11 @@ namespace RemoteControlToolkitCore.DefaultShell
         private ProcessFactorySubsystem _processFactory;
         private IScriptExecutionContext _scriptContext;
         private IHostApplication _nodeApplication;
+        private IPipeService _pipeService;
         private string _motd = "I love cookies!";
         private ILogger<DefaultShell> _logger;
         private ITerminalHandler _shellExt;
-        private RctProcess _process;
+        private List<RctProcess> _processes;
         private bool _promptAnyways;
         private Dictionary<string, Func<CommandRequest, CommandResponse>> _builtInCommands;
         private List<(string art, string artist)> _bannerArts;
@@ -225,6 +228,7 @@ __;_ \ /,//`
                         continue;
                     }
                     currentProc.EnvironmentVariables["?"] = executeCommand(newCommand, currentProc).Code.ToString();
+                    _processes.Clear();
                 }
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }
@@ -258,7 +262,7 @@ __;_ \ /,//`
             }
             return bannerBuilder;
         }
-        private void setupScriptingEngine(TextWriter outWriter, TextWriter errorWriter, TextReader inReader, RctProcess currentProc, CancellationToken token)
+        private void setupScriptingEngine(StreamWriter outWriter, StreamWriter errorWriter, TextReader inReader, RctProcess currentProc, CancellationToken token)
         {
             _engine.ParentProcess = currentProc;
             _engine.Token = token;
@@ -299,7 +303,7 @@ __;_ \ /,//`
         {
             if (command.StartsWith("::"))
             {
-                _process = currentProc.ClientContext.ProcessTable.CreateProcessBuilder()
+                _processes.Add(currentProc.ClientContext.ProcessTable.CreateProcessBuilder()
                     .SetProcessName("Scripting")
                     .SetParent(currentProc)
                     .SetAction((proc, newToken) =>
@@ -310,89 +314,122 @@ __;_ \ /,//`
                         _engine.ExecuteString<dynamic>(command.Substring(2), _scriptContext);
                         return new CommandResponse(CommandResponse.CODE_SUCCESS);
                     })
-                    .Build();
-                _process.ThreadError += (sender, e) =>
+                    .Build());
+                _processes[0].ThreadError += (sender, e) =>
                 {
                     currentProc.Error.WriteLine($"Error while running script: {e.Message}".Red());
                 };
-                _process.SetOut(currentProc.Out);
-                _process.SetError(currentProc.Error);
-                _process.SetIn(currentProc.In);
-                addProcessExtensions(_process);
-                _process.Start();
-                _process.WaitForExit();
-                return _process.ExitCode;
+                _processes[0].SetOut(currentProc.OpenOutputStream());
+                _processes[0].SetError(currentProc.OpenErrorStream());
+                _processes[0].SetIn(currentProc.In, currentProc.OpenInputStream());
+                addProcessExtensions(_processes[0]);
+                _processes[0].Start();
+                _processes[0].WaitForExit();
+                return _processes[0].ExitCode;
             }
             ILexer lexer = new Lexer();
             try
             {
-                IParser parser = new Parser(_engine, _scriptContext, currentProc.EnvironmentVariables);
                 var lexedItems = lexer.Lex(command);
-                var parsedItems = parser.Parse(lexedItems);
-                CommandRequest newRequest = new CommandRequest(parsedItems[0].Select(e => e.ToString()).ToArray());
-                string newCommand = newRequest.Arguments[0];
-                //Check if command is built-in.
-                if (_builtInCommands.ContainsKey(newCommand))
+                //var parsedItems = parser.Parse(lexedItems);
+                var parsedItems = splitToken(lexedItems.ToArray(), TokenType.Semicolon);
+                CommandResponse exitCode = new CommandResponse(CommandResponse.CODE_SUCCESS);
+                for (int i = 0; i < parsedItems.Length; i++)
                 {
-                    _process = currentProc.ClientContext.ProcessTable.CreateProcessBuilder()
-                        .SetProcessName("internalCommand")
-                        .SetParent(currentProc)
-                        .SetAction((proc, delToken) =>
-                            _builtInCommands[newCommand](newRequest))
-                        .Build();
-                    
-                    _process.ThreadError += (sender, e) =>
+                    var pipedItems = splitToken(parsedItems[i].ToArray(), TokenType.Pipe);
+                    //We need to create a pipe. We are going to use the pipe service to create the piping. Usually this will be a Microsoft anonymous pipe.
+                    for (int p = 0; p < pipedItems.Length; p++)
                     {
-                        currentProc.Error.WriteLine($"Error while executing built-in command: {e.Message}".Red());
-                    };
-                }
-
-                //Check if command should execute external program.
-                else if (newCommand.StartsWith("./"))
-                {
-                    string fileName = newCommand.Substring(2);
-                    newRequest.Arguments.SetValue(fileName, 0);
-                    _process = _processFactory.CreateProcess("Scripting", newRequest, currentProc,
-                        currentProc.ClientContext.ProcessTable);
-
-                    _process.ThreadError += (sender, e) =>
-                    {
-                        currentProc.Error.WriteLine(Output.Red($"Error while running script: {e.Message}"));
-                    };
-                }
-                else
-                {
-                    try
-                    {
-                        _process = _processFactory.CreateProcess("Application", newRequest, currentProc,
-                            currentProc.ClientContext.ProcessTable);
-
-                        _process.ThreadError += (sender, e) =>
+                        CommandRequest newRequest = new CommandRequest(pipedItems[p].Select(e => e.ToString()).ToArray());
+                        string newCommand = newRequest.Arguments[0];
+                        //Check if command is built-in.
+                        if (_builtInCommands.ContainsKey(newCommand))
                         {
-                            currentProc.Error.WriteLine(Output.Red($"Error while executing command: {e.Message}"));
-                        };
-                    }
-                    catch (RctProcessException)
-                    {
-                        currentProc.Error.WriteLine(Output.Red("No such command, script, or built-in function exists."));
-                        return new CommandResponse(CommandResponse.CODE_FAILURE);
-                    }
-                }
+                            _processes.Add(currentProc.ClientContext.ProcessTable.CreateProcessBuilder()
+                                .SetProcessName("internalCommand")
+                                .SetParent(currentProc)
+                                .SetAction((proc, delToken) =>
+                                    _builtInCommands[newCommand](newRequest))
+                                .Build());
 
-                //Redirect IO
-                try
-                {
-                    redirectIo(parser, currentProc);
+                            _processes[p].ThreadError += (sender, e) =>
+                            {
+                                currentProc.Error.WriteLine(
+                                    $"Error while executing built-in command: {e.Message}".Red());
+                            };
+                        }
+
+                        //Check if command should execute external program.
+                        else if (newCommand.StartsWith("./"))
+                        {
+                            string fileName = newCommand.Substring(2);
+                            newRequest.Arguments.SetValue(fileName, 0);
+                            _processes.Add(_processFactory.CreateProcess("Scripting", newRequest, currentProc,
+                                currentProc.ClientContext.ProcessTable));
+
+                            _processes[p].ThreadError += (sender, e) =>
+                            {
+                                currentProc.Error.WriteLine(Output.Red($"Error while running script: {e.Message}"));
+                            };
+                        }
+                        else
+                        {
+                            try
+                            {
+                                _processes.Add(_processFactory.CreateProcess("Application", newRequest, currentProc,
+                                    currentProc.ClientContext.ProcessTable));
+
+                                _processes[p].ThreadError += (sender, e) =>
+                                {
+                                    currentProc.Error.WriteLine(
+                                        Output.Red($"Error while executing command: {e.Message}"));
+                                };
+                            }
+                            catch (RctProcessException)
+                            {
+                                currentProc.Error.WriteLine(
+                                    Output.Red("No such command, script, or built-in function exists."));
+                                return new CommandResponse(CommandResponse.CODE_FAILURE);
+                            }
+                        }
+
+                        //Redirect IO
+                        try
+                        {
+                            //Seek next item. If exists, we can setup the pipe.
+                            if (p <= pipedItems.Length - 1)
+                            {
+                                if (p > 0)
+                                {
+                                    if (_processes[p - 1].EnvironmentVariables.ContainsKey("PIPE"))
+                                    {
+                                        connectPipeToProcesses(_processes[p - 1], _processes[p]);
+                                    }
+                                }
+                                _processes[p].EnvironmentVariables.Add("PIPE", "true");
+                            }
+
+                            //redirectIo(parser, currentProc);
+                        }
+                        catch (Exception ex)
+                        {
+                            currentProc.Error.WriteLine(Output.Red($"Error while redirecting IO: {ex.Message}"));
+                            return new CommandResponse(CommandResponse.CODE_FAILURE);
+                        }
+
+                        addProcessExtensions(_processes[p]);
+                    }
+                    //Execute processes
+                    foreach (var process in _processes)
+                    {
+                        process.Start();
+                    }
+                    //Unless otherwise specified, run the last command asynchronously.
+                    _processes[_processes.Count - 1].WaitForExit();
+
+                    _processes.Clear();
                 }
-                catch (Exception ex)
-                {
-                    currentProc.Error.WriteLine(Output.Red($"Error while redirecting IO: {ex.Message}"));
-                    return new CommandResponse(CommandResponse.CODE_FAILURE);
-                }
-                addProcessExtensions(_process);
-                _process.Start();
-                _process.WaitForExit();
-                return _process.ExitCode;
+                return exitCode;
             }
             catch (ParserException e)
             {
@@ -406,65 +443,96 @@ __;_ \ /,//`
             }
         }
 
+        private void connectPipeToProcesses(RctProcess processA, RctProcess processB)
+        {
+            //Pre conditions
+            if (processA == null || processB == null) return;
+            AnonymousPipeServerStream server = _pipeService.OpenAnonymousPipe(PipeDirection.Out).stream;
+            (int position, AnonymousPipeClientStream stream) client =
+                _pipeService.ConnectToPipe(server.GetClientHandleAsString(), PipeDirection.In);
+            processA.SetOut(new StreamWriter(server) {AutoFlush = true});
+            processB.SetIn(new StreamReader(client.stream));
+        }
+
+        private List<CommandToken>[] splitToken(CommandToken[] tokens, TokenType type)
+        {
+            List<List<CommandToken>> splittedTokens = new List<List<CommandToken>>();
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                List<CommandToken> subTokens = new List<CommandToken>();
+                for (int j = i; j < tokens.Length; j++)
+                {
+                    if (tokens[j].Type == type) break;
+                    else subTokens.Add(tokens[j]);
+                    i++;
+                }
+                splittedTokens.Add(subTokens);
+            }
+
+            return splittedTokens.ToArray();
+        }
+
         private void addProcessExtensions(RctProcess process)
         {
             process.Extensions.Add(_scriptContext);
         }
-        private void redirectIo(IParser parser, RctProcess currentProc)
-        {
-            IFileSystem workingDirFileSystem = currentProc.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
-            if (parser.OutputRedirected == RedirectionMode.File)
-            {
-                _process.SetOut(new StreamWriter(parser.Output, parser.OutputAppendMode));
-            }
-            else if (parser.OutputRedirected == RedirectionMode.VFS)
-            {
-                StreamWriter sw;
-                if (parser.OutputAppendMode)
-                {
-                    sw = new StreamWriter(
-                        workingDirFileSystem.OpenFile(parser.Output, FileMode.Append, FileAccess.Write));
-                    _process.SetOut(sw);
-                    _engine.SetOut(sw);
-                }
-                else
-                {
-                    sw = new StreamWriter(workingDirFileSystem.OpenFile(parser.Output, FileMode.Create,
-                        FileAccess.Write));
-                    _process.SetOut(sw);
-                    _engine.SetOut(sw);
-                }
-            }
-            else
-            {
-                _engine.SetOut(currentProc.Out);
-                _engine.SetError(currentProc.Error);
-            }
-            StreamReader sr;
-            if (parser.InputRedirected == RedirectionMode.File)
-            {
-                sr = new StreamReader(parser.Input);
-                _process.SetIn(sr);
-                _engine.SetIn(sr);
-            }
-            else if (parser.InputRedirected == RedirectionMode.VFS)
-            {
-                sr = new StreamReader(workingDirFileSystem.OpenFile(parser.Input, FileMode.Open, FileAccess.Read));
-                _process.SetIn(sr);
-                _engine.SetIn(sr);
-            }
-            else
-            {
-                _engine.SetIn(currentProc.In);
-            }
-        }
+        //private void redirectIo(IParser parser, RctProcess currentProc)
+        //{
+        //    IFileSystem workingDirFileSystem = currentProc.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
+        //    if (parser.OutputRedirected == RedirectionMode.File)
+        //    {
+        //        _processes.SetOut(new StreamWriter(parser.Output, parser.OutputAppendMode));
+        //    }
+        //    else if (parser.OutputRedirected == RedirectionMode.VFS)
+        //    {
+        //        StreamWriter sw;
+        //        if (parser.OutputAppendMode)
+        //        {
+        //            sw = new StreamWriter(
+        //                workingDirFileSystem.OpenFile(parser.Output, FileMode.Append, FileAccess.Write));
+        //            _processes.SetOut(sw);
+        //            _engine.SetOut(sw);
+        //        }
+        //        else
+        //        {
+        //            sw = new StreamWriter(workingDirFileSystem.OpenFile(parser.Output, FileMode.Create,
+        //                FileAccess.Write));
+        //            _processes.SetOut(sw);
+        //            _engine.SetOut(sw);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        _engine.SetOut(currentProc.Out);
+        //        _engine.SetError(currentProc.Error);
+        //    }
+        //    StreamReader sr;
+        //    if (parser.InputRedirected == RedirectionMode.File)
+        //    {
+        //        sr = new StreamReader(parser.Input);
+        //        _processes.SetIn(sr);
+        //        _engine.SetIn(sr);
+        //    }
+        //    else if (parser.InputRedirected == RedirectionMode.VFS)
+        //    {
+        //        sr = new StreamReader(workingDirFileSystem.OpenFile(parser.Input, FileMode.Open, FileAccess.Read));
+        //        _processes.SetIn(sr);
+        //        _engine.SetIn(sr);
+        //    }
+        //    else
+        //    {
+        //        _engine.SetIn(currentProc.In);
+        //    }
+        //}
         public override void InitializeServices(IServiceProvider kernel)
         {
             _nodeApplication = kernel.GetService<IHostApplication>();
             _processFactory = kernel.GetService<ProcessFactorySubsystem>();
             _logger = kernel.GetService<ILogger<DefaultShell>>();
+            _pipeService = kernel.GetService<IPipeService>();
             _logger.LogInformation("Shell initialized.");
             _builtInCommands = new Dictionary<string, Func<CommandRequest, CommandResponse>>();
+            _processes = new List<RctProcess>();
             _scriptingSubsystem = kernel.GetService<ScriptingSubsystem>();
             _engine = _scriptingSubsystem.CreateEngine();
             _scriptContext = _engine.CreateContext();

@@ -32,6 +32,7 @@ namespace RemoteControlToolkitCoreServer
                 .ConfigureLogging(factory =>
                     factory.AddConsole())
                 .AddStartup<RemoteControlToolkitCore.Subsystem.Workflow.Startup>()
+                .AddStartup<RemoteControlToolkitCore.Subsystem.Audio.Startup>()
                 .UsePluginManager<PluginManager>()
                 .LoadFromPluginsFolder()
                 .Build();
@@ -42,12 +43,11 @@ namespace RemoteControlToolkitCoreServer
 
     public class Startup : IApplicationStartup
     {
-        public void ConfigureServices(IServiceCollection services, IAppBuilder builder)
+        public void ConfigureServices(IServiceCollection services)
         {
             services.AddDeviceBus();
             services.AddVFS();
             services.AddScriptingEngine();
-            services.AddAudio();
             services.AddCommandLine();
             services.AddSingleton<IServerPool, ServerPool>();
             services.AddPipeService();

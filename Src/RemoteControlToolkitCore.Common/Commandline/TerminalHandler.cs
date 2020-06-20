@@ -228,6 +228,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                         break;
                     case (char)26:
                         quit = true;
+                        insertCharacter(sb, ref cursorPosition, text.ToString());
                         cursorPosition = sb.Length;
                         break;
                     //Handle backspace
@@ -307,9 +308,9 @@ namespace RemoteControlToolkitCore.Common.Commandline
         {
             StringBuilder sb = new StringBuilder();
             string text;
-            while ((text = ReadLine()) != ((char) 26).ToString())
+            while (string.IsNullOrWhiteSpace(text = ReadLine()) || text[0] != (char)26)
             {
-                sb.AppendLine(text);
+                sb.Append(text);
             }
 
             return sb.ToString();

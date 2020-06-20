@@ -97,7 +97,7 @@ namespace RemoteControlToolkitCore.Common.Networking
             return _sr.BaseStream;
         }
 
-        public TextWriter GetClientWriter()
+        public StreamWriter GetClientWriter()
         {
             return _sw;
         }

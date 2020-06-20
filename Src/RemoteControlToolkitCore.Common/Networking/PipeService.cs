@@ -84,6 +84,12 @@ namespace RemoteControlToolkitCore.Common.Networking
             _anonymousClientPipes[id].Close();
         }
 
+        public void DisconnectAnonymousClientPipe(AnonymousPipeClientStream pipe)
+        {
+            pipe.Close();
+            _anonymousClientPipes.Remove(pipe);
+        }
+
         public AnonymousPipeServerStream GetAnonymousPipeServer(int id)
         {
             return _anonymousServerPipes[id];

@@ -1,21 +1,16 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.Plugin;
 
-namespace RemoteControlToolkitCore.Subsystem.Workflow
+namespace RemoteControlToolkitCore.Subsystem.Audio
 {
     [Plugin]
     public class Startup : IApplicationStartup
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton(provider =>
-                new WorkflowSubsystem(provider.GetRequiredService<IHostApplication>().PluginManager, provider));
+            services.AddAudio();
         }
 
         public void PostConfigureServices(IServiceProvider provider, IHostApplication application)

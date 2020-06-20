@@ -15,8 +15,8 @@ namespace RemoteControlToolkitCore.Common.Scripting
         RctProcess ParentProcess { get; set; }
         CancellationToken Token { get; set; }
         void SetIn(TextReader reader);
-        void SetOut(TextWriter writer);
-        void SetError(TextWriter writer);
+        void SetOut(StreamWriter writer);
+        void SetError(StreamWriter writer);
         ScriptIO IO { get; }
         IScriptExecutionContext ExecuteFile(string path);
         int ExecuteProgram(string file, IFileSystem fileSystem);

@@ -32,10 +32,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             }
             else
             {
-                while (!token.IsCancellationRequested)
-                {
-                    context.Out.WriteLine(context.In.ReadLine());
-                }
+                context.Out.WriteLine(context.In.ReadToEnd());
             }
             return new CommandResponse(CommandResponse.CODE_SUCCESS);
         }

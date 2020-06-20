@@ -22,9 +22,9 @@ namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
             {
                 var application = _subSystem.CreateProcess("Application", new CommandRequest(args),
                     engine.ParentProcess, engine.ParentProcess.ClientContext.ProcessTable);
-                application.SetOut(engine.IO.OutputWriter);
-                application.SetIn(engine.IO.InputReader);
-                application.SetError(engine.IO.ErrorWriter);
+                application.SetOut(engine.IO.OutputStream);
+                application.SetIn(engine.IO.InputReader, engine.IO.InputStream);
+                application.SetError(engine.IO.ErrorStream);
                 return application;
             }));
             context.AddVariable("ex", new Func<string, CommandResponse>((command) =>
@@ -34,9 +34,9 @@ namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
                         "shell", "-c", command
                     }),
                     engine.ParentProcess, engine.ParentProcess.ClientContext.ProcessTable);
-                application.SetOut(engine.IO.OutputWriter);
-                application.SetIn(engine.IO.InputReader);
-                application.SetError(engine.IO.ErrorWriter);
+                application.SetOut(engine.IO.OutputStream);
+                application.SetIn(engine.IO.InputReader, engine.IO.InputStream);
+                application.SetError(engine.IO.ErrorStream);
                 application.Start();
                 application.WaitForExit();
                 //Reset IO

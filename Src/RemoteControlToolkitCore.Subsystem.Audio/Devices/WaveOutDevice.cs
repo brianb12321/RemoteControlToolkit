@@ -50,7 +50,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio.Devices
 
         public void SetProperty(string propertyName, object value)
         {
-            _info.Data[propertyName] = value;
+            
         }
 
         public IWavePlayer Init(IWaveProvider provider)

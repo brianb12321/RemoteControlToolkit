@@ -28,7 +28,7 @@ namespace RemoteControlToolkitCore.Common
 
         public IHostApplication Build()
         {
-            _startups.ForEach(s => s.ConfigureServices(_services, this));
+            _startups.ForEach(s => s.ConfigureServices(_services));
             _services.AddSingleton<IHostApplication, Application>((provider) =>
             {
                 return new Application(provider.GetService<ILogger<Application>>(),

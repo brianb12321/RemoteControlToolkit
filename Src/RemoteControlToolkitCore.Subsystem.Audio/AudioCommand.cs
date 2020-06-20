@@ -44,9 +44,9 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
             string mode = "play";
             string pathMode = "VFS";
             string path = string.Empty;
-            string device = "WaveOut";
+            IAudioDevice device = (IAudioDevice)_bus.GetSelectorsByTag("audio").First(v => v.Category == "WaveOut").GetDevice("-1");
             string deviceId = "-1";
-            string fileType = "WAV";
+            IAudioProviderModule fileType = _audioSubystem.GetAudioProvider("MP3");
             bool wait = false;
             int sampleRate = 44100;
             int bitDepth = 16;
@@ -62,13 +62,20 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                     v => path = v)
                 .Add("device|d=",
                     "The installed device module to use. Default: WaveOut",
-                    v => device = v)
+                    v => device = (IAudioDevice)_bus.GetSelectorsByTag("audio").First(c => c.Category == v).GetDevice(deviceId))
                 .Add("deviceId|i=",
                     "The id of the device to open. Default: -1 (WaveOut Audio Mapper)",
                     v => deviceId = v)
                 .Add("fileType|t=",
                     "The file provider module to use.",
-                    v => fileType = v)
+                    v =>
+                    {
+                        fileType = _audioSubystem.GetAudioProvider(v);
+                        if (fileType == null)
+                        {
+                            throw new ArgumentException("No audio provider module found.");
+                        }
+                    })
                 .Add("stop", "Stops all audio playback.", v => mode = "stop")
                 .Add("pause", "Pauses all audio playback.", v => mode = "pause")
                 .Add("resume", "Resume all paused audio playback.", v => mode = "resume")
@@ -113,6 +120,14 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                         currentProc.Error.WriteLine(Output.Red("channel must be a number."));
                     }
                 })
+                .Add("dev:", "Pass configuration options to the device module.", (k, v) =>
+                {
+                    device.SetProperty(k, v);
+                })
+                .Add("fileType:", "Pass configuration options to the file type provider module.", (k, v) =>
+                {
+                    fileType.ConfigurationOptions.Add(k, v);
+                })
                 .Add("help|?",
                     "Displays the help screen.",
                     v => showHelp = true);
@@ -120,6 +135,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
             options.Parse(args.Arguments.Select(a => a.ToString()));
             if (showHelp)
             {
+                currentProc.Out.WriteLine("audio [OPTIONS] [DEVICE_OPTIONS] [PROVIDER_OPTIONS]\r\n");
                 options.WriteOptionDescriptions(currentProc.Out);
                 return new CommandResponse(CommandResponse.CODE_SUCCESS); ;
             }
@@ -180,7 +196,6 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
             try
             {
 
-                IAudioDevice module = (IAudioDevice)_bus.GetSelectorsByTag("audio").First(v => v.Category == device).GetDevice(deviceId);
                 switch (pathMode.ToUpper())
                 {
                     case "VFS":
@@ -217,11 +232,10 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                             var task = convert.ConvertLiveMedia(stream, audioStreamInfo.Container.Name, audioStream, "mp3", new ConvertSettings());
                             convert.LogReceived += (sender, eventArgs) =>
                             {
-                                ITerminalHandler handler;
                                 //Display progress bar.
                                 if (eventArgs.Data.StartsWith("size=") && !currentProc.OutRedirected)
                                 {
-                                    handler = currentProc.ClientContext.GetExtension<ITerminalHandler>();
+                                    var handler = currentProc.ClientContext.GetExtension<ITerminalHandler>();
                                     handler.ClearRow();
                                     currentProc.Out.Write($"LOG: {eventArgs.Data}");
                                     handler.MoveCursorLeft(9999999);
@@ -253,13 +267,9 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                         throw new ArgumentException("Path mode must be VFS or PHYS.");
                 }
 
-                IAudioProviderModule provider = _audioSubystem.GetAudioProvider(fileType);
-                if (provider == null)
-                {
-                    throw new ArgumentException("No audio provider module found.");
-                }
+                
 
-                player = module.Init(provider.OpenAudio(fileStream, new WaveFormat(sampleRate, bitDepth, channels)));
+                player = device.Init(fileType.OpenAudio(fileStream, new WaveFormat(sampleRate, bitDepth, channels)));
 
                 player.PlaybackStopped += (sender, e) =>
                 {

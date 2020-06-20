@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Security.Principal;
 using System.ServiceModel;
 using System.Threading;
-using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Networking;
@@ -26,9 +24,12 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public IPrincipal Identity { get; }
 
         public IInstanceSession ClientContext { get; set; }
-        public TextWriter Out { get; private set; }
-        public TextWriter Error { get; private set; }
+        public StreamWriter Out { get; private set; }
+        private Stream _outStream;
+        public StreamWriter Error { get; private set; }
+        private Stream _errorStream;
         public TextReader In { get; private set; }
+        private Stream _inStream;
         public bool DisposeIn { get; set; } = true;
         public bool DisposeOut { get; set; } = true;
         public bool DisposeError { get; set; } = true;
@@ -49,6 +50,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public event EventHandler StandardOutDisposed;
         public event EventHandler StandardInDisposed;
         public event EventHandler StandardErrorDisposed;
+        public event EventHandler ProcessFinished;
         private readonly Thread _workingThread;
         private readonly CancellationTokenSource _cts;
         private readonly ProcessDelegate _threadStart;
@@ -85,6 +87,9 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 Out = Parent.Out;
                 In = Parent.In;
                 Error = Parent.Error;
+                _outStream = Parent._outStream;
+                _errorStream = Parent._errorStream;
+                _inStream = Parent._inStream;
                 Identity = Parent.Identity;
                 ClientContext = Parent.ClientContext;
                 StandardOutDisposed += Parent.StandardOutDisposed;
@@ -116,10 +121,14 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         {
             if (IsBackground)
             {
-                SetIn(TextReader.Null);
-                SetOut(TextWriter.Null);
-                SetError(TextWriter.Null);
+                SetIn(Stream.Null);
+                SetOut(Stream.Null);
+                SetError(Stream.Null);
             }
+
+            //Dispose process once finished regardless of errors.
+            ProcessFinished += (sender, e) => Dispose();
+            
             _table.AddProcess(this);
             _workingThread.Start(this);
         }
@@ -141,7 +150,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         {
             try
             {
-                ExitCode = _threadStart?.Invoke((RctProcess)data, _cts.Token);
+                ExitCode = _threadStart?.Invoke((RctProcess) data, _cts.Token);
             }
             catch (ThreadAbortException)
             {
@@ -152,12 +161,15 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 ThreadError?.Invoke(this, ex);
                 ExitCode = new CommandResponse(CommandResponse.CODE_THREAD_ABORT);
             }
+            finally
+            {
+                ProcessFinished?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         public void WaitForExit()
         {
             _workingThread.Join();
-            Dispose();
         }
 
         public void Abort()
@@ -174,21 +186,66 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             Dispose();
         }
 
-        public void SetOut(TextWriter outWriter)
+        public Stream OpenOutputStream()
         {
-            if (Out != null) OutRedirected = true;
-            Out = outWriter;
+            return _outStream;
         }
 
-        public void SetError(TextWriter errorWriter)
+        public Stream OpenErrorStream()
         {
-            if (Error != null) ErrorRedirected = true;
-            Error = errorWriter;
+            return _errorStream;
         }
 
-        public void SetIn(TextReader inReader)
+        public Stream OpenInputStream()
         {
-            if (In != null) InRedirected = true;
+            return _inStream;
+        }
+
+        public void SetOut(Stream outStream)
+        {
+            if (_outStream != null) OutRedirected = true;
+            _outStream = outStream;
+            Out = new StreamWriter(_outStream);
+            Out.AutoFlush = true;
+        }
+        public void SetOut(StreamWriter outStream)
+        {
+            if (_outStream != null) OutRedirected = true;
+            _outStream = outStream.BaseStream;
+            Out = outStream;
+        }
+
+        public void SetError(Stream errorStream)
+        {
+            if (_errorStream != null) ErrorRedirected = true;
+            _errorStream = errorStream;
+            Error = new StreamWriter(_errorStream);
+            Error.AutoFlush = true;
+        }
+        public void SetError(StreamWriter errorStream)
+        {
+            if (_errorStream != null) ErrorRedirected = true;
+            _errorStream = errorStream.BaseStream;
+            Error = errorStream;
+        }
+
+        public void SetIn(Stream inStream)
+        {
+            if (_inStream != null) InRedirected = true;
+            _inStream = inStream;
+            In = new StreamReader(_inStream);
+        }
+        public void SetIn(StreamReader inStream)
+        {
+            if (_inStream != null) InRedirected = true;
+            _inStream = inStream.BaseStream;
+            In = inStream;
+        }
+        public void SetIn(TextReader inReader, Stream inStream)
+        {
+            if (_inStream != null) InRedirected = true;
+            //Currently reading from the terminal cannot be accomplished by a stream.
+            _inStream = inStream;
             In = inReader;
         }
 
@@ -230,7 +287,14 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                     provider.RemoveExtension(this);
                 }
                 Child?.Dispose();
-                _table.RemoveProcess(Pid);
+
+                //Check if process is already removed from table.
+
+                if (_table.ProcessExists(Pid))
+                {
+                    _table.RemoveProcess(Pid);
+                }
+
                 Disposed = true;
             }
         }

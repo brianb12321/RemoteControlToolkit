@@ -71,13 +71,13 @@ namespace RemoteControlToolkitCore.Subsystem.Roslyn
                 switch (inputMode)
                 {
                     case "text":
-                        tree = CSharpSyntaxTree.ParseText(inputStrings[0]);
+                        tree = CSharpSyntaxTree.ParseText(inputStrings[0], cancellationToken: token);
                         break;
                     case "file":
-                        tree = CSharpSyntaxTree.ParseText(fileSystem.ReadAllText(inputStrings[0]));
+                        tree = CSharpSyntaxTree.ParseText(fileSystem.ReadAllText(inputStrings[0]), cancellationToken: token);
                         break;
                     case "stdIn":
-                        tree = CSharpSyntaxTree.ParseText(context.In.ReadToEnd());
+                        tree = CSharpSyntaxTree.ParseText(context.In.ReadToEnd(), cancellationToken: token);
                         break;
                     default:
                         tree = null;
