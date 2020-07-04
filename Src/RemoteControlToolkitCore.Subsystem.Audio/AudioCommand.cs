@@ -124,7 +124,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                 {
                     device.SetProperty(k, v);
                 })
-                .Add("fileType:", "Pass configuration options to the file type provider module.", (k, v) =>
+                .Add("ftModule:", "Pass configuration options to the file type provider module.", (k, v) =>
                 {
                     fileType.ConfigurationOptions.Add(k, v);
                 })

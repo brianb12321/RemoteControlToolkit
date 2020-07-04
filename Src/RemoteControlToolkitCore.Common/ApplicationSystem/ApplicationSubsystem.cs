@@ -8,13 +8,10 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
     public class ApplicationSubsystem : PluginSubsystem
     {
         private readonly IServiceProvider _provider;
-        public RctProcess.RctProcessBuilder Factory { get; }
 
         public ApplicationSubsystem(IPluginManager pluginManager, IServiceProvider provider) : base(pluginManager)
         {
             _provider = provider;
-            var table = new ProcessTable();
-            Factory = new RctProcess.RctProcessBuilder(table);
         }
 
         public IApplication GetApplication(string name)

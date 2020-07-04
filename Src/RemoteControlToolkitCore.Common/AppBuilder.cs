@@ -16,7 +16,7 @@ namespace RemoteControlToolkitCore.Common
     {
         private readonly List<IApplicationStartup> _startups;
         private readonly IServiceCollection _services;
-        private IPluginManager _pluginManager;
+        protected IPluginManager _pluginManager;
         private ILoggerFactory _loggerFactory;
         public NetworkSide ExecutingSide => NetworkSide.Server;
 
@@ -26,19 +26,19 @@ namespace RemoteControlToolkitCore.Common
             _services = new ServiceCollection();
         }
 
+        protected virtual IHostApplication InjectHostApplication(IServiceProvider provider)
+        {
+            return new Application(provider.GetService<ILogger<Application>>(),
+                provider.GetService<ILogger<ProxyNetworkInstance>>(),
+                provider, ExecutingSide, this,
+                provider.GetService<IKeySetupService>(),
+                _pluginManager,
+                provider.GetService<NSshServiceConfiguration>());
+        }
         public IHostApplication Build()
         {
             _startups.ForEach(s => s.ConfigureServices(_services));
-            _services.AddSingleton<IHostApplication, Application>((provider) =>
-            {
-                return new Application(provider.GetService<ILogger<Application>>(),
-                    provider.GetService<ILogger<ProxyNetworkInstance>>(),
-                    provider, ExecutingSide, this, 
-                    provider.GetService<IKeySetupService>(), 
-                    _pluginManager,
-                    provider.GetService<NSshServiceConfiguration>());
-            });
-            
+            _services.AddSingleton(InjectHostApplication);
             var serviceProvider = _services.BuildServiceProvider();
             var hostApplication = serviceProvider.GetService<IHostApplication>();
             _startups.ForEach(s => s.PostConfigureServices(serviceProvider, hostApplication));

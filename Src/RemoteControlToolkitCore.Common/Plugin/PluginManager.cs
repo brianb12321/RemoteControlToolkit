@@ -42,6 +42,7 @@ namespace RemoteControlToolkitCore.Common.Plugin
             {
                 PluginLibrary library = new PluginLibrary(assembly, this);
                 _loadedLibraries.Add(library.UniqueName, library);
+
                 return library;
             }
             catch (Exception e)

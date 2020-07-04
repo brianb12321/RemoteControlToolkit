@@ -23,6 +23,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
+using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.NSsh.Types;
 
 namespace RemoteControlToolkitCore.Common.NSsh.Configuration
@@ -62,6 +63,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.Configuration
             IdleTimeout = TimeSpan.FromMinutes(10);
             ReceiveWindowSize = 1024 * 1024 * 4;
             ReceiveMaximumPacketSize = 1024 * 1024;
+            TerminalHandlerFactoryType = typeof(StandardTerminalHandlerFactory);
         }
 
         public List<IPEndPoint> ListenEndPoints { get; private set; }
@@ -87,6 +89,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.Configuration
         public uint ReceiveMaximumPacketSize { get; set; }
 
         public string UserAuthenticationBanner { get; set; }
+        public Type TerminalHandlerFactoryType { get; set; }
 
         public static NSshServiceConfiguration LoadFromFile(string file)
         {

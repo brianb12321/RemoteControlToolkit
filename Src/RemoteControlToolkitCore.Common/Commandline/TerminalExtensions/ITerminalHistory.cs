@@ -42,8 +42,6 @@ namespace RemoteControlToolkitCore.Common.Commandline.TerminalExtensions
                     cursorPosition = 0;
                     string historyCommand = History[HistoryPosition];
                     byte[] historyCommandBytes = Encoding.UTF8.GetBytes(historyCommand);
-                    //Clean out buffer
-                    owner.RawTerminalIn.GetBuffer();
                     renderBuffer.Clear();
                     owner.RawTerminalIn.Write(historyCommandBytes, 0, historyCommandBytes.Length);
                 }
@@ -59,8 +57,6 @@ namespace RemoteControlToolkitCore.Common.Commandline.TerminalExtensions
                     buffer.Clear();
                     cursorPosition = 0;
                     string historyCommand = History[HistoryPosition];
-                    //Clean out buffer
-                    owner.RawTerminalIn.GetBuffer();
                     renderBuffer.Clear();
                     byte[] historyCommandBytes = Encoding.UTF8.GetBytes(historyCommand);
                     owner.RawTerminalIn.Write(historyCommandBytes, 0, historyCommandBytes.Length);

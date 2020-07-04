@@ -129,11 +129,11 @@ __;_ \ /,//`
                     string key = arg2.Arguments[1].ToString();
                     if (currentProc.EnvironmentVariables.ContainsKey(key))
                     {
-                        currentProc.EnvironmentVariables[key] = arg2.Arguments[2].ToString();
+                        currentProc.EnvironmentVariables.AddVariable(key, arg2.Arguments[2].ToString());
                     }
                     else
                     {
-                        currentProc.EnvironmentVariables.Add(key, arg2.Arguments[2].ToString());
+                        currentProc.EnvironmentVariables.AddVariable(key, arg2.Arguments[2].ToString());
                     }
                 }
 
@@ -161,7 +161,9 @@ __;_ \ /,//`
         public override CommandResponse Execute(CommandRequest args, RctProcess currentProc, CancellationToken token)
         {
             bool printNewLine = false;
+            _logger.LogDebug("Getting terminal handler.");
             _shellExt = currentProc.ClientContext.GetExtension<ITerminalHandler>();
+            _logger.LogDebug("Attaching control-c handler.");
             currentProc.ControlC += CurrentProc_ControlC;
             setupInternalCommands(currentProc);
             string command = string.Empty;
@@ -173,9 +175,14 @@ __;_ \ /,//`
                 .Add("motd|m=", "Sets the shell's motto of the day.", v => _motd = v)
                 .Add("promptAnyways|p", "Displays the prompt even when StdIn is redirected.", v => _promptAnyways = true);
 
+            
             options.Parse(args.Arguments.Select(a => a.ToString()));
             if (showHelp)
             {
+                currentProc.Out.WriteLine("Usage: shell [-c=<COMMAND>] [-n] [-m=<MOTD>] [-p]");
+                currentProc.Out.WriteLine("The default shell experience for Remote Control Toolkit Core.");
+                currentProc.Out.WriteLine();
+                currentProc.Out.WriteLine("Options:");
                 options.WriteOptionDescriptions(currentProc.Out);
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }
@@ -190,7 +197,7 @@ __;_ \ /,//`
                         currentProc.Out.WriteLine("\u001b]e");
                         continue;
                     }
-                    currentProc.EnvironmentVariables["?"] = executeCommand(newCommand, currentProc).Code.ToString();
+                    currentProc.EnvironmentVariables.AddVariable("?", executeCommand(newCommand, currentProc).Code.ToString());
                     currentProc.Out.WriteLine("\u001b]e");
                 }
             }
@@ -200,6 +207,7 @@ __;_ \ /,//`
                 StringBuilder sb = new StringBuilder();
                 _shellExt?.SetTitle($"RCT Shell - {currentProc.WorkingDirectory}");
                 //Draw Banner
+                _logger.LogDebug("Drawing banner.");
                 loadBannerArt();
                 currentProc.Out.Write(drawBanner().ToString());
                 if(currentProc.Identity.IsInRole("Administrator")) currentProc.Out.WriteLine("WARNING: You are logged in as a server administrator.".BrightYellow());
@@ -216,7 +224,7 @@ __;_ \ /,//`
                     {
                         if (!currentProc.InRedirected || _promptAnyways) currentProc.Out.Write($"{currentProc.Identity.Identity.Name.BrightGreen()}{"@".BrightGreen()}{Environment.MachineName.BrightGreen()}:{currentProc.WorkingDirectory.ToString().BrightBlue()}{" $".Blue()} ");
                     }
-
+                    _logger.LogDebug("Beginning readline.");
                     string newCommand = currentProc.In.ReadLine();
                     if (printNewLine) currentProc.Out.WriteLine();
                     if (newCommand == null) break;
@@ -227,7 +235,7 @@ __;_ \ /,//`
                         if (printNewLine) currentProc.Out.WriteLine();
                         continue;
                     }
-                    currentProc.EnvironmentVariables["?"] = executeCommand(newCommand, currentProc).Code.ToString();
+                    currentProc.EnvironmentVariables.AddVariable("?", executeCommand(newCommand, currentProc).Code.ToString());
                     _processes.Clear();
                 }
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
@@ -288,7 +296,7 @@ __;_ \ /,//`
 
             foreach (var command in commands)
             {
-                currentProc.EnvironmentVariables["?"] = executeCommand(command, currentProc).Code.ToString();
+                currentProc.EnvironmentVariables.AddVariable("?", executeCommand(command, currentProc).Code.ToString());
             }
         }
 
@@ -406,7 +414,7 @@ __;_ \ /,//`
                                         connectPipeToProcesses(_processes[p - 1], _processes[p]);
                                     }
                                 }
-                                _processes[p].EnvironmentVariables.Add("PIPE", "true");
+                                _processes[p].EnvironmentVariables.AddVariableLocal("PIPE", "true");
                             }
 
                             //redirectIo(parser, currentProc);

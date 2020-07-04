@@ -19,7 +19,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
     {
         TextWriter TerminalOut { get; }
         TextReader TerminalIn { get; }
-        MemoryStream RawTerminalIn { get; }
+        Stream RawTerminalIn { get; }
         event EventHandler TerminalDimensionsChanged;
         event EventHandler ReadLineInvoked;
         event EventHandler<string> ReadLineCompleted;
@@ -27,7 +27,6 @@ namespace RemoteControlToolkitCore.Common.Commandline
         (string row, string column) GetCursorPosition();
         uint TerminalRows { get; set; }
         uint TerminalColumns { get; set; }
-        PseudoTerminalPayload InitialTerminalConfig { get; }
         PseudoTerminalMode TerminalModes { get; }
         void Clear();
         string ClearScreenCursorDown(bool writeCode = false);

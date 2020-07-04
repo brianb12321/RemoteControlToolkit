@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using RemoteControlToolkitCore.Common.NSsh.ChannelLayer;
 
 namespace RemoteControlToolkitCore.Common.Utilities
@@ -33,7 +34,9 @@ namespace RemoteControlToolkitCore.Common.Utilities
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            _producer.SendData(buffer);
+            //Convert byte array into string.
+            string text = Encoding.UTF8.GetString(buffer, offset, count);
+            _producer.SendData(Encoding.UTF8.GetBytes(text));
         }
 
         public override bool CanRead => false;

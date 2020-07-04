@@ -17,23 +17,20 @@ namespace RemoteControlToolkitCore.Common.Commandline
 {
     public class CommandChannelConsumer : BaseConsoleChannelConsumer, IChannelCommandConsumer
     {
-        private readonly IImpersonationProvider _provider;
         private readonly ILogger<BaseProcessConsole> _logger;
         private readonly ILogger<TerminalHandler> _terminalLogger;
         private readonly ProcessFactorySubsystem _subsystem;
         private readonly IExtensionProvider<IInstanceSession>[] _providers;
         private readonly FileSystemSubsystem _fileSystemSubsystem;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly ITerminalHandlerFactory _terminalHandlerFactory;
         public CommandChannelConsumer(ILogger<BaseConsoleChannelConsumer> logger, ILogger<TerminalHandler> terminalLogger, IImpersonationProvider provider, FileSystemSubsystem fileSystemSubsystem, ILogger<BaseProcessConsole> consoleLogger, ProcessFactorySubsystem subsystem, IServiceProvider serviceProvider) : base(logger)
         {
             _fileSystemSubsystem = fileSystemSubsystem;
-            _provider = provider;
             _logger = consoleLogger;
             _terminalLogger = terminalLogger;
             _subsystem = subsystem;
-            _provider = provider;
-            _serviceProvider = serviceProvider;
             _providers = serviceProvider.GetServices<IExtensionProvider<IInstanceSession>>().ToArray();
+            _terminalHandlerFactory = serviceProvider.GetService<ITerminalHandlerFactory>();
         }
         protected override IConsole CreateConsole()
         {
@@ -41,7 +38,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             ClaimsIdentity identity = new ClaimsIdentity();
             identity.AddClaim(new Claim(ClaimTypes.Role, "Administrator"));
             principal.AddIdentity(identity);
-            return new BaseProcessConsole(_logger, _subsystem, _providers, _fileSystemSubsystem, Channel, InitialTerminalConfiguration, InitialEnvironmentVariables, principal, _terminalLogger);
+            return new BaseProcessConsole(_logger, _subsystem, _providers, _fileSystemSubsystem, Channel, InitialTerminalConfiguration, InitialEnvironmentVariables, principal, _terminalLogger, _terminalHandlerFactory);
         }
 
         public string Command { get; set; }

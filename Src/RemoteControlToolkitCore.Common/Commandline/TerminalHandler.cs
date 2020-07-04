@@ -13,16 +13,16 @@ namespace RemoteControlToolkitCore.Common.Commandline
     {
         
         public IExtensionCollection<ITerminalHandler> Extensions { get; }
-        public PseudoTerminalPayload InitialTerminalConfig { get; }
         public PseudoTerminalMode TerminalModes { get; }
-        public TextWriter TerminalOut => _textOut;
+        public TextWriter TerminalOut { get; }
         public TextReader TerminalIn => _textIn;
-        public MemoryStream RawTerminalIn => _stdIn;
+        public Stream RawTerminalIn { get; }
+
         public event EventHandler TerminalDimensionsChanged;
         public event EventHandler ReadLineInvoked;
         public event EventHandler<string> ReadLineCompleted;
-        private uint _terminalRows = 36;
-        private uint _terminalColumns = 130;
+        private uint _terminalRows;
+        private uint _terminalColumns;
         private uint _scrollOffset;
         private readonly uint _maxChars = 272;
         private int _cursorX;
@@ -31,20 +31,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
         private readonly Dictionary<string, KeyBindingDelegate> _keyBindings;
         public List<string> History { get; }
 
-        public string TerminalName
-        {
-            get
-            {
-                try
-                {
-                    return InitialTerminalConfig.TerminalType;
-                }
-                catch (NullReferenceException)
-                {
-                    return "vt100";
-                }
-            }
-        }
+        public string TerminalName { get; set; }
 
         public uint TerminalRows
         {
@@ -65,27 +52,25 @@ namespace RemoteControlToolkitCore.Common.Commandline
             }
         }
 
-        private readonly MemoryStream _stdIn;
-        private readonly TextWriter _textOut;
         private readonly StreamReader _textIn;
         private int _originalCol;
 
         private int OriginalRow => _originalRow - (int)_scrollOffset;
 
         private int _originalRow;
-        public TerminalHandler(MemoryStream stdIn, TextWriter stdOut, PseudoTerminalPayload terminalConfig)
+        public TerminalHandler(Stream stdIn, Stream stdOut, string terminalName, uint initialTerminalColumns, uint initialTerminalRows, PseudoTerminalMode modes)
         {
-            _stdIn = stdIn;
-            _textOut = stdOut;
-            _textIn = new StreamReader(_stdIn);
-            History = new List<string>();
-            InitialTerminalConfig = terminalConfig;
-            if (InitialTerminalConfig != null)
+            RawTerminalIn = stdIn;
+            TerminalOut = new StreamWriter(stdOut, Encoding.UTF8, 1, true)
             {
-                _terminalRows = InitialTerminalConfig.TerminalHeight;
-                _terminalColumns = InitialTerminalConfig.TerminalWidth;
-            }
-            TerminalModes = new PseudoTerminalMode();
+                AutoFlush = true
+            };
+            _textIn = new StreamReader(stdIn);
+            History = new List<string>();
+            TerminalName = terminalName;
+            _terminalRows = initialTerminalRows;
+            _terminalColumns = initialTerminalColumns;
+            TerminalModes = modes ?? new PseudoTerminalMode();
             Extensions = new ExtensionCollection<ITerminalHandler>(this);
             _keyBindings = new Dictionary<string, KeyBindingDelegate>
             {
@@ -105,8 +90,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public void Clear()
         {
-            _textOut.Write("\u001b[2J\u001b[;H\u001b[0m");
-            if(TerminalModes.ClearScrollbackOnClear) _textOut.Write("\u001b[3J");
+            TerminalOut.Write("\u001b[2J\u001b[;H\u001b[0m");
+            if(TerminalModes.ClearScrollbackOnClear) TerminalOut.Write("\u001b[3J");
         }
 
         public string ClearScreenCursorDown(bool writeCode = false)
@@ -114,7 +99,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             if (writeCode) return "\u001b[J";
             else
             {
-                _textOut.Write("\u001b[J");
+                TerminalOut.Write("\u001b[J");
                 return string.Empty;
             }
 
@@ -122,12 +107,12 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public void ClearRow()
         {
-            _textOut.Write("\u001b[K");
+            TerminalOut.Write("\u001b[K");
         }
 
         public void Bell()
         {
-            _textOut.Write("\a");
+            TerminalOut.Write("\a");
         }
 
         private void updateTerminal(StringBuilder sb, int cursorPosition)
@@ -179,22 +164,15 @@ namespace RemoteControlToolkitCore.Common.Commandline
                         _cursorX = realCursorPosition;
                     }
                 }
-                _textOut.Write(_renderBuffer.ToString());
+                TerminalOut.Write(_renderBuffer.ToString());
                 _renderBuffer.Clear();
             }
-        }
-
-        private void cleanOutBuffers(StringBuilder sb)
-        {
-            sb.Insert(0, Encoding.UTF8.GetString(_stdIn.GetBuffer()));
         }
 
         public string ReadLine()
         {
             StringBuilder sb = new StringBuilder();
 
-            //Clean out memory pipe's buffer
-            cleanOutBuffers(sb);
             ReadLineInvoked?.Invoke(this, EventArgs.Empty);
             var (row, column) = GetCursorPosition();
             _originalCol = int.Parse(column);
@@ -291,7 +269,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 updateTerminal(sb, cursorPosition);
                 if (quit) break;
             }
-            _textOut.WriteLine();
+            TerminalOut.WriteLine();
             ReadLineCompleted?.Invoke(this, sb.ToString());
             return sb.ToString();
         }
@@ -324,7 +302,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             {
                 _renderBuffer.Append((char)character);
                 _renderBuffer.Append("\u001b[1C");
-                _textOut.Write(_renderBuffer.ToString());
+                TerminalOut.Write(_renderBuffer.ToString());
             }
 
             return (char)character;
@@ -356,50 +334,50 @@ namespace RemoteControlToolkitCore.Common.Commandline
             }
             else
             {
-                if(col == 0 && row == 0) _textOut.Write("\u001b[;H");
-                else _textOut.Write($"\u001b[{row};{col}H");
+                if(col == 0 && row == 0) TerminalOut.Write("\u001b[;H");
+                else TerminalOut.Write($"\u001b[{row};{col}H");
                 return string.Empty;
             }
         }
 
         public void MoveCursorLeft(int count = 1)
         {
-            if(count > 0) _textOut.Write($"\u001b[{count}D");
+            if(count > 0) TerminalOut.Write($"\u001b[{count}D");
         }
 
         public void MoveCursorRight(int count = 1)
         {
-            _textOut.Write($"\u001b[{count}C");
+            TerminalOut.Write($"\u001b[{count}C");
         }
 
         public void MoveCursorUp(int count = 1)
         {
-            _textOut.Write($"\u001b[{count}A");
+            TerminalOut.Write($"\u001b[{count}A");
         }
 
         public void MoveCursorDown(int count = 1)
         {
-            _textOut.Write($"\u001b[{count}B");
+            TerminalOut.Write($"\u001b[{count}B");
         }
 
         public void SetDisplayMode(int code)
         {
-            _textOut.Write($"\u001b[{code}m");
+            TerminalOut.Write($"\u001b[{code}m");
         }
 
         public void Reset()
         {
-            _textOut.Write("\u001b[c");
+            TerminalOut.Write("\u001b[c");
         }
 
         public void ScrollDown()
         {
-            _textOut.Write("\u001b[M");
+            TerminalOut.Write("\u001b[M");
         }
 
         public void SetTitle(string title)
         {
-            _textOut.Write($"\u001b]0;{title}\x7");
+            TerminalOut.Write($"\u001b]0;{title}\x7");
         }
 
         public void SetForeground(ConsoleColor color)
@@ -465,23 +443,23 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public void HideCursor()
         {
-            _textOut.Write("\u001b[?25l");
+            TerminalOut.Write("\u001b[?25l");
         }
 
         public void ShowCursor()
         {
-            _textOut.WriteLine($"\u001b[?25h");
+            TerminalOut.WriteLine($"\u001b[?25h");
         }
 
         public void ResizeWindow(int column, int row)
         {
-            _textOut.Write($"\x1B[8; {row}; {column}t");
+            TerminalOut.Write($"\x1B[8; {row}; {column}t");
         }
 
         public (string row, string column) GetCursorPosition()
         {
             //Send code for cursor position.
-            _textOut.Write("\u001b[6n");
+            TerminalOut.Write("\u001b[6n");
             char escapeChar = (char)_textIn.Read();
             if (escapeChar == '\u001b')
             {

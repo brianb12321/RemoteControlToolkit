@@ -79,8 +79,8 @@ namespace RemoteControlToolkitCore.Common.Networking
         private void initializeEnvironmentVariables(RctProcess process)
         {
             _logger.LogInformation("Initializing environment variables.");
-            process.EnvironmentVariables.Add("PROXY_MODE", "true");
-            process.EnvironmentVariables.Add(".", "0");
+            process.EnvironmentVariables.AddVariable("PROXY_MODE", "true");
+            process.EnvironmentVariables.AddVariable(".", "0");
         }
 
         public void Start()

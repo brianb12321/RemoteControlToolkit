@@ -53,15 +53,10 @@ namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
         }
         private void addEnvironmentFunctions(IScriptingEngine engine, IScriptExecutionContext context)
         {
-            context.AddVariable("get_envar", new Func<string, string>(variable => engine.ParentProcess.EnvironmentVariables[variable]));
+            context.AddVariable("get_envar", new Func<string, EnvironmentVariable>(variable => engine.ParentProcess.EnvironmentVariables[variable]));
             context.AddVariable("set_envar", new Action<string, string>((variable, value) =>
             {
-                if(engine.ParentProcess.EnvironmentVariables.ContainsKey(variable))
-                    engine.ParentProcess.EnvironmentVariables[variable] = value;
-                else
-                {
-                    engine.ParentProcess.EnvironmentVariables.Add(variable, value);
-                }
+                engine.ParentProcess.EnvironmentVariables.AddVariable(variable, value);
             }));
             context.AddVariable("pwd", new Func<string>(() => engine.ParentProcess.WorkingDirectory.ToString()));
         }

@@ -31,7 +31,6 @@ namespace RemoteControlToolkitCore.Common.Commandline
         public ITerminalHandler TerminalHandler { get; }
         public IExtensionCollection<IInstanceSession> Extensions { get; }
         private readonly RctProcess _shellProcess;
-        private readonly TerminalHandler _terminalHandler;
         private readonly ChannelStreamWriter _channelStreamWriter;
 
         public BaseProcessConsole(ILogger<BaseProcessConsole> logger,
@@ -42,7 +41,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
             PseudoTerminalPayload terminalConfig,
             List<EnvironmentPayload> environmentPayloads,
             IPrincipal identity,
-            ILogger<TerminalHandler> terminalLogger)
+            ILogger<TerminalHandler> terminalLogger,
+            ITerminalHandlerFactory terminalFactory)
         {
             ClientUniqueID = Guid.NewGuid();
             Pipe = new BlockingMemoryStream();
@@ -55,10 +55,9 @@ namespace RemoteControlToolkitCore.Common.Commandline
             {
                 provider.GetExtension(this);
             }
-            var outStream = GetClientWriter();
-            _terminalHandler = new TerminalHandler(Pipe, outStream, terminalConfig);
-            TerminalHandler = _terminalHandler;
-            var consoleInStream = new ConsoleTextReader(_terminalHandler);
+            var outStream = GetClientWriter().BaseStream;
+            TerminalHandler = terminalFactory.CreateNewTerminalHandler(terminalConfig.TerminalType, Pipe, outStream, terminalConfig.TerminalHeight, terminalConfig.TerminalWidth);
+            var consoleInStream = new ConsoleTextReader(TerminalHandler);
             try
             {
                 _shellProcess = subsystem.GetProcessBuilder("Application", new CommandRequest(new[] {"shell"}), null, ProcessTable)
@@ -99,13 +98,13 @@ namespace RemoteControlToolkitCore.Common.Commandline
                                 };
                                 process.Start();
                                 process.WaitForExit();
-                                current.EnvironmentVariables["?"] = process.ExitCode.ToString();
+                                current.EnvironmentVariables.AddVariable("?", process.ExitCode.ToString());
                             }
                             catch (RctProcessException)
                             {
                                 current.Error.WriteLine(
                                     Output.Red("No such command, script, or built-in function exists."));
-                                current.EnvironmentVariables["?"] = "-1";
+                                current.EnvironmentVariables.AddVariable("?", "-1");
                             }
                         }
 
@@ -120,26 +119,19 @@ namespace RemoteControlToolkitCore.Common.Commandline
             _shellProcess.ThreadError += (sender, e) =>
                 _logger.LogError($"A critical error occurred while running the shell: {e.Message}");
             initializeEnvironmentVariables(_shellProcess, environmentPayloads);
-            Extensions.Add(_terminalHandler);
+            Extensions.Add(TerminalHandler);
         }
 
         private void initializeEnvironmentVariables(RctProcess process, List<EnvironmentPayload> environmentPayloads)
         {
             _logger.LogInformation("Initializing environment variables.");
-            process.EnvironmentVariables.Add("PROXY_MODE", "false");
-            process.EnvironmentVariables.Add("?", "0");
-            process.EnvironmentVariables.Add("TERM", _terminalHandler.TerminalName);
-            process.EnvironmentVariables.Add("WORKINGDIR", "/");
+            process.EnvironmentVariables.AddVariable("PROXY_MODE", "false");
+            process.EnvironmentVariables.AddVariable("?", "0");
+            process.EnvironmentVariables.AddVariable("TERM", TerminalHandler.TerminalName);
+            process.EnvironmentVariables.AddVariable("WORKINGDIR", "/");
             foreach (EnvironmentPayload payload in environmentPayloads)
             {
-                if (process.EnvironmentVariables.ContainsKey(payload.VariableName))
-                {
-                    process.EnvironmentVariables[payload.VariableName] = payload.VariableValue;
-                }
-                else
-                {
-                    process.EnvironmentVariables.Add(payload.VariableName, payload.VariableValue);
-                }
+                process.EnvironmentVariables.AddVariable(payload.VariableName, payload.VariableValue);
             }
         }
 
@@ -147,8 +139,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public void SignalWindowChange(WindowChangePayload args)
         {
-            _terminalHandler.TerminalColumns = args.TerminalWidth;
-            _terminalHandler.TerminalRows = args.TerminalHeight;
+            TerminalHandler.TerminalColumns = args.TerminalWidth;
+            TerminalHandler.TerminalRows = args.TerminalHeight;
         }
 
         public IChannelProducer Producer { get; private set; }
@@ -166,7 +158,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public StreamWriter GetClientWriter()
         {
-           return new ChannelTextWriter(_channelStreamWriter);
+           return new StreamWriter(_channelStreamWriter) {AutoFlush = true};
         }
 
         public T GetExtension<T>() where T : IExtension<IInstanceSession>

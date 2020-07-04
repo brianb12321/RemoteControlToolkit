@@ -25,9 +25,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCore.Co
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailGun", "Src\PluginLibraries\MailGun\MailGun\MailGun.csproj", "{5E9D8ADB-6B6B-453A-BFD1-64D9F664C659}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteControlToolkitCore.DefaultShell", "Src\RemoteControlToolkitCore.DefaultShell\RemoteControlToolkitCore.DefaultShell.csproj", "{4EE13D41-5F3F-4EFB-A7AA-F0F6CBDA0D5E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCore.DefaultShell", "Src\RemoteControlToolkitCore.DefaultShell\RemoteControlToolkitCore.DefaultShell.csproj", "{4EE13D41-5F3F-4EFB-A7AA-F0F6CBDA0D5E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteControlToolkitCore.Subsystem.Roslyn", "Src\RemoteControlToolkitCore.Subsystem.Roslyn\RemoteControlToolkitCore.Subsystem.Roslyn.csproj", "{CAD22DCC-52DE-4618-A86D-6786010C7314}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCore.Subsystem.Roslyn", "Src\RemoteControlToolkitCore.Subsystem.Roslyn\RemoteControlToolkitCore.Subsystem.Roslyn.csproj", "{CAD22DCC-52DE-4618-A86D-6786010C7314}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "WCF Support", "WCF Support", "{60CEDB75-2E29-487D-BA87-F0AE1C12DD33}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemoteControlToolkitCoreServerWCF", "Src\WCF Support\RemoteControlToolkitCoreServerWCF\RemoteControlToolkitCoreServerWCF.csproj", "{9B314066-94B9-4A65-8EA0-531B31DBC459}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteControlToolkitCoreClientWCF", "Src\WCF Support\RemoteControlToolkitCoreClientWCF\RemoteControlToolkitCoreClientWCF.csproj", "{3574D88B-6E5A-4C4F-AE03-97454148AF4F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteControlToolkitCoreLibraryWCF", "Src\WCF Support\RemoteControlToolkitCoreLibraryWCF\RemoteControlToolkitCoreLibraryWCF.csproj", "{F39FAE46-419E-4910-8E88-A3DFB005DAB1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,6 +91,18 @@ Global
 		{CAD22DCC-52DE-4618-A86D-6786010C7314}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CAD22DCC-52DE-4618-A86D-6786010C7314}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CAD22DCC-52DE-4618-A86D-6786010C7314}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B314066-94B9-4A65-8EA0-531B31DBC459}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B314066-94B9-4A65-8EA0-531B31DBC459}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B314066-94B9-4A65-8EA0-531B31DBC459}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B314066-94B9-4A65-8EA0-531B31DBC459}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3574D88B-6E5A-4C4F-AE03-97454148AF4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3574D88B-6E5A-4C4F-AE03-97454148AF4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3574D88B-6E5A-4C4F-AE03-97454148AF4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3574D88B-6E5A-4C4F-AE03-97454148AF4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F39FAE46-419E-4910-8E88-A3DFB005DAB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F39FAE46-419E-4910-8E88-A3DFB005DAB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F39FAE46-419E-4910-8E88-A3DFB005DAB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F39FAE46-419E-4910-8E88-A3DFB005DAB1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -92,6 +112,9 @@ Global
 		{1FE359FD-4F4B-42EA-A195-19CBFC31385B} = {D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}
 		{5A2531C4-78FC-4FF6-B241-46763194295E} = {D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}
 		{5E9D8ADB-6B6B-453A-BFD1-64D9F664C659} = {D9FCA2DF-A55C-4230-9EA2-8BAE5DC9C32F}
+		{9B314066-94B9-4A65-8EA0-531B31DBC459} = {60CEDB75-2E29-487D-BA87-F0AE1C12DD33}
+		{3574D88B-6E5A-4C4F-AE03-97454148AF4F} = {60CEDB75-2E29-487D-BA87-F0AE1C12DD33}
+		{F39FAE46-419E-4910-8E88-A3DFB005DAB1} = {60CEDB75-2E29-487D-BA87-F0AE1C12DD33}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D6FE14CE-3C81-49CF-BB5E-798286159FC7}

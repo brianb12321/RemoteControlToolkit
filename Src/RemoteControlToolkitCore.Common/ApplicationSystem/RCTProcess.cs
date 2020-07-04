@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Principal;
 using System.ServiceModel;
+using System.Text;
 using System.Threading;
 using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
 using RemoteControlToolkitCore.Common.Commandline;
@@ -36,8 +38,8 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
 
         public UPath WorkingDirectory
         {
-            get => EnvironmentVariables["WORKINGDIR"];
-            set => EnvironmentVariables["WORKINGDIR"] = value.ToString();
+            get => EnvironmentVariables["WORKINGDIR"].Value.ToString();
+            set => EnvironmentVariables["WORKINGDIR"] = new EnvironmentVariable("WORKINGDIR", value);
         } 
         public IExtensionCollection<RctProcess> Extensions { get; }
         public bool Running => State == ThreadState.Running;
@@ -55,7 +57,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         private readonly CancellationTokenSource _cts;
         private readonly ProcessDelegate _threadStart;
         public CommandResponse ExitCode { get; private set; }
-        public Dictionary<string, string> EnvironmentVariables { get; }
+        public EnvironmentVariableCollection EnvironmentVariables { get; }
         public bool Disposed { get; private set; }
         private readonly IProcessTable _table;
         private readonly IExtensionProvider<RctProcess>[] _extensionProviders;
@@ -79,7 +81,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             _extensionProviders = providers;
             populateExtension();
             //Populate Extensions
-            EnvironmentVariables = new Dictionary<string, string>();
+            EnvironmentVariables = new EnvironmentVariableCollection();
             Identity = identity;
             if (Parent != null)
             {
@@ -102,11 +104,16 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 DisposeOut = Parent.DisposeOut;
                 DisposeError = Parent.DisposeError;
                 IsBackground = Parent.IsBackground;
-                EnvironmentVariables = new Dictionary<string, string>(Parent.EnvironmentVariables);
+                EnvironmentVariables = new EnvironmentVariableCollection();
+                //Determine inherit-ability.
+                foreach(EnvironmentVariable variable in Parent.EnvironmentVariables.Values)
+                {
+                    if(variable.Inheritable) EnvironmentVariables.Add(variable.Name, variable);
+                }
             }
 
             _workingThread = new Thread(startThread);
-            _workingThread.SetApartmentState(apartmentState);
+            SetApartmentState(apartmentState);
             _cts = new CancellationTokenSource();
         }
 
@@ -116,6 +123,11 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             {
                 provider.GetExtension(this);
             }
+        }
+
+        public void SetApartmentState(ApartmentState state)
+        {
+            _workingThread.SetApartmentState(state);
         }
         public void Start()
         {
@@ -150,6 +162,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         {
             try
             {
+                Thread.CurrentPrincipal = Identity;
                 ExitCode = _threadStart?.Invoke((RctProcess) data, _cts.Token);
             }
             catch (ThreadAbortException)
@@ -201,11 +214,18 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             return _inStream;
         }
 
+        StreamWriter configureStreamWriter(Stream input)
+        {
+            //We do not want the preamble to be written to the underlying stream.
+            return new StreamWriter(input, new UTF8Encoding(false, false), 1, true)
+                {AutoFlush = true};
+        }
+
         public void SetOut(Stream outStream)
         {
             if (_outStream != null) OutRedirected = true;
             _outStream = outStream;
-            Out = new StreamWriter(_outStream);
+            Out = configureStreamWriter(outStream);
             Out.AutoFlush = true;
         }
         public void SetOut(StreamWriter outStream)
@@ -219,7 +239,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         {
             if (_errorStream != null) ErrorRedirected = true;
             _errorStream = errorStream;
-            Error = new StreamWriter(_errorStream);
+            Error = configureStreamWriter(errorStream);
             Error.AutoFlush = true;
         }
         public void SetError(StreamWriter errorStream)
@@ -309,7 +329,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             private RctProcess _parent;
             private IPrincipal _principal;
             private IInstanceSession _session;
-            private ApartmentState _apartmentState = ApartmentState.STA;
+            private ApartmentState _apartmentState = ApartmentState.Unknown;
             private readonly List<IExtensionProvider<RctProcess>> _extensions;
             public RctProcessBuilder(IProcessTable table)
             {

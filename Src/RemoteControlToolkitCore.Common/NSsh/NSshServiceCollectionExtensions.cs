@@ -29,6 +29,7 @@ namespace RemoteControlToolkitCore.Common.NSsh
             //services.AddSingleton<IImpersonationProvider, ImpersonationProvider>("ImpersonationProvider");
             services.AddSingleton<IImpersonationProvider, BasicImpersonationProvider>();
             services.AddSingleton<IPacketFactory, PacketFactory>();
+            services.AddSingleton(typeof(ITerminalHandlerFactory), config.TerminalHandlerFactoryType);
             return services;
         }
     }
