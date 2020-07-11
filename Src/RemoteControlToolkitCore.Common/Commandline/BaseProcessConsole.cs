@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Principal;
 using System.ServiceModel;
+using System.Text;
 using Crayon;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
@@ -56,8 +57,22 @@ namespace RemoteControlToolkitCore.Common.Commandline
                 provider.GetExtension(this);
             }
             var outStream = GetClientWriter().BaseStream;
-            TerminalHandler = terminalFactory.CreateNewTerminalHandler(terminalConfig.TerminalType, Pipe, outStream, terminalConfig.TerminalHeight, terminalConfig.TerminalWidth);
-            var consoleInStream = new ConsoleTextReader(TerminalHandler);
+            TextReader consoleInStream;
+            if (terminalConfig != null)
+            {
+                TerminalHandler = terminalFactory.CreateNewTerminalHandler(terminalConfig?.TerminalType ?? "vt100",
+                    Pipe,
+                    outStream,
+                    terminalConfig.TerminalHeight,
+                    terminalConfig.TerminalWidth);
+                consoleInStream = new ConsoleTextReader(TerminalHandler);
+            }
+            else
+            {
+                _logger.LogWarning("A pseudo terminal was not allocated. Some interactive commands may not work properly.");
+                consoleInStream = new StreamReader(Pipe, new UTF8Encoding(false, false), false, 1, true);
+            }
+            
             try
             {
                 _shellProcess = subsystem.GetProcessBuilder("Application", new CommandRequest(new[] {"shell"}), null, ProcessTable)
@@ -119,7 +134,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             _shellProcess.ThreadError += (sender, e) =>
                 _logger.LogError($"A critical error occurred while running the shell: {e.Message}");
             initializeEnvironmentVariables(_shellProcess, environmentPayloads);
-            Extensions.Add(TerminalHandler);
+            if(TerminalHandler != null) Extensions.Add(TerminalHandler);
         }
 
         private void initializeEnvironmentVariables(RctProcess process, List<EnvironmentPayload> environmentPayloads)
@@ -127,7 +142,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             _logger.LogInformation("Initializing environment variables.");
             process.EnvironmentVariables.AddVariable("PROXY_MODE", "false");
             process.EnvironmentVariables.AddVariable("?", "0");
-            process.EnvironmentVariables.AddVariable("TERM", TerminalHandler.TerminalName);
+            if(TerminalHandler != null) process.EnvironmentVariables.AddVariable("TERM", TerminalHandler.TerminalName);
             process.EnvironmentVariables.AddVariable("WORKINGDIR", "/");
             foreach (EnvironmentPayload payload in environmentPayloads)
             {

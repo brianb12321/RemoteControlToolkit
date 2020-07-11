@@ -163,7 +163,7 @@ namespace RemoteControlToolkitCoreServerWCF
             throw new NotImplementedException();
         }
 
-        public void ResizeWindow(int column, int row)
+        public void ResizeWindow(uint column, uint row)
         {
             throw new NotImplementedException();
         }

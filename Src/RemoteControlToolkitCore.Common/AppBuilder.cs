@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.NSsh.Services;
@@ -18,6 +20,7 @@ namespace RemoteControlToolkitCore.Common
         private readonly IServiceCollection _services;
         protected IPluginManager _pluginManager;
         private ILoggerFactory _loggerFactory;
+        private IConfigurationRoot _configRoot;
         public NetworkSide ExecutingSide => NetworkSide.Server;
 
         public AppBuilder()
@@ -32,8 +35,8 @@ namespace RemoteControlToolkitCore.Common
                 provider.GetService<ILogger<ProxyNetworkInstance>>(),
                 provider, ExecutingSide, this,
                 provider.GetService<IKeySetupService>(),
-                _pluginManager,
-                provider.GetService<NSshServiceConfiguration>());
+                _pluginManager, provider.GetService<IOptions<NSshServiceConfiguration>>().Value
+                );
         }
         public IHostApplication Build()
         {
@@ -99,6 +102,14 @@ namespace RemoteControlToolkitCore.Common
                     _startups.Add(startup);
                 }
             }
+            return this;
+        }
+
+        public IAppBuilder AddConfiguration(Action<IConfigurationBuilder> configure)
+        {
+            ConfigurationBuilder builder = new ConfigurationBuilder();
+            configure?.Invoke(builder);
+            _configRoot = builder.Build();
             return this;
         }
 

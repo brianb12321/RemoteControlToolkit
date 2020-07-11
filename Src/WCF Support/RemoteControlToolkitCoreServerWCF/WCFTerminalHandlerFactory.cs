@@ -12,10 +12,10 @@ namespace RemoteControlToolkitCoreServerWCF
     public class WCFTerminalHandlerFactory : ITerminalHandlerFactory
     {
         public ITerminalHandler CreateNewTerminalHandler(string name, Stream stdIn = null, Stream stdOut = null,
-            uint terminalRows = 32, uint terminalColumns = 32, PseudoTerminalMode modes = null,
+            uint terminalRows = 32, uint terminalColumns = 32, PseudoTerminalMode modes = null, int baudRate = 9600,
             object[] additionalArguments = null)
         {
-            if(additionalArguments != null && additionalArguments.Length < 1) throw new ArgumentException("The client callback must be passed to additional arguments.", nameof(additionalArguments));
+            if (additionalArguments != null && additionalArguments.Length < 1) throw new ArgumentException("The client callback must be passed to additional arguments.", nameof(additionalArguments));
             return new WCFTerminalHandler(additionalArguments[0] as IRCTServiceCallback);
         }
     }

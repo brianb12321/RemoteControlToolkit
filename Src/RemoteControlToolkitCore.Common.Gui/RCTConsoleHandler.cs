@@ -19,7 +19,7 @@ namespace RemoteControlToolkitCore.Common.Gui
             set
             {
                 _handler.UpdateCursorPosition(0, 0);
-                _handler.ResizeWindow(value.Width, value.Height);
+                _handler.ResizeWindow((uint)value.Width, (uint)value.Height);
                 Initialize();
             }
         }

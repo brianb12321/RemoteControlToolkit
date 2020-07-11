@@ -20,6 +20,7 @@ using System;
 using System.Globalization;
 using System.Security.Principal;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.NSsh.Packets;
 using RemoteControlToolkitCore.Common.NSsh.Packets.UserAuth;
@@ -79,7 +80,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer.State
 
         public override void UserAuthRequestPacket(ITransportLayerManager manager, UserAuthRequestPacket packet)
         {
-            NSshServiceConfiguration config = _provider.GetService<NSshServiceConfiguration>();
+            NSshServiceConfiguration config = _provider.GetService<IOptions<NSshServiceConfiguration>>().Value;
             
             // Send the user authentication banner if present
             if (config.UserAuthenticationBanner != null && !_sentAuthBanner)

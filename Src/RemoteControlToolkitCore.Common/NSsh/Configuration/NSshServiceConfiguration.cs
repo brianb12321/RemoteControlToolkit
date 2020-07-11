@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.Serialization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml;
@@ -49,7 +50,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.Configuration
     ///  exchange before the server will disconnect it.
     ///  
     /// IdleTimeout: The period an authenticated client must have data sent to or from  
-    ///  or it will be disconencted.
+    ///  or it will be disconnected.
     /// </remarks>
     public class NSshServiceConfiguration
     {
@@ -63,10 +64,9 @@ namespace RemoteControlToolkitCore.Common.NSsh.Configuration
             IdleTimeout = TimeSpan.FromMinutes(10);
             ReceiveWindowSize = 1024 * 1024 * 4;
             ReceiveMaximumPacketSize = 1024 * 1024;
-            TerminalHandlerFactoryType = typeof(StandardTerminalHandlerFactory);
         }
 
-        public List<IPEndPoint> ListenEndPoints { get; private set; }
+        public List<IPEndPoint> ListenEndPoints { get; set; }
 
         public int MaximumClientConnections { get; set; }
 
@@ -89,49 +89,5 @@ namespace RemoteControlToolkitCore.Common.NSsh.Configuration
         public uint ReceiveMaximumPacketSize { get; set; }
 
         public string UserAuthenticationBanner { get; set; }
-        public Type TerminalHandlerFactoryType { get; set; }
-
-        public static NSshServiceConfiguration LoadFromFile(string file)
-        {
-            NSshServiceConfiguration configuration = new NSshServiceConfiguration();
-            XDocument configurationXml = XDocument.Load(file);
-
-            var endPoints = from endPoint in configurationXml.Descendants("EndPoint")
-                            select new
-                            {
-                                Port = Int32.Parse(endPoint.Attribute("Port").Value),
-                                IPAddress = IPAddress.Parse(endPoint.Attribute("IPAddress").Value)
-                            };
-
-            foreach (var endPoint in endPoints)
-            {
-                configuration.ListenEndPoints.Add(new IPEndPoint(endPoint.IPAddress, endPoint.Port));
-            }
-
-            return configuration;
-        }
-
-        public static void SaveToFile(string file, NSshServiceConfiguration configuration)
-        {
-            using (XmlWriter writer = new XmlTextWriter(file, Encoding.UTF8))
-            {
-                writer.WriteStartDocument();
-                writer.WriteStartElement("NSsh");
-                writer.WriteStartElement("Configuration");
-
-                writer.WriteStartElement("ListenEndPoints");
-                foreach (IPEndPoint endpoint in configuration.ListenEndPoints)
-                {
-                    writer.WriteStartElement("EndPoint");
-                    writer.WriteAttributeString("IPAddress", endpoint.Address.ToString());
-                    writer.WriteAttributeString("Port", endpoint.Port.ToString());
-                    writer.WriteEndElement();
-                }
-                writer.WriteEndElement();
-
-                writer.WriteEndElement();
-                writer.WriteEndElement();
-            }
-        }
     }
 }

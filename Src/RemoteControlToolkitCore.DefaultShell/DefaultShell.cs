@@ -338,10 +338,11 @@ __;_ \ /,//`
             ILexer lexer = new Lexer();
             try
             {
-                var lexedItems = lexer.Lex(command);
+                var lexedItems = lexer.Lex(command).ToList();
                 //var parsedItems = parser.Parse(lexedItems);
                 var parsedItems = splitToken(lexedItems.ToArray(), TokenType.Semicolon);
                 CommandResponse exitCode = new CommandResponse(CommandResponse.CODE_SUCCESS);
+
                 for (int i = 0; i < parsedItems.Length; i++)
                 {
                     var pipedItems = splitToken(parsedItems[i].ToArray(), TokenType.Pipe);
@@ -458,8 +459,9 @@ __;_ \ /,//`
             AnonymousPipeServerStream server = _pipeService.OpenAnonymousPipe(PipeDirection.Out).stream;
             (int position, AnonymousPipeClientStream stream) client =
                 _pipeService.ConnectToPipe(server.GetClientHandleAsString(), PipeDirection.In);
-            processA.SetOut(new StreamWriter(server) {AutoFlush = true});
-            processB.SetIn(new StreamReader(client.stream));
+            processA.SetOut(server);
+            processA.SetError(server);
+            processB.SetIn(client.stream);
         }
 
         private List<CommandToken>[] splitToken(CommandToken[] tokens, TokenType type)

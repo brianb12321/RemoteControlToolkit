@@ -15,7 +15,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
 
         public void PostConfigureServices(IServiceProvider provider, IHostApplication application)
         {
-            
+            provider.GetService<AudioOutSubsystem>().InitializeSubsystem();
         }
     }
 }

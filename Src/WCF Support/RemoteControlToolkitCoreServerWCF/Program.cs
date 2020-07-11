@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Net;
 using System.ServiceModel;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common;
@@ -12,8 +12,6 @@ using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Commands;
 using RemoteControlToolkitCore.Common.DeviceBus;
 using RemoteControlToolkitCore.Common.Networking;
-using RemoteControlToolkitCore.Common.NSsh;
-using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Proxy;
 using RemoteControlToolkitCore.DefaultShell;
@@ -31,6 +29,11 @@ namespace RemoteControlToolkitCoreServerWCF
         {
             IHostApplication app = new WCFAppBuilder()
                 .AddStartup<Startup>()
+                .AddConfiguration(c =>
+                {
+                    c.Sources.Clear();
+                    c.AddJsonFile("Configurations/Server/server.config", true, false);
+                })
                 .ConfigureLogging(factory =>
                     factory.AddConsole())
                 .AddStartup<RemoteControlToolkitCore.Subsystem.Workflow.Startup>()
@@ -67,7 +70,6 @@ namespace RemoteControlToolkitCoreServerWCF
             application.PluginManager.LoadFromType(typeof(AsmGen));
             provider.GetService<ApplicationSubsystem>().InitializeSubsystem();
             provider.GetService<ProcessFactorySubsystem>().InitializeSubsystem(); ;
-            provider.GetService<AudioOutSubsystem>().InitializeSubsystem();
             provider.GetService<FileSystemSubsystem>().InitializeSubsystem(); ;
             provider.GetService<ScriptingSubsystem>().InitializeSubsystem();
             provider.GetService<DeviceBusSubsystem>().InitializeSubsystem();

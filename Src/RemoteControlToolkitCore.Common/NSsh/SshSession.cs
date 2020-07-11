@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.NSsh.Packets;
 using RemoteControlToolkitCore.Common.NSsh.TransportLayer;
@@ -21,12 +22,12 @@ namespace RemoteControlToolkitCore.Common.NSsh
 
         readonly IHostApplication _sshService;
 
-        public SshSession(IHostApplication service, ITransportLayerManager manager, ILogger<SshSession> logger, NSshServiceConfiguration config)
+        public SshSession(IHostApplication service, ITransportLayerManager manager, ILogger<SshSession> logger, IOptions<NSshServiceConfiguration> config)
         {
             _sshService = service;
             _transportManager = manager;
             Logger = logger;
-            _config = config;
+            _config = config.Value;
         }
 
         ~SshSession()

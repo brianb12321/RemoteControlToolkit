@@ -51,6 +51,6 @@ namespace RemoteControlToolkitCore.Common.Commandline
         void SetBackground(ConsoleColor color);
         void HideCursor();
         void ShowCursor();
-        void ResizeWindow(int column, int row);
+        void ResizeWindow(uint column, uint row);
     }
 }

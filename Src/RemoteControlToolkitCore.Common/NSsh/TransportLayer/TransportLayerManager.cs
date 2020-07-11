@@ -25,6 +25,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.NSsh.Packets;
 using RemoteControlToolkitCore.Common.NSsh.TransportLayer.State;
@@ -61,14 +62,14 @@ namespace RemoteControlToolkitCore.Common.NSsh.TransportLayer
         private NSshServiceConfiguration _config;
         private StateManager _stateManager;
 
-        public TransportLayerManager(ILogger<TransportLayerManager> logger, IPacketFactory factory, ISecureRandom random, NSshServiceConfiguration config, StateManager stateManager, IMacFactory macFactory)
+        public TransportLayerManager(ILogger<TransportLayerManager> logger, IPacketFactory factory, ISecureRandom random, IOptions<NSshServiceConfiguration> config, StateManager stateManager, IMacFactory macFactory)
         {
             _logger = logger;
             _stateManager = stateManager;
             CommunicationLock = new object();
             _packetFactory = factory;
             _random = random;
-            _config = config;
+            _config = config.Value;
             _macFactory = macFactory;
         }
 

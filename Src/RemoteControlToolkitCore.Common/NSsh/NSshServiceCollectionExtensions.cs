@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.NSsh.ChannelLayer;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
@@ -11,9 +12,10 @@ namespace RemoteControlToolkitCore.Common.NSsh
 {
     public static class NSshServiceCollectionExtensions
     {
-        public static IServiceCollection AddSSH(this IServiceCollection services, NSshServiceConfiguration config)
+        public static IServiceCollection AddSSH(this IServiceCollection services, Action<NSshServiceConfiguration> config)
         {
-            services.AddSingleton(config);
+            services.Configure(config);
+            services.AddSingleton(typeof(ITerminalHandlerFactory), typeof(StandardTerminalHandlerFactory));
             services.AddTransient<ISshSession, SshSession>();
             services.AddTransient<ITransportLayerManager, TransportLayerManager>();
             services.AddSingleton<StateManager>();
@@ -29,7 +31,6 @@ namespace RemoteControlToolkitCore.Common.NSsh
             //services.AddSingleton<IImpersonationProvider, ImpersonationProvider>("ImpersonationProvider");
             services.AddSingleton<IImpersonationProvider, BasicImpersonationProvider>();
             services.AddSingleton<IPacketFactory, PacketFactory>();
-            services.AddSingleton(typeof(ITerminalHandlerFactory), config.TerminalHandlerFactoryType);
             return services;
         }
     }

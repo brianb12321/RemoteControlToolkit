@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.ServiceModel;
 using System.Text;
+using RemoteControlToolkitCore.Common.Commandline.Readline;
+using RemoteControlToolkitCore.Common.Commandline.Readline.Abstractions;
 using RemoteControlToolkitCore.Common.Commandline.TerminalExtensions;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
@@ -23,12 +26,12 @@ namespace RemoteControlToolkitCore.Common.Commandline
         public event EventHandler<string> ReadLineCompleted;
         private uint _terminalRows;
         private uint _terminalColumns;
-        private uint _scrollOffset;
-        private readonly uint _maxChars = 272;
-        private int _cursorX;
-        private int _cursorY;
+
+        private readonly GNUReadline _readline;
+        //private uint _scrollOffset;
+
         private readonly StringBuilder _renderBuffer = new StringBuilder();
-        private readonly Dictionary<string, KeyBindingDelegate> _keyBindings;
+        //private readonly Dictionary<string, KeyBindingDelegate> _keyBindings;
         public List<string> History { get; }
 
         public string TerminalName { get; set; }
@@ -53,11 +56,11 @@ namespace RemoteControlToolkitCore.Common.Commandline
         }
 
         private readonly StreamReader _textIn;
-        private int _originalCol;
+        //private int _originalCol;
 
-        private int OriginalRow => _originalRow - (int)_scrollOffset;
+        //private int OriginalRow => _originalRow - (int)_scrollOffset;
 
-        private int _originalRow;
+        //private int _originalRow;
         public TerminalHandler(Stream stdIn, Stream stdOut, string terminalName, uint initialTerminalColumns, uint initialTerminalRows, PseudoTerminalMode modes)
         {
             RawTerminalIn = stdIn;
@@ -72,20 +75,23 @@ namespace RemoteControlToolkitCore.Common.Commandline
             _terminalColumns = initialTerminalColumns;
             TerminalModes = modes ?? new PseudoTerminalMode();
             Extensions = new ExtensionCollection<ITerminalHandler>(this);
-            _keyBindings = new Dictionary<string, KeyBindingDelegate>
-            {
-                {
-                    // ReSharper disable once RedundantAssignment
-                    "\u001b[11~", (StringBuilder sb, StringBuilder renderBuffer, ref int cursorPosition) =>
-                    {
-                        sb.Clear();
-                        cursorPosition = 0;
-                        return true;
-                    }
-                }
-            };
-            //Add History functionality.
-            Extensions.Add(new TerminalHistory());
+            _readline = new GNUReadline(new TerminalReadLineConsole(this));
+            _readline.HistoryEnabled = true;
+            ResizeWindow(initialTerminalColumns, initialTerminalRows);
+            ////_keyBindings = new Dictionary<string, KeyBindingDelegate>
+            ////{
+            ////    {
+            ////        // ReSharper disable once RedundantAssignment
+            ////        "\u001b[11~", (StringBuilder sb, StringBuilder renderBuffer, ref int cursorPosition) =>
+            ////        {
+            ////            sb.Clear();
+            ////            cursorPosition = 0;
+            ////            return true;
+            ////        }
+            ////    }
+            ////};
+            ////Add History functionality.
+            //Extensions.Add(new TerminalHistory());
         }
 
         public void Clear()
@@ -115,173 +121,173 @@ namespace RemoteControlToolkitCore.Common.Commandline
             TerminalOut.Write("\a");
         }
 
-        private void updateTerminal(StringBuilder sb, int cursorPosition)
-        {
-            int realCursorPosition = (cursorPosition + _originalCol);
-            int cursorRowsToMove = realCursorPosition / (int)TerminalColumns;
-            int cellsToMove = (realCursorPosition % (int)TerminalColumns) - 1;
-            //The cursor position is a multiple of the column
-            if (cellsToMove == -1)
-            {
-                cursorRowsToMove--;
-                cellsToMove = (int)TerminalColumns;
-            }
-            if (TerminalModes.ECHO)
-            {
-                //Restore saved cursor position.
-                _renderBuffer.Append(UpdateCursorPosition(_originalCol, OriginalRow, true));
-                //Clear lines
-                _renderBuffer.Append(ClearScreenCursorDown(true));
-                _renderBuffer.Append(UpdateCursorPosition(_originalCol, OriginalRow, true));
-                _renderBuffer.Append(sb);
-                _renderBuffer.Append(UpdateCursorPosition(_originalCol, OriginalRow, true));
-                //Reposition cursor
-                if (cursorPosition > 0)
-                {
-                    if (realCursorPosition > (int)TerminalColumns)
-                    {
-                        if(cellsToMove > 0) _cursorX = cellsToMove;
-                        _cursorY += cursorRowsToMove - 1;
-                        //Check if cursor is at the end of the row and must count the new scrolled coordinates.
-                        if (_cursorY == TerminalRows && _cursorX == TerminalColumns)
-                        {
-                            _scrollOffset += 1;
-                        }
+        //private void updateTerminal(StringBuilder sb, int cursorPosition)
+        //{
+        //    int realCursorPosition = (cursorPosition + _originalCol);
+        //    int cursorRowsToMove = realCursorPosition / (int)TerminalColumns;
+        //    int cellsToMove = (realCursorPosition % (int)TerminalColumns) - 1;
+        //    //The cursor position is a multiple of the column
+        //    if (cellsToMove == -1)
+        //    {
+        //        cursorRowsToMove--;
+        //        cellsToMove = (int)TerminalColumns;
+        //    }
+        //    if (TerminalModes.ECHO)
+        //    {
+        //        //Restore saved cursor position.
+        //        _renderBuffer.Append(UpdateCursorPosition(_originalCol, OriginalRow, true));
+        //        //Clear lines
+        //        _renderBuffer.Append(ClearScreenCursorDown(true));
+        //        _renderBuffer.Append(UpdateCursorPosition(_originalCol, OriginalRow, true));
+        //        _renderBuffer.Append(sb);
+        //        _renderBuffer.Append(UpdateCursorPosition(_originalCol, OriginalRow, true));
+        //        //Reposition cursor
+        //        if (cursorPosition > 0)
+        //        {
+        //            if (realCursorPosition > (int)TerminalColumns)
+        //            {
+        //                if(cellsToMove > 0) _cursorX = cellsToMove;
+        //                _cursorY += cursorRowsToMove - 1;
+        //                //Check if cursor is at the end of the row and must count the new scrolled coordinates.
+        //                if (_cursorY == TerminalRows && _cursorX == TerminalColumns)
+        //                {
+        //                    _scrollOffset += 1;
+        //                }
                         
-                        for (int i = 0; i < cursorRowsToMove; i++)
-                        {
-                            _renderBuffer.AppendLine();
-                        }
+        //                for (int i = 0; i < cursorRowsToMove; i++)
+        //                {
+        //                    _renderBuffer.AppendLine();
+        //                }
 
-                        if (cellsToMove > 0)
-                        {
-                            _renderBuffer.Append($"\u001b[{_cursorX}C");
-                        }
-                    }
-                    else
-                    {
-                        _renderBuffer.Append("\u001b[" + cursorPosition + "C");
-                        _cursorX = realCursorPosition;
-                    }
-                }
-                TerminalOut.Write(_renderBuffer.ToString());
-                _renderBuffer.Clear();
-            }
-        }
-
+        //                if (cellsToMove > 0)
+        //                {
+        //                    _renderBuffer.Append($"\u001b[{_cursorX}C");
+        //                }
+        //            }
+        //            else
+        //            {
+        //                _renderBuffer.Append("\u001b[" + cursorPosition + "C");
+        //                _cursorX = realCursorPosition;
+        //            }
+        //        }
+        //        TerminalOut.Write(_renderBuffer.ToString());
+        //        _renderBuffer.Clear();
+        //    }
+        //}
         public string ReadLine()
         {
-            StringBuilder sb = new StringBuilder();
+            return _readline.Read();
+            //StringBuilder sb = new StringBuilder();
+            //int cursorPosition = sb.Length;
+            //ReadLineInvoked?.Invoke(this, EventArgs.Empty);
+            //var (row, column) = GetCursorPosition();
+            //_originalCol = int.Parse(column);
+            //_cursorX = _originalCol;
+            //_scrollOffset = 0;
+            //_originalRow = int.Parse(row);
+            //_cursorY = _originalRow;
+            //char text;
+            //updateTerminal(sb, cursorPosition);
+            //bool quit = false;
+            ////Read from the terminal
+            //while (true)
+            //{
+            //    text = (char)_textIn.Read();
+            //    if (!TerminalModes.ICANON)
+            //    {
+            //        if (TerminalModes.ECHO)
+            //        {
+            //            _renderBuffer.Append(text);
+            //            _renderBuffer.Append("\u001b[1C");
+            //        }
+            //        return text.ToString();
+            //    }
+            //    //Check conditions
+            //    switch (text)
+            //    {
+            //        case '\r':
+            //            quit = true;
+            //            cursorPosition = sb.Length;
+            //            break;
+            //        case (char)26:
+            //            quit = true;
+            //            insertCharacter(sb, ref cursorPosition, text.ToString());
+            //            cursorPosition = sb.Length;
+            //            break;
+            //        //Handle backspace
+            //        case '\u007f':
+            //            if (sb.Length > 0 && cursorPosition > 0)
+            //            {
+            //                sb.Remove(cursorPosition - 1, 1);
+            //                cursorPosition--;
+            //            }
 
-            ReadLineInvoked?.Invoke(this, EventArgs.Empty);
-            var (row, column) = GetCursorPosition();
-            _originalCol = int.Parse(column);
-            _cursorX = _originalCol;
-            _scrollOffset = 0;
-            _originalRow = int.Parse(row);
-            _cursorY = _originalRow;
-            char text;
-            int cursorPosition = sb.Length;
-            updateTerminal(sb, cursorPosition);
-            bool quit = false;
-            //Read from the terminal
-            while (true)
-            {
-                text = (char)_textIn.Read();
-                if (!TerminalModes.ICANON)
-                {
-                    if (TerminalModes.ECHO)
-                    {
-                        _renderBuffer.Append(text);
-                        _renderBuffer.Append("\u001b[1C");
-                    }
-                    return text.ToString();
-                }
-                //Check conditions
-                switch (text)
-                {
-                    case '\r':
-                        quit = true;
-                        cursorPosition = sb.Length;
-                        break;
-                    case (char)26:
-                        quit = true;
-                        insertCharacter(sb, ref cursorPosition, text.ToString());
-                        cursorPosition = sb.Length;
-                        break;
-                    //Handle backspace
-                    case '\u007f':
-                        if (sb.Length > 0 && cursorPosition > 0)
-                        {
-                            sb.Remove(cursorPosition - 1, 1);
-                            cursorPosition--;
-                        }
+            //            break;
+            //        case '\u001b':
+            //            char[] buffer = new char[8];
+            //            _textIn.Read(buffer, 0, buffer.Length);
+            //            string code = new string(buffer).Replace("\0", string.Empty);
+            //            switch (code)
+            //            {
+            //                //Cursor Right
+            //                case "[C":
+            //                    cursorPosition = Math.Min(sb.Length, cursorPosition + 1);
+            //                    break;
+            //                //Home
+            //                case "[H":
+            //                case "[1~":
+            //                    cursorPosition = 0;
+            //                    break;
+            //                //End
+            //                case "[F":
+            //                case "[4~":
+            //                    cursorPosition = sb.Length;
+            //                    break;
 
-                        break;
-                    case '\u001b':
-                        char[] buffer = new char[8];
-                        _textIn.Read(buffer, 0, buffer.Length);
-                        string code = new string(buffer).Replace("\0", string.Empty);
-                        switch (code)
-                        {
-                            //Cursor Right
-                            case "[C":
-                                cursorPosition = Math.Min(sb.Length, cursorPosition + 1);
-                                break;
-                            //Home
-                            case "[H":
-                            case "[1~":
-                                cursorPosition = 0;
-                                break;
-                            //End
-                            case "[F":
-                            case "[4~":
-                                cursorPosition = sb.Length;
-                                break;
+            //                //Cursor Left
+            //                case "[D":
+            //                    if (cursorPosition > 0)
+            //                    {
+            //                        cursorPosition = Math.Max(0, cursorPosition - 1);
+            //                    }
+            //                    break;
+            //                default:
+            //                    if (_keyBindings.ContainsKey($"\u001b{code}"))
+            //                    {
+            //                        bool consume = _keyBindings[$"\u001b{code}"](sb, _renderBuffer, ref cursorPosition);
+            //                        if (!consume) insertCharacter(sb, ref cursorPosition, $"\u001b{code}");
+            //                        break;
+            //                    }
+            //                    else break;
+            //            }
+            //            break;
 
-                            //Cursor Left
-                            case "[D":
-                                if (cursorPosition > 0)
-                                {
-                                    cursorPosition = Math.Max(0, cursorPosition - 1);
-                                }
-                                break;
-                            default:
-                                if (_keyBindings.ContainsKey($"\u001b{code}"))
-                                {
-                                    bool consume = _keyBindings[$"\u001b{code}"](sb, _renderBuffer, ref cursorPosition);
-                                    if (!consume) insertCharacter(sb, ref cursorPosition, $"\u001b{code}");
-                                    break;
-                                }
-                                else break;
-                        }
-                        break;
-
-                    default:
-                        if (_keyBindings.ContainsKey(text.ToString()))
-                        {
-                            bool consume = _keyBindings[text.ToString()](sb, _renderBuffer, ref cursorPosition);
-                            if (!consume) insertCharacter(sb, ref cursorPosition, text.ToString());
-                        }
-                        else insertCharacter(sb, ref cursorPosition, text.ToString());
-                        break;
-                }
-                updateTerminal(sb, cursorPosition);
-                if (quit) break;
-            }
-            TerminalOut.WriteLine();
-            ReadLineCompleted?.Invoke(this, sb.ToString());
-            return sb.ToString();
+            //        default:
+            //            if (_keyBindings.ContainsKey(text.ToString()))
+            //            {
+            //                bool consume = _keyBindings[text.ToString()](sb, _renderBuffer, ref cursorPosition);
+            //                if (!consume) insertCharacter(sb, ref cursorPosition, text.ToString());
+            //            }
+            //            else insertCharacter(sb, ref cursorPosition, text.ToString());
+            //            break;
+            //    }
+            //    updateTerminal(sb, cursorPosition);
+            //    if (quit) break;
+            //}
+            //TerminalOut.WriteLine();
+            //ReadLineCompleted?.Invoke(this, sb.ToString());
+            //TerminalOut.Write("\u001b[16l");
+            //return sb.ToString();
         }
 
-        private void insertCharacter(StringBuilder sb, ref int cursorPosition, string text)
-        {
-            if (sb.Length <= _maxChars)
-            {
-                sb.Insert(cursorPosition, text);
-                cursorPosition++;
-            }
-        }
+        //private void insertCharacter(StringBuilder sb, ref int cursorPosition, string text)
+        //{
+        //    if (sb.Length <= _maxChars)
+        //    {
+        //        sb.Insert(cursorPosition, text);
+        //        cursorPosition += text.Length;
+        //    }
+        //}
         public string ReadToEnd()
         {
             StringBuilder sb = new StringBuilder();
@@ -310,7 +316,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public void BindKey(string key, KeyBindingDelegate function)
         {
-            _keyBindings.Add(key, function);
+            //_keyBindings.Add(key, function);
         }
 
         public int ReadFromPipe(char[] buffer, int offset, int length)
@@ -320,9 +326,9 @@ namespace RemoteControlToolkitCore.Common.Commandline
 
         public void UpdateHomePosition(int col, int row)
         {
-            _originalCol = col;
-            _originalRow = row;
-            UpdateCursorPosition(col, row);
+            //_originalCol = col;
+            //_originalRow = row;
+            //UpdateCursorPosition(col, row);
         }
 
         public string UpdateCursorPosition(int col, int row, bool writeCode = false)
@@ -451,7 +457,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
             TerminalOut.WriteLine($"\u001b[?25h");
         }
 
-        public void ResizeWindow(int column, int row)
+        public void ResizeWindow(uint column, uint row)
         {
             TerminalOut.Write($"\x1B[8; {row}; {column}t");
         }
