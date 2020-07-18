@@ -7,16 +7,16 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem.Factory
     [Plugin(PluginName = "External")]
     public class ExternalApplicationProcessFactory : PluginModule<ProcessFactorySubsystem>, IProcessFactory
     {
-        public IProcessBuilder CreateProcessBuilder(CommandRequest request, RctProcess parentProcess, IProcessTable table)
+        public IProcessBuilder CreateProcessBuilder(RctProcess parentProcess, IProcessTable table)
         {
-            Process process = new Process();
             IProcessBuilder builder = table.CreateProcessBuilder()
-                .SetProcessName(request.Arguments[0])
+                .SetProcessName(args => Process.GetProcessesByName(args)[0].ProcessName)
                 .SetParent(parentProcess)
-                .SetAction((current, token) =>
+                .SetAction((args, current, token) =>
                 {
-                    process.StartInfo.FileName = request.Arguments[0];
-                    process.StartInfo.Arguments = request.GetArguments();
+                    Process process = new Process();
+                    process.StartInfo.FileName = args.Arguments[0];
+                    process.StartInfo.Arguments = args.GetArguments();
                     process.StartInfo.UseShellExecute = false;
                     process.StartInfo.CreateNoWindow = true;
                     process.StartInfo.RedirectStandardOutput = true;

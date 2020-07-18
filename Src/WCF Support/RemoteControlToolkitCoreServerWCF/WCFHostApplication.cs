@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel;
 using System.ServiceModel.Description;
@@ -8,6 +9,7 @@ using System.ServiceModel.Security;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.NSsh;
@@ -36,6 +38,7 @@ namespace RemoteControlToolkitCoreServerWCF
             _provider = provider;
             _errorLogger = provider.GetService<ILogger<ErrorHandler>>();
             _tcpBindingFactory = provider.GetService<IBindingFactory<NetTcpBinding>>();
+            RootFileProvider = new PhysicalFileProvider(Assembly.GetEntryAssembly().Location);
         }
         public void Dispose()
         {
@@ -44,6 +47,8 @@ namespace RemoteControlToolkitCoreServerWCF
 
             System.Windows.Forms.Application.Exit();
         }
+
+        public IFileProvider RootFileProvider { get; }
 
         public void UnRegisterSession(ISshSession session)
         {

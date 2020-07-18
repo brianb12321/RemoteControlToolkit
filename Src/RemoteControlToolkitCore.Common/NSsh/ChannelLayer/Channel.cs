@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
+using RemoteControlToolkitCore.Common.Configuration;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh.ChannelLayer.Console;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
@@ -58,7 +59,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.ChannelLayer
         public Channel(ILogger<Channel> logger, IServiceProvider provider)
         {
             _logger = logger;
-            NSshServiceConfiguration config = provider.GetService<IOptions<NSshServiceConfiguration>>().Value;
+            NSshServiceConfiguration config = provider.GetService<IWritableOptions<NSshServiceConfiguration>>().Value;
             _provider = provider;
             _receiveWindowSize = config.ReceiveWindowSize;
             _receiveMaximumPacketSize = config.ReceiveMaximumPacketSize;

@@ -26,6 +26,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
             foreach (var wavePlayer in Queue)
             {
                 wavePlayer.Stop();
+                wavePlayer.Dispose();
             }
             Queue.Clear();
         }

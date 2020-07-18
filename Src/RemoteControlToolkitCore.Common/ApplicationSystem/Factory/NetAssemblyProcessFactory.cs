@@ -1,10 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Plugin;
@@ -22,21 +17,21 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem.Factory
             _provider = provider;
         }
 
-        public IProcessBuilder CreateProcessBuilder(CommandRequest request, RctProcess parentProcess, IProcessTable table)
+        public IProcessBuilder CreateProcessBuilder(RctProcess parentProcess, IProcessTable table)
         {
             IProcessBuilder builder = table.CreateProcessBuilder()
-                .SetAction((current, token) =>
+                .SetAction((args, current, token) =>
                 {
                     IFileSystem fileSystem = current.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
-                    Assembly assembly = Assembly.Load(fileSystem.ReadAllBytes(request.Arguments[0]));
-                    string[] arguments = request.Arguments;
+                    Assembly assembly = Assembly.Load(fileSystem.ReadAllBytes(args.Arguments[0]));
+                    string[] arguments = args.Arguments;
                     // ReSharper disable once CoVariantArrayConversion
                     object[] parameters = new[] {arguments};
                     assembly.EntryPoint.Invoke(null, parameters);
                     return new CommandResponse(CommandResponse.CODE_SUCCESS);
                 })
                 .AddProcessExtensions(_provider.GetServices<IExtensionProvider<RctProcess>>())
-                .SetProcessName("External .NET Assembly")
+                .SetProcessName(name => "External .NET Assembly")
                 .SetParent(parentProcess);
 
             return builder;

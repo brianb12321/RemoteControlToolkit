@@ -15,21 +15,51 @@ using ThreadState = System.Threading.ThreadState;
 
 namespace RemoteControlToolkitCore.Common.ApplicationSystem
 {
-    public delegate CommandResponse ProcessDelegate(RctProcess current, CancellationToken token);
+    public delegate CommandResponse ProcessDelegate(CommandRequest args, RctProcess current, CancellationToken token);
+    /// <summary>
+    /// Encapsulates a process in RCT.
+    /// </summary>
     public class RctProcess : IExtensibleObject<RctProcess>
     {
-        public uint Pid { get; set; }
+        /// <summary>
+        /// The process id number registered in the process table.
+        /// </summary>
+        public uint Pid { get; }
         public bool IsBackground { get; set; }
+        /// <summary>
+        /// If standard in was redirected. Standard in is not redirected when first set.
+        /// </summary>
         public bool InRedirected { get; private set; }
+        /// <summary>
+        /// If standard out was redirected. Standard out is not redirected when first set.
+        /// </summary>
         public bool OutRedirected { get; private set; }
+        /// <summary>
+        /// If standard error was redirected. Standard error is not redirected when first set.
+        /// </summary>
         public bool ErrorRedirected { get; private set; }
+        /// <summary>
+        /// The current user that owns this process.
+        /// </summary>
         public IPrincipal Identity { get; }
+        /// <summary>
+        /// The current session for this process.
+        /// </summary>
 
         public IInstanceSession ClientContext { get; set; }
+        /// <summary>
+        /// Represents standard out.
+        /// </summary>
         public StreamWriter Out { get; private set; }
         private Stream _outStream;
+        /// <summary>
+        /// Represents standard error.
+        /// </summary>
         public StreamWriter Error { get; private set; }
         private Stream _errorStream;
+        /// <summary>
+        /// Represents standard in.
+        /// </summary>
         public TextReader In { get; private set; }
         private Stream _inStream;
         public bool DisposeIn { get; set; } = true;
@@ -43,10 +73,27 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         } 
         public IExtensionCollection<RctProcess> Extensions { get; }
         public bool Running => State == ThreadState.Running;
+        /// <summary>
+        /// The current state of the process.
+        /// </summary>
         public ThreadState State => _workingThread.ThreadState;
-        public string Name { get; }
+        private readonly Func<string, string> _nameFunction;
+
+        /// <summary>
+        /// The friendly name of this process.
+        /// </summary>
+        public string Name => _nameFunction.Invoke(CommandLineName);
         public RctProcess Parent { get; }
-        public RctProcess Child { get; set; }
+        public List<RctProcess> Children { get; set; }
+        private CommandRequest _startRequest;
+        /// <summary>
+        /// Any arguments that should be passed to the process when <see cref="Start"/> is invoked.
+        /// </summary>
+        public string[] Arguments { get; set; }
+        /// <summary>
+        /// The path name of a program to execute. Depends on what factory used to create the process.
+        /// </summary>
+        public string CommandLineName { get; set; }
         public event EventHandler<Exception> ThreadError;
         public event EventHandler<ControlCEventArgs> ControlC;
         public event EventHandler StandardOutDisposed;
@@ -56,6 +103,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         private readonly Thread _workingThread;
         private readonly CancellationTokenSource _cts;
         private readonly ProcessDelegate _threadStart;
+
         public CommandResponse ExitCode { get; private set; }
         public EnvironmentVariableCollection EnvironmentVariables { get; }
         public bool Disposed { get; private set; }
@@ -64,7 +112,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
 
         private RctProcess(IProcessTable table,
             IInstanceSession session,
-            string name,
+            Func<string, string> nameFunction,
             RctProcess parent,
             ProcessDelegate threadStart,
             IPrincipal identity,
@@ -72,7 +120,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             ApartmentState apartmentState)
         {
             _table = table;
-            Name = name;
+            _nameFunction = nameFunction;
             Parent = parent;
             _threadStart = threadStart;
             ClientContext = session;
@@ -83,9 +131,10 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             //Populate Extensions
             EnvironmentVariables = new EnvironmentVariableCollection();
             Identity = identity;
+            Children = new List<RctProcess>();
             if (Parent != null)
             {
-                Parent.Child = this;
+                Parent.Children.Add(this);
                 Out = Parent.Out;
                 In = Parent.In;
                 Error = Parent.Error;
@@ -131,6 +180,8 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         }
         public void Start()
         {
+            if(string.IsNullOrWhiteSpace(CommandLineName)) throw new ArgumentException("A commandline name must be set because the system does not know what program to execute.", nameof(CommandLineName));
+            _startRequest = new CommandRequest(new []{CommandLineName}.Concat(Arguments ?? Array.Empty<string>()).ToArray());
             if (IsBackground)
             {
                 SetIn(Stream.Null);
@@ -163,7 +214,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             try
             {
                 Thread.CurrentPrincipal = Identity;
-                ExitCode = _threadStart?.Invoke((RctProcess) data, _cts.Token);
+                ExitCode = _threadStart?.Invoke(_startRequest, (RctProcess) data, _cts.Token);
             }
             catch (ThreadAbortException)
             {
@@ -188,14 +239,20 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public void Abort()
         {
             //Will break under .NET Core
-            Child?.Abort();
+            for(int i = 0; i < Children.Count; i++)
+            {
+                Children[i].Abort();
+            }
             _workingThread?.Abort();
             Dispose();
         }
 
         public void Close()
         {
-            Child?.Close();
+            for (int i = 0; i < Children.Count; i++)
+            {
+                Children[i].Close();
+            }
             Dispose();
         }
 
@@ -223,47 +280,75 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
 
         public void SetOut(Stream outStream)
         {
-            if (_outStream != null) OutRedirected = true;
+            if (_outStream != null)
+            {
+                Out.Close();
+                OutRedirected = true;
+            }
             _outStream = outStream;
             Out = configureStreamWriter(outStream);
             Out.AutoFlush = true;
         }
         public void SetOut(StreamWriter outStream)
         {
-            if (_outStream != null) OutRedirected = true;
+            if (_outStream != null)
+            {
+                _outStream.Close();
+                OutRedirected = true;
+            }
             _outStream = outStream.BaseStream;
             Out = outStream;
         }
 
         public void SetError(Stream errorStream)
         {
-            if (_errorStream != null) ErrorRedirected = true;
+            if (_errorStream != null)
+            {
+                ErrorRedirected = true;
+                _errorStream.Close();
+            }
             _errorStream = errorStream;
             Error = configureStreamWriter(errorStream);
             Error.AutoFlush = true;
         }
         public void SetError(StreamWriter errorStream)
         {
-            if (_errorStream != null) ErrorRedirected = true;
+            if (_errorStream != null)
+            {
+                ErrorRedirected = true;
+                _errorStream.Close();
+            }
             _errorStream = errorStream.BaseStream;
             Error = errorStream;
         }
 
         public void SetIn(Stream inStream)
         {
-            if (_inStream != null) InRedirected = true;
+            if (_inStream != null)
+            {
+                InRedirected = true;
+                _inStream.Close();
+            }
             _inStream = inStream;
             In = new StreamReader(_inStream);
         }
         public void SetIn(StreamReader inStream)
         {
-            if (_inStream != null) InRedirected = true;
+            if (_inStream != null)
+            {
+                InRedirected = true;
+                _inStream.Close();
+            }
             _inStream = inStream.BaseStream;
             In = inStream;
         }
         public void SetIn(TextReader inReader, Stream inStream)
         {
-            if (_inStream != null) InRedirected = true;
+            if (_inStream != null)
+            {
+                InRedirected = true;
+                _inStream.Close();
+            }
             //Currently reading from the terminal cannot be accomplished by a stream.
             _inStream = inStream;
             In = inReader;
@@ -306,7 +391,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 {
                     provider.RemoveExtension(this);
                 }
-                Child?.Dispose();
+                Children?.ForEach(c => c.Dispose());
 
                 //Check if process is already removed from table.
 
@@ -315,6 +400,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                     _table.RemoveProcess(Pid);
                 }
 
+                Parent?.Children.Remove(this);
                 Disposed = true;
             }
         }
@@ -324,7 +410,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         {
             private readonly IProcessTable _table;
             private readonly IServiceProvider _provider;
-            private string _processName;
+            private Func<string, string> _processNameFunction;
             private ProcessDelegate _action;
             private RctProcess _parent;
             private IPrincipal _principal;
@@ -341,16 +427,16 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             {
                 return new RctProcess(_table,
                     _parent?.ClientContext ?? _session,
-                    _processName,
+                    _processNameFunction,
                     _parent,
                     _action,
                     _parent?.Identity ?? _principal, 
                     _extensions.ToArray(), _apartmentState);
             }
 
-            public IProcessBuilder SetProcessName(string name)
+            public IProcessBuilder SetProcessName(Func<string, string> nameProviderFunction)
             {
-                _processName = name;
+                _processNameFunction = nameProviderFunction;
                 return this;
             }
 

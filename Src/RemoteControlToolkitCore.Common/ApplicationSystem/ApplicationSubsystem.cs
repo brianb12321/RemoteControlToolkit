@@ -14,13 +14,19 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             _provider = provider;
         }
 
-        public IApplication GetApplication(string name)
+        public IApplication GetApplicationWithoutInit(string name)
         {
             IApplication app = (IApplication)PluginManager.ActivatePluginModule<ApplicationSubsystem>(name);
             if (app == null)
             {
                 throw new RctProcessException($"The application \"{name}\" does not exist.");
             }
+
+            return app;
+        }
+        public IApplication GetApplication(string name)
+        {
+            var app = GetApplicationWithoutInit(name);
             app.InitializeServices(_provider);
             return app;
         }

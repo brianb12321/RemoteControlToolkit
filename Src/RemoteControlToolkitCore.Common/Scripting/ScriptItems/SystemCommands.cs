@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Plugin;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,8 +21,10 @@ namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
         {
             context.AddVariable("ex_application", new Func<string, string[], RctProcess>((name, args) =>
             {
-                var application = _subSystem.CreateProcess("Application", new CommandRequest(args),
+                var application = _subSystem.CreateProcess("Application",
                     engine.ParentProcess, engine.ParentProcess.ClientContext.ProcessTable);
+                application.CommandLineName = args[0];
+                application.Arguments = args.Skip(1).ToArray();
                 application.SetOut(engine.IO.OutputStream);
                 application.SetIn(engine.IO.InputReader, engine.IO.InputStream);
                 application.SetError(engine.IO.ErrorStream);
@@ -29,11 +32,9 @@ namespace RemoteControlToolkitCore.Common.Scripting.ScriptItems
             }));
             context.AddVariable("ex", new Func<string, CommandResponse>((command) =>
             {
-                var application = _subSystem.CreateProcess("Application", new CommandRequest(new []
-                    {
-                        "shell", "-c", command
-                    }),
-                    engine.ParentProcess, engine.ParentProcess.ClientContext.ProcessTable);
+                var application = _subSystem.CreateProcess("Application", engine.ParentProcess, engine.ParentProcess.ClientContext.ProcessTable);
+                application.CommandLineName = "shell";
+                application.Arguments = new[] {"-c", command};
                 application.SetOut(engine.IO.OutputStream);
                 application.SetIn(engine.IO.InputReader, engine.IO.InputStream);
                 application.SetError(engine.IO.ErrorStream);

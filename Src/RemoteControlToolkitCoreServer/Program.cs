@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -14,7 +16,6 @@ using RemoteControlToolkitCore.Common.Commandline.Commands;
 using RemoteControlToolkitCore.Common.DeviceBus;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh;
-using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Proxy;
 using RemoteControlToolkitCore.DefaultShell;
@@ -30,12 +31,13 @@ namespace RemoteControlToolkitCoreServer
         static void Main(string[] args)
         {
             IHostApplication app = new AppBuilder()
-                .AddStartup<Startup>()
                 .AddConfiguration(c =>
                 {
                     c.Sources.Clear();
-                    c.AddJsonFile("Configurations/Server/server.config", true, false);
+                    c.SetBasePath(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+                    c.AddJsonFile("appsettings.json", true, false);
                 })
+                .AddStartup<Startup>()
                 .ConfigureLogging(factory =>
                     factory.AddConsole())
                 .AddStartup<RemoteControlToolkitCore.Subsystem.Workflow.Startup>()
@@ -50,6 +52,8 @@ namespace RemoteControlToolkitCoreServer
 
     public class Startup : IApplicationStartup
     {
+        public IConfiguration Configuration { get; set; }
+
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDeviceBus();
@@ -58,16 +62,17 @@ namespace RemoteControlToolkitCoreServer
             services.AddCommandLine();
             services.AddSingleton<IServerPool, ServerPool>();
             services.AddPipeService();
-            services.AddSSH(config =>
-            {
-                config.ListenEndPoints = new List<IPEndPoint>
-                    { new IPEndPoint(IPAddress.Any, 8081)};
-                config.IdleTimeout = TimeSpan.FromDays(25);
-                config.MaximumClientConnections = 10;
-                config.UserAuthenticationBanner =
-                    "You are about to connect to a RemoteControlToolkit server. Any damages caused by the use of this software will be held against the user. Please refer to the user manual before proceeding.";
-                config.ReceiveMaximumPacketSize = uint.MaxValue;
-            });
+            services.AddSSH((IConfigurationRoot)Configuration);
+            //services.AddSSH(config =>
+            //{
+            //    config.ListenEndPoints = new List<IPEndPoint>
+            //        { new IPEndPoint(IPAddress.Any, 8081)};
+            //    config.IdleTimeout = TimeSpan.FromDays(25);
+            //    config.MaximumClientConnections = 10;
+            //    config.UserAuthenticationBanner =
+            //        "You are about to connect to a RemoteControlToolkit server. Any damages caused by the use of this software will be held against the user. Please refer to the user manual before proceeding.";
+            //    config.ReceiveMaximumPacketSize = uint.MaxValue;
+            //});
         }
 
         public void PostConfigureServices(IServiceProvider provider, IHostApplication application)

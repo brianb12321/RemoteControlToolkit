@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
 
@@ -69,6 +70,16 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             _activeProcesses[pid].InvokeControlC();
         }
 
+        public bool HasChildren(uint pid)
+        {
+            return _activeProcesses[pid].Children.Any();
+        }
+
+        public string GetName(uint pid)
+        {
+            return _activeProcesses[pid].Name;
+        }
+
         public void CloseAll()
         {
             foreach (uint pid in _activeProcesses.Keys)
@@ -82,6 +93,21 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                     // ignored
                 }
             }
+        }
+
+        public IEnumerable<(uint position, string name)> GetProcessNames()
+        {
+            return _activeProcesses.Select(v => (v.Key, v.Value.Name));
+        }
+
+        public IEnumerable<uint> GetRootProcesses()
+        {
+            return _activeProcesses.Where(p => p.Value.Parent == null).Select(k => k.Key);
+        }
+
+        public IEnumerable<uint> GetChildren(uint pid)
+        {
+            return _activeProcesses[pid].Children.Select(c => c.Pid);
         }
     }
 }

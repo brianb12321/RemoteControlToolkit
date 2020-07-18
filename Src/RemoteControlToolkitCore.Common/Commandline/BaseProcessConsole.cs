@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Principal;
 using System.ServiceModel;
 using System.Text;
@@ -75,20 +76,21 @@ namespace RemoteControlToolkitCore.Common.Commandline
             
             try
             {
-                _shellProcess = subsystem.GetProcessBuilder("Application", new CommandRequest(new[] {"shell"}), null, ProcessTable)
+                _shellProcess = subsystem.GetProcessBuilder("Application", null, ProcessTable)
                     .SetSecurityPrincipal(identity)
                     .SetInstanceSession(this)
                     .Build();
+                _shellProcess.CommandLineName = "shell";
             }
             //Load emergency shell.
             catch (Exception)
             {
                 _logger.LogWarning("There was an error starting a shell, using emergency shell.");
                 _shellProcess = ProcessTable.CreateProcessBuilder()
-                    .SetProcessName("Emergency Shell")
+                    .SetProcessName(name => "Emergency Shell")
                     .SetInstanceSession(this)
                     .SetSecurityPrincipal(identity)
-                    .SetAction((current, token) =>
+                    .SetAction((args, current, token) =>
                     {
                         current.Out.WriteLine(
                             "There was a critical error loading a shell. You have been provided with an emergency shell."
@@ -104,9 +106,10 @@ namespace RemoteControlToolkitCore.Common.Commandline
                             string[] tokens = command.Split(' ');
                             try
                             {
-                                var process = subsystem.CreateProcess("Application",
-                                    new CommandRequest(tokens), current, ProcessTable);
-                                    process.ThreadError += (sender, e) =>
+                                var process = subsystem.CreateProcess("Application", current, ProcessTable);
+                                process.CommandLineName = tokens[0];
+                                process.Arguments = tokens.Skip(1).ToArray();
+                                process.ThreadError += (sender, e) =>
                                 {
                                     current.Error.WriteLine(
                                         Output.Red($"Error while executing command: {e.Message}"));

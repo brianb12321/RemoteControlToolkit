@@ -43,19 +43,18 @@ namespace RemoteControlToolkitCore.Common.Networking
             }
 
             _proxyProcess = ProcessTable.CreateProcessBuilder()
-                .SetProcessName("Proxy Client")
+                .SetProcessName(name => "Proxy Client")
                 .SetInstanceSession(this)
                 .SetSecurityPrincipal(new ClaimsPrincipal(new GenericIdentity("bob")))
-                .SetAction((current, token) =>
+                .SetAction((args, current, token) =>
                 {
                     try
                     {
                         _sw = new StreamWriter(_networkStream);
                         _sr = new StreamReader(_networkStream);
                         _sw.AutoFlush = true;
-                        _commandShell = serviceProvider.GetService<ProcessFactorySubsystem>().CreateProcess("shell",
-                            new CommandRequest(new[] {"shell"}), current, ProcessTable);
-
+                        _commandShell = serviceProvider.GetService<ProcessFactorySubsystem>().CreateProcess("Application", current, ProcessTable);
+                        _commandShell.CommandLineName = "shell";
                         _commandShell.SetOut(GetClientWriter());
                         _commandShell.SetIn(GetClientReader());
                         _commandShell.SetError(GetClientWriter());

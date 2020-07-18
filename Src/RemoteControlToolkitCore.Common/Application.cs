@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using NDesk.Options;
+using RemoteControlToolkitCore.Common.Configuration;
 using RemoteControlToolkitCore.Common.NSsh;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.NSsh.Services;
@@ -25,12 +29,13 @@ namespace RemoteControlToolkitCore.Common
         private bool _proxyMode;
         private string _proxyAddress = string.Empty;
         private int _proxyPort = 8080;
-        private readonly NSshServiceConfiguration _config;
+        private NSshServiceConfiguration _config;
         private bool _shutdown;
 
         public NetworkSide ExecutingSide { get; }
         public IAppBuilder Builder { get; }
         public IPluginManager PluginManager { get; }
+        public IFileProvider RootFileProvider { get; }
         private long _connectionsReceived;
         private readonly List<TcpListener> _listenSockets = new List<TcpListener>();
         private readonly Dictionary<ISshSession, Thread> _sessions = new Dictionary<ISshSession, Thread>();
@@ -40,21 +45,20 @@ namespace RemoteControlToolkitCore.Common
             IServiceProvider provider,
             NetworkSide side,
             IAppBuilder builder,
-            IKeySetupService keySetup,
-            IPluginManager pluginManager,
-            NSshServiceConfiguration config)
+            IPluginManager pluginManager)
         {
             _logger = logger;
             _proxyLogger = proxyLogger;
             _provider = provider;
             ExecutingSide = side;
             Builder = builder;
-            _config = config;
             PluginManager = pluginManager;
-            keySetup.EnsureSetup();
+            RootFileProvider = new PhysicalFileProvider(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
         }
         public void Run(string[] args)
         {
+            _config = _provider.GetService<IWritableOptions<NSshServiceConfiguration>>().Value;
+            _provider.GetService<IKeySetupService>().EnsureSetup();
             _shutdown = false;
             OptionSet options = new OptionSet()
                 .Add("p|proxy", "Connect to a proxy server.", v => _proxyMode = true)
@@ -105,7 +109,8 @@ namespace RemoteControlToolkitCore.Common
         private void handleConnections(object endPointObject)
         {
             TcpListener socket = null;
-            IPEndPoint endPoint = (IPEndPoint)endPointObject;
+            var address = (NSshServiceConfiguration.IPSetting) endPointObject;
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(address.IPAddress), address.Port);
 
             try
             {

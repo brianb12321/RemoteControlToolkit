@@ -48,6 +48,8 @@ namespace RemoteControlToolkitCoreServerWCF
 
     public class Startup : IApplicationStartup
     {
+        public IConfiguration Configuration { get; set; }
+
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDeviceBus();

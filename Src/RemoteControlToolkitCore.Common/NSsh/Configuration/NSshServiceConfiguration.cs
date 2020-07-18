@@ -56,31 +56,36 @@ namespace RemoteControlToolkitCore.Common.NSsh.Configuration
     {
         public NSshServiceConfiguration()
         {
-            ListenEndPoints = new List<IPEndPoint>();
+            ListenEndPoints = new List<IPSetting>();
             MaximumClientConnections = 20;
             MaximumSameIPAddressConnections = 2;
             VersionsExchangedTimeout = TimeSpan.FromSeconds(3);
             AuthenticatedTimeout = TimeSpan.FromSeconds(60);
-            IdleTimeout = TimeSpan.FromMinutes(10);
+            IdleTimeout = TimeSpan.FromDays(25);
             ReceiveWindowSize = 1024 * 1024 * 4;
             ReceiveMaximumPacketSize = 1024 * 1024;
         }
 
-        public List<IPEndPoint> ListenEndPoints { get; set; }
+        public List<IPSetting> ListenEndPoints { get; set; }
 
         public int MaximumClientConnections { get; set; }
 
         public int MaximumSameIPAddressConnections { get; set; }
+        [IgnoreDataMember]
 
         public TimeSpan VersionsExchangedTimeout { get; set; }
 
+        [IgnoreDataMember]
         public TimeSpan AuthenticatedTimeout { get; set; }
+        [IgnoreDataMember]
 
         public TimeSpan IdleTimeout { get; set; }
 
         public PublicKeyAlgorithm ServerKeyAlgorithm { get; set; }
+        [IgnoreDataMember]
 
         public DSACryptoServiceProvider ServerDsaProvider { get; set; }
+        [IgnoreDataMember]
 
         public RSACryptoServiceProvider ServerRsaProvider{ get; set; }
 
@@ -89,5 +94,21 @@ namespace RemoteControlToolkitCore.Common.NSsh.Configuration
         public uint ReceiveMaximumPacketSize { get; set; }
 
         public string UserAuthenticationBanner { get; set; }
+
+        public class IPSetting
+        {
+            public string IPAddress { get; set; }
+            public int Port { get; set; }
+
+            public IPSetting()
+            {
+
+            }
+            public IPSetting(string address, int port)
+            {
+                IPAddress = address;
+                Port = port;
+            }
+        }
     }
 }

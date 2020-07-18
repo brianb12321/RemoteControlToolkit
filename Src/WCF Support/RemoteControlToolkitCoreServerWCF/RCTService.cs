@@ -61,10 +61,11 @@ namespace RemoteControlToolkitCoreServerWCF
             principal.AddIdentity(identity);
 
             _shellProcess =
-                _processFactory.GetProcessBuilder("Application", new CommandRequest(new[] {"shell"}), null, ProcessTable)
+                _processFactory.GetProcessBuilder("Application", null, ProcessTable)
                     .SetSecurityPrincipal(principal)
                     .SetInstanceSession(this)
                     .Build();
+            _shellProcess.CommandLineName = "shell";
 
             var outStream = new WCFStream(_callback);
             _shellProcess.SetOut(outStream);

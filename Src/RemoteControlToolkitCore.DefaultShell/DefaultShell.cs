@@ -303,7 +303,7 @@ __;_ \ /,//`
         private static void CurrentProc_ControlC(object sender, ControlCEventArgs e)
         {
             RctProcess currentProc = (RctProcess) sender;
-            currentProc.Child?.InvokeControlC();
+            currentProc.Children?.ForEach(c => c.InvokeControlC());
             e.CloseProcess = false;
         }
 
@@ -312,9 +312,9 @@ __;_ \ /,//`
             if (command.StartsWith("::"))
             {
                 _processes.Add(currentProc.ClientContext.ProcessTable.CreateProcessBuilder()
-                    .SetProcessName("Scripting")
+                    .SetProcessName(name => $"Scripting {name}")
                     .SetParent(currentProc)
-                    .SetAction((proc, newToken) =>
+                    .SetAction((args, proc, newToken) =>
                     {
                         _engine.ParentProcess = proc;
                         _engine.Token = newToken;
@@ -349,16 +349,16 @@ __;_ \ /,//`
                     //We need to create a pipe. We are going to use the pipe service to create the piping. Usually this will be a Microsoft anonymous pipe.
                     for (int p = 0; p < pipedItems.Length; p++)
                     {
-                        CommandRequest newRequest = new CommandRequest(pipedItems[p].Select(e => e.ToString()).ToArray());
-                        string newCommand = newRequest.Arguments[0];
+                        string[] arguments = pipedItems[p].Select(e => e.ToString()).ToArray();
+                        string newCommand = arguments[0];
                         //Check if command is built-in.
                         if (_builtInCommands.ContainsKey(newCommand))
                         {
                             _processes.Add(currentProc.ClientContext.ProcessTable.CreateProcessBuilder()
-                                .SetProcessName("internalCommand")
+                                .SetProcessName(name => $"internalCommand {name}")
                                 .SetParent(currentProc)
-                                .SetAction((proc, delToken) =>
-                                    _builtInCommands[newCommand](newRequest))
+                                .SetAction((args, proc, delToken) =>
+                                    _builtInCommands[newCommand](args))
                                 .Build());
 
                             _processes[p].ThreadError += (sender, e) =>
@@ -366,15 +366,19 @@ __;_ \ /,//`
                                 currentProc.Error.WriteLine(
                                     $"Error while executing built-in command: {e.Message}".Red());
                             };
+                            _processes[p].CommandLineName = newCommand;
+                            _processes[p].Arguments = arguments.Skip(1).ToArray();
                         }
 
                         //Check if command should execute external program.
                         else if (newCommand.StartsWith("./"))
                         {
                             string fileName = newCommand.Substring(2);
-                            newRequest.Arguments.SetValue(fileName, 0);
-                            _processes.Add(_processFactory.CreateProcess("Scripting", newRequest, currentProc,
+                            if (string.IsNullOrWhiteSpace(fileName)) return new CommandResponse(CommandResponse.CODE_FAILURE);
+                            _processes.Add(_processFactory.CreateProcess("Scripting", currentProc,
                                 currentProc.ClientContext.ProcessTable));
+                            _processes[p].CommandLineName = fileName;
+                            _processes[p].Arguments = arguments.Skip(1).ToArray();
 
                             _processes[p].ThreadError += (sender, e) =>
                             {
@@ -385,9 +389,11 @@ __;_ \ /,//`
                         {
                             try
                             {
-                                _processes.Add(_processFactory.CreateProcess("Application", newRequest, currentProc,
+                                _processes.Add(_processFactory.CreateProcess("Application", currentProc,
                                     currentProc.ClientContext.ProcessTable));
 
+                                _processes[p].CommandLineName = newCommand;
+                                _processes[p].Arguments = arguments.Skip(1).ToArray();
                                 _processes[p].ThreadError += (sender, e) =>
                                 {
                                     currentProc.Error.WriteLine(

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Security.Cryptography;
 using Microsoft.Extensions.Options;
+using RemoteControlToolkitCore.Common.Configuration;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.NSsh.Types;
 
@@ -16,7 +17,7 @@ namespace RemoteControlToolkitCore.Common.NSsh.Services
         RSACryptoServiceProvider rsaProvider;
         private NSshServiceConfiguration _config;
 
-        public KeySetupService(IOptions<NSshServiceConfiguration> config)
+        public KeySetupService(IWritableOptions<NSshServiceConfiguration> config)
         {
             _config = config.Value;
             dsaCspParameters = new CspParameters(13);

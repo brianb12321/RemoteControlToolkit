@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using RemoteControlToolkitCore.Common.Configuration;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.NSsh.Configuration;
 using RemoteControlToolkitCore.Common.NSsh.Services;
@@ -34,8 +35,7 @@ namespace RemoteControlToolkitCore.Common
             return new Application(provider.GetService<ILogger<Application>>(),
                 provider.GetService<ILogger<ProxyNetworkInstance>>(),
                 provider, ExecutingSide, this,
-                provider.GetService<IKeySetupService>(),
-                _pluginManager, provider.GetService<IOptions<NSshServiceConfiguration>>().Value
+                _pluginManager
                 );
         }
         public IHostApplication Build()
@@ -99,6 +99,7 @@ namespace RemoteControlToolkitCore.Common
             {
                 if (!_startups.Contains(startup))
                 {
+                    startup.Configuration = _configRoot;
                     _startups.Add(startup);
                 }
             }
@@ -118,6 +119,7 @@ namespace RemoteControlToolkitCore.Common
             var startup = (IApplicationStartup) Activator.CreateInstance(typeof(TStartup));
             if (!_startups.Contains(startup))
             {
+                startup.Configuration = _configRoot;
                 _startups.Add(startup);
             }
             return this;

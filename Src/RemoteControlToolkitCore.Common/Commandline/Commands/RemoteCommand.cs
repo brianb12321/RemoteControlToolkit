@@ -39,7 +39,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 context.ControlC += (sender, e) =>
                 {
                     e.CloseProcess = false;
-                    ((RctProcess)sender).Child.InvokeControlC();
+                    ((RctProcess)sender).Children.ForEach(c => c.InvokeControlC());
                 };
                 var selectedServer = _serverPool.GetServers()[id];
                 var remoteStreamWriter = selectedServer.GetClientWriter();

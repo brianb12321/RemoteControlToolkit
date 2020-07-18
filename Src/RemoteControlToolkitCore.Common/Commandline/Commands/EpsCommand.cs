@@ -93,9 +93,9 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 if (runAsRCTProcess)
                 {
                     RctProcess proc = context.ClientContext.ProcessTable.CreateProcessBuilder()
-                        .SetProcessName($"Ext - {name}")
+                        .SetProcessName(processName => $"Ext - {processName}")
                         .SetParent(context)
-                        .SetAction((current, cancellationToken) =>
+                        .SetAction((innerArgs, current, cancellationToken) =>
                         {
                             string text = string.Empty;
                             if (redirectStandardIn)
@@ -116,6 +116,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                             return new CommandResponse((p.HasExited) ? p.ExitCode : 0);
                         })
                         .Build();
+                    proc.CommandLineName = name;
                     proc.Start();
                     proc.WaitForExit();
                     return proc.ExitCode;

@@ -21,24 +21,24 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem.Factory
             _scriptingSubsystem = provider.GetService<ScriptingSubsystem>();
         }
 
-        public IProcessBuilder CreateProcessBuilder(CommandRequest request, RctProcess parentProcess, IProcessTable table)
+        public IProcessBuilder CreateProcessBuilder(RctProcess parentProcess, IProcessTable table)
         {
-            IScriptingEngine engine = _scriptingSubsystem.CreateEngine();
             var fileSystem = parentProcess.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
             IProcessBuilder builder = table.CreateProcessBuilder()
-                .SetProcessName(request.Arguments[0])
+                .SetProcessName(args => args)
                 .SetParent(parentProcess)
                 .AddProcessExtensions(_provider.GetServices<IExtensionProvider<RctProcess>>())
-                .SetAction((current, token) =>
+                .SetAction((args, current, token) =>
                 {
+                    IScriptingEngine engine = _scriptingSubsystem.CreateEngine();
                     engine.ParentProcess = current;
                     engine.Token = token;
                     engine.SetIn(current.In);
                     engine.SetOut(current.Out);
                     engine.SetError(current.Error);
-                    string fileName = request.Arguments[0];
+                    string fileName = args.Arguments[0];
                     List<string> argList = new List<string> { fileName };
-                    argList.AddRange(request.Arguments.Length >= 1 ? request.Arguments.Skip(1) : request.Arguments);
+                    argList.AddRange(args.Arguments.Length >= 1 ? args.Arguments.Skip(1) : args.Arguments);
                     engine.GetDefaultModule().AddVariable("argv", argList.ToArray());
                     return new CommandResponse(engine.ExecuteProgram(fileName, fileSystem));
                 });

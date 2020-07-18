@@ -19,17 +19,17 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem.Factory
         {
             
         }
-        public IProcessBuilder GetProcessBuilder(string factoryName, CommandRequest request, RctProcess parent, IProcessTable table)
+        public IProcessBuilder GetProcessBuilder(string factoryName, RctProcess parent, IProcessTable table)
         {
             IProcessFactory factory =
                 (IProcessFactory)PluginManager.ActivatePluginModule<ProcessFactorySubsystem>(factoryName);
 
             factory.InitializeServices(_provider);
-            return factory.CreateProcessBuilder(request, parent, table);
+            return factory.CreateProcessBuilder(parent, table);
         }
-        public RctProcess CreateProcess(string factoryName, CommandRequest request, RctProcess parent, IProcessTable table)
+        public RctProcess CreateProcess(string factoryName, RctProcess parent, IProcessTable table)
         {
-            return GetProcessBuilder(factoryName, request, parent, table).Build();
+            return GetProcessBuilder(factoryName, parent, table).Build();
         }
     }
 }

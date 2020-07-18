@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.NSsh.ChannelLayer;
@@ -12,9 +13,8 @@ namespace RemoteControlToolkitCore.Common.NSsh
 {
     public static class NSshServiceCollectionExtensions
     {
-        public static IServiceCollection AddSSH(this IServiceCollection services, Action<NSshServiceConfiguration> config)
+        private static void configureServices(IServiceCollection services)
         {
-            services.Configure(config);
             services.AddSingleton(typeof(ITerminalHandlerFactory), typeof(StandardTerminalHandlerFactory));
             services.AddTransient<ISshSession, SshSession>();
             services.AddTransient<ITransportLayerManager, TransportLayerManager>();
@@ -31,6 +31,17 @@ namespace RemoteControlToolkitCore.Common.NSsh
             //services.AddSingleton<IImpersonationProvider, ImpersonationProvider>("ImpersonationProvider");
             services.AddSingleton<IImpersonationProvider, BasicImpersonationProvider>();
             services.AddSingleton<IPacketFactory, PacketFactory>();
+        }
+        public static IServiceCollection AddSSH(this IServiceCollection services, IConfigurationRoot configuration)
+        {
+            services.ConfigureWritable<NSshServiceConfiguration>(configuration, "SSH", "appsettings.json");
+            configureServices(services);
+            return services;
+        }
+        public static IServiceCollection AddSSH(this IServiceCollection services, IConfigurationRoot configRoot, Action<NSshServiceConfiguration> config)
+        {
+            services.ConfigureWritable<NSshServiceConfiguration>(configRoot, "SSH", "appsettings.json", config);
+            configureServices(services);
             return services;
         }
     }

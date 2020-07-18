@@ -22,14 +22,15 @@ namespace RemoteControlToolkitCore.Subsystem.Workflow.Activities
         protected override CommandResponse Execute(CodeActivityContext context)
         {
             // Obtain the runtime value of the Text input argument
-            string processName = context.GetValue(this.ProcessName);
-            CommandRequest request = new CommandRequest(processName.Split(' '));
+            string[] processName = context.GetValue(this.ProcessName).Split(' ');
             RctProcess currentProc = context.GetExtension<RctProcess>();
             ProcessFactorySubsystem subsystem =
                 context.GetExtension<IServiceProvider>().GetService<ProcessFactorySubsystem>();
 
-            RctProcess newProc = subsystem.CreateProcess("Application", request, currentProc,
+            RctProcess newProc = subsystem.CreateProcess("Application", currentProc,
                 currentProc.ClientContext.ProcessTable);
+            newProc.CommandLineName = processName[0];
+            newProc.Arguments = processName.Skip(1).ToArray();
 
             newProc.Start();
             newProc.WaitForExit();

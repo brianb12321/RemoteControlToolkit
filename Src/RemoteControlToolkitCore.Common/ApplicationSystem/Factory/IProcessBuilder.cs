@@ -23,9 +23,9 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem.Factory
         /// <summary>
         /// The name the process will be displayed as when queried.
         /// </summary>
-        /// <param name="name">The display name.</param>
+        /// <param name="nameProviderFunction">A function for providing a process name..</param>
         /// <returns></returns>
-        IProcessBuilder SetProcessName(string name);
+        IProcessBuilder SetProcessName(Func<string, string> nameProviderFunction);
         /// <summary>
         /// The code that will be executed when the process is started.
         /// </summary>

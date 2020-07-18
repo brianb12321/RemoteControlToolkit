@@ -12,6 +12,6 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem.Factory
     /// </summary>
     public interface IProcessFactory : IPluginModule<ProcessFactorySubsystem>
     {
-        IProcessBuilder CreateProcessBuilder(CommandRequest request, RctProcess parentProcess, IProcessTable table);
+        IProcessBuilder CreateProcessBuilder(RctProcess parentProcess, IProcessTable table);
     }
 }

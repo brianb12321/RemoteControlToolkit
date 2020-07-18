@@ -33,7 +33,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 .Add("showHelp|?", "Displays the help screen.", v => showHelp = true)
                 .Add("module|m=", "The process factory module to use. Default is Application", v => module = v);
 
-            var fileAndArguments = options.Parse(args.Arguments).Skip(1);
+            var fileAndArguments = options.Parse(args.Arguments).Skip(1).ToArray();
             if (showHelp)
             {
                 options.WriteOptionDescriptions(context.Out);
@@ -41,8 +41,9 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             }
             else
             {
-                var process = _processFactorySubsystem.CreateProcess(module,
-                    new CommandRequest(fileAndArguments.ToArray()), context, context.ClientContext.ProcessTable);
+                var process = _processFactorySubsystem.CreateProcess(module, context, context.ClientContext.ProcessTable);
+                process.CommandLineName = fileAndArguments[0];
+                process.Arguments = fileAndArguments.Skip(1).ToArray();
                 process.ThreadError += (sender, e) =>
                     context.Error.WriteLine($"Error while running process: {e.Message}".Red());
                 process.SetIn(context.OpenInputStream());
