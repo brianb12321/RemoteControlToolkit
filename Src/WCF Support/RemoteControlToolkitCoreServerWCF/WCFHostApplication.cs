@@ -12,7 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common;
-using RemoteControlToolkitCore.Common.NSsh;
+using RemoteControlToolkitCore.Common.ApplicationSystem;
+using RemoteControlToolkitCore.Common.Networking.NSsh;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCoreLibraryWCF;
 
@@ -28,6 +29,7 @@ namespace RemoteControlToolkitCoreServerWCF
         private readonly ILogger<WCFHostApplication> _logger;
         private readonly ILogger<ErrorHandler> _errorLogger;
         private readonly IBindingFactory<NetTcpBinding> _tcpBindingFactory;
+        public IProcessTable GlobalSystemProcessTable { get; }
 
         public WCFHostApplication(IAppBuilder builder, IPluginManager manager,
             IServiceProvider provider)
@@ -39,6 +41,8 @@ namespace RemoteControlToolkitCoreServerWCF
             _errorLogger = provider.GetService<ILogger<ErrorHandler>>();
             _tcpBindingFactory = provider.GetService<IBindingFactory<NetTcpBinding>>();
             RootFileProvider = new PhysicalFileProvider(Assembly.GetEntryAssembly().Location);
+            GlobalSystemProcessTable = new ProcessTable();
+            
         }
         public void Dispose()
         {

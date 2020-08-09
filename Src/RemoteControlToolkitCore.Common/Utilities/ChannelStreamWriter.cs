@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-using RemoteControlToolkitCore.Common.NSsh.ChannelLayer;
+using RemoteControlToolkitCore.Common.Networking.NSsh.ChannelLayer;
 
 namespace RemoteControlToolkitCore.Common.Utilities
 {

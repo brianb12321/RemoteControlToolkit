@@ -28,12 +28,13 @@
     <PackageReference Include="Mono.Math.Port" Version="1.0.0" />
     <PackageReference Include="NDesk.Options.Core" Version="1.2.5" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.2" />
+    <PackageReference Include="Owin" Version="1.0.0" />
     <PackageReference Include="System.Reactive" Version="4.3.2" />
     <PackageReference Include="System.ServiceModel.Primitives" Version="4.7.0" />
+    <PackageReference Include="TinyMessengerStandard" Version="1.0.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Configuration\" />
     <Folder Include="Proxy\" />
     <Folder Include="VirtualFileSystem\Zio\" />
   </ItemGroup>
@@ -45,7 +46,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="NSsh\Types\DsaKeyPair.cs">
+    <Compile Update="Networking\NSsh\Types\DsaKeyPair.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>

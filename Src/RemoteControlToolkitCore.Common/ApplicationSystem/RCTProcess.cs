@@ -11,6 +11,7 @@ using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
+using TinyMessenger;
 using ThreadState = System.Threading.ThreadState;
 
 namespace RemoteControlToolkitCore.Common.ApplicationSystem
@@ -94,6 +95,10 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         /// The path name of a program to execute. Depends on what factory used to create the process.
         /// </summary>
         public string CommandLineName { get; set; }
+        /// <summary>
+        /// Used for event signaling.
+        /// </summary>
+        public ITinyMessengerHub EventBus { get; }
         public event EventHandler<Exception> ThreadError;
         public event EventHandler<ControlCEventArgs> ControlC;
         public event EventHandler StandardOutDisposed;
@@ -132,6 +137,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             EnvironmentVariables = new EnvironmentVariableCollection();
             Identity = identity;
             Children = new List<RctProcess>();
+            EventBus = new TinyMessengerHub();
             if (Parent != null)
             {
                 Parent.Children.Add(this);
@@ -164,6 +170,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
             _workingThread = new Thread(startThread);
             SetApartmentState(apartmentState);
             _cts = new CancellationTokenSource();
+            _table.AddProcess(this);
         }
 
         private void populateExtension()
@@ -191,8 +198,6 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
 
             //Dispose process once finished regardless of errors.
             ProcessFinished += (sender, e) => Dispose();
-            
-            _table.AddProcess(this);
             _workingThread.Start(this);
         }
         public void InvokeControlC()
@@ -330,7 +335,7 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 _inStream.Close();
             }
             _inStream = inStream;
-            In = new StreamReader(_inStream);
+            In = new StreamReader(_inStream, Encoding.UTF8, false, 1, true);
         }
         public void SetIn(StreamReader inStream)
         {

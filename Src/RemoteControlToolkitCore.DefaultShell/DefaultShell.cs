@@ -303,7 +303,11 @@ __;_ \ /,//`
         private static void CurrentProc_ControlC(object sender, ControlCEventArgs e)
         {
             RctProcess currentProc = (RctProcess) sender;
-            currentProc.Children?.ForEach(c => c.InvokeControlC());
+            // ReSharper disable once ForCanBeConvertedToForeach
+            for (int i = 0; i < currentProc.Children.Count; i++)
+            {
+                currentProc.Children[i].InvokeControlC();
+            }
             e.CloseProcess = false;
         }
 
@@ -387,25 +391,25 @@ __;_ \ /,//`
                         }
                         else
                         {
-                            try
-                            {
-                                _processes.Add(_processFactory.CreateProcess("Application", currentProc,
-                                    currentProc.ClientContext.ProcessTable));
+                            _processes.Add(_processFactory.CreateProcess("Application", currentProc,
+                                currentProc.ClientContext.ProcessTable));
 
-                                _processes[p].CommandLineName = newCommand;
-                                _processes[p].Arguments = arguments.Skip(1).ToArray();
-                                _processes[p].ThreadError += (sender, e) =>
+                            _processes[p].CommandLineName = newCommand;
+                            _processes[p].Arguments = arguments.Skip(1).ToArray();
+                            _processes[p].ThreadError += (sender, e) =>
+                            {
+                                if (e is RctProcessException)
+                                {
+                                    currentProc.Error.WriteLine(
+                                        Output.Red("No such command, script, or built-in function exists."));
+                                }
+                                else
                                 {
                                     currentProc.Error.WriteLine(
                                         Output.Red($"Error while executing command: {e.Message}"));
-                                };
-                            }
-                            catch (RctProcessException)
-                            {
-                                currentProc.Error.WriteLine(
-                                    Output.Red("No such command, script, or built-in function exists."));
-                                return new CommandResponse(CommandResponse.CODE_FAILURE);
-                            }
+                                }
+
+                            };
                         }
 
                         //Redirect IO
@@ -439,7 +443,7 @@ __;_ \ /,//`
                     {
                         process.Start();
                     }
-                    //Unless otherwise specified, run the last command asynchronously.
+                    //Unless otherwise specified, run the last command synchronously.
                     _processes[_processes.Count - 1].WaitForExit();
 
                     _processes.Clear();

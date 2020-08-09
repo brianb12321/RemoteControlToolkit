@@ -14,7 +14,7 @@ namespace RemoteControlToolkitCore.Subsystem.Workflow
 
         public string[] GetAllActivityNames()
         {
-            return PluginManager.GetAllPluginModuleInformation<WorkflowSubsystem>()
+            return PluginManager.GetAllPluginModuleInformation<IWorkflowPluginModule>()
                 .Select(i => i.PluginName)
                 .ToArray();
         }

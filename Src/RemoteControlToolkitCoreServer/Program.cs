@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,7 +13,7 @@ using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Commands;
 using RemoteControlToolkitCore.Common.DeviceBus;
 using RemoteControlToolkitCore.Common.Networking;
-using RemoteControlToolkitCore.Common.NSsh;
+using RemoteControlToolkitCore.Common.Networking.NSsh;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Proxy;
 using RemoteControlToolkitCore.DefaultShell;
@@ -52,7 +50,12 @@ namespace RemoteControlToolkitCoreServer
 
     public class Startup : IApplicationStartup
     {
-        public IConfiguration Configuration { get; set; }
+        private readonly IConfiguration _configuration;
+
+        public Startup(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
 
         public void ConfigureServices(IServiceCollection services)
         {
@@ -62,7 +65,7 @@ namespace RemoteControlToolkitCoreServer
             services.AddCommandLine();
             services.AddSingleton<IServerPool, ServerPool>();
             services.AddPipeService();
-            services.AddSSH((IConfigurationRoot)Configuration);
+            services.AddSSH((IConfigurationRoot)_configuration);
             //services.AddSSH(config =>
             //{
             //    config.ListenEndPoints = new List<IPEndPoint>

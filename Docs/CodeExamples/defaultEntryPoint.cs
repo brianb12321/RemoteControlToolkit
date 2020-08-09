@@ -25,9 +25,19 @@ namespace RemoteControlToolkitCoreServer
         static void Main(string[] args)
         {
             IHostApplication app = new AppBuilder()
+                .AddConfiguration(c =>
+                {
+                    c.Sources.Clear();
+                    c.SetBasePath(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+                    c.AddJsonFile("appsettings.json", true, false);
+                })
                 .AddStartup<Startup>()
+                .ConfigureLogging(factory =>
+                    factory.AddConsole())
                 .AddStartup<RemoteControlToolkitCore.Subsystem.Workflow.Startup>()
-                .ScanForAppStartup("Extensions")
+                .AddStartup<RemoteControlToolkitCore.Subsystem.Audio.Startup>()
+                .UsePluginManager<PluginManager>()
+                .LoadFromPluginsFolder()
                 .Build();
 
             app.Run(args);
@@ -36,45 +46,32 @@ namespace RemoteControlToolkitCoreServer
 
     public class Startup : IApplicationStartup
     {
-        public void ConfigureServices(IServiceCollection services, IAppBuilder builder)
+        public IConfiguration Configuration { get; set; }
+
+        public void ConfigureServices(IServiceCollection services)
         {
-            services.AddLogging(logBuilder =>
-            {
-                logBuilder.AddConsole();
-            });
-            services.AddPluginSystem<DefaultPluginLoader>();
             services.AddDeviceBus();
             services.AddVFS();
-            services.AddScriptingEngine<ScriptingSubsystem>();
-            services.AddAudio();
+            services.AddScriptingEngine();
             services.AddCommandLine();
             services.AddSingleton<IServerPool, ServerPool>();
             services.AddPipeService();
-            services.AddSSH(new NSshServiceConfiguration()
-            {
-                ListenEndPoints = { new IPEndPoint(IPAddress.Any, 8081) },
-                IdleTimeout = TimeSpan.FromHours(2),
-                MaximumClientConnections = 10,
-                UserAuthenticationBanner = "You are about to connect to a RemoteControlToolkit server. Any damages caused by the use of this software will be held against the user. Please refer to the user manual before proceeding."
-            });
+            services.AddSSH((IConfigurationRoot)Configuration);
         }
 
         public void PostConfigureServices(IServiceProvider provider, IHostApplication application)
         {
-            provider.GetService<IPluginLibraryLoader>().LoadFromAssembly(Assembly.GetAssembly(typeof(DefaultShell)),
-                application.ExecutingSide);
-            provider.GetService<IPluginLibraryLoader>()
-                .LoadFromAssembly(Assembly.GetAssembly(typeof(AudioCommand)), application.ExecutingSide);
-            provider.GetService<IPluginLibraryLoader>()
-                .LoadFromFolder("Extensions", application.ExecutingSide);
-            provider.GetService<IPluginLibraryLoader>()
-                .LoadFromAssembly(Assembly.GetAssembly(typeof(WorkflowCommand)), application.ExecutingSide);
-            provider.GetService<IPluginLibraryLoader>()
-                .LoadFromAssembly(Assembly.GetAssembly(typeof(RCTSerialDevice)), application.ExecutingSide);
-            provider.GetService<IApplicationSubsystem>().Init();
-            provider.GetService<IFileSystemSubsystem>().Init();
-            provider.GetService<IDeviceBus>().Init();
-            provider.GetService<IScriptingSubsystem>().Init();
+            application.PluginManager.LoadFromType(typeof(DefaultShell));
+            application.PluginManager.LoadFromType(typeof(HelpCommand));
+            application.PluginManager.LoadFromType(typeof(AudioCommand));
+            application.PluginManager.LoadFromType(typeof(WorkflowCommand));
+            application.PluginManager.LoadFromType(typeof(RCTSerialDevice));
+            application.PluginManager.LoadFromType(typeof(AsmGen));
+            provider.GetService<ApplicationSubsystem>().InitializeSubsystem();
+            provider.GetService<ProcessFactorySubsystem>().InitializeSubsystem(); ;
+            provider.GetService<FileSystemSubsystem>().InitializeSubsystem(); ;
+            provider.GetService<ScriptingSubsystem>().InitializeSubsystem();
+            provider.GetService<DeviceBusSubsystem>().InitializeSubsystem();
         }
     }
 }

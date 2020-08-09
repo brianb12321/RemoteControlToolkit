@@ -101,6 +101,17 @@ namespace RemoteControlToolkitCore.Common.Plugin
             return _attributes.ToArray();
         }
 
+        public Type[] GetTypesByType<TType>()
+        {
+            List<Type> types = new List<Type>();
+            foreach (PluginLibrary library in _loadedLibraries.Values)
+            {
+                types.AddRange(library.GetTypeByType<TType>());
+            }
+
+            return types.ToArray();
+        }
+
         public TType[] ActivateGenericTypes<TType>()
         {
             List<TType> types = new List<TType>();

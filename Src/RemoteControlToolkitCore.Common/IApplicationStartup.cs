@@ -8,7 +8,6 @@ namespace RemoteControlToolkitCore.Common
 {
     public interface IApplicationStartup
     {
-        IConfiguration Configuration { get; set; }
         void ConfigureServices(IServiceCollection services);
         void PostConfigureServices(IServiceProvider provider, IHostApplication application);
     }

@@ -1,21 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 using System.Reflection;
 using System.Threading;
-using Microsoft.Extensions.Logging;
-using RemoteControlToolkitCore.Common.Networking;
-using RemoteControlToolkitCore.Common.Plugin;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using RemoteControlToolkitCore.Common.Plugin;
 using Microsoft.Extensions.FileProviders;
-using NDesk.Options;
+using RemoteControlToolkitCore.Common.ApplicationSystem;
+using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
+using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Configuration;
-using RemoteControlToolkitCore.Common.NSsh;
-using RemoteControlToolkitCore.Common.NSsh.Configuration;
-using RemoteControlToolkitCore.Common.NSsh.Services;
+using RemoteControlToolkitCore.Common.Networking.NSsh;
 
 [assembly: PluginLibrary("CommonPlugin","Common Plugin")]
 namespace RemoteControlToolkitCore.Common
@@ -23,215 +19,79 @@ namespace RemoteControlToolkitCore.Common
     public class Application : IHostApplication
     {
         private readonly ILogger<Application> _logger;
-        private readonly ILogger<ProxyNetworkInstance> _proxyLogger;
+        private ProcessFactorySubsystem _factorySubsystem;
         private readonly IServiceProvider _provider;
-        private Thread _clientThread;
-        private bool _proxyMode;
-        private string _proxyAddress = string.Empty;
-        private int _proxyPort = 8080;
-        private NSshServiceConfiguration _config;
-        private bool _shutdown;
-
+        private RctProcess _sshProcess;
+        private ApplicationOptions _applicationOptions;
         public NetworkSide ExecutingSide { get; }
+        public IProcessTable GlobalSystemProcessTable { get; }
         public IAppBuilder Builder { get; }
         public IPluginManager PluginManager { get; }
         public IFileProvider RootFileProvider { get; }
-        private long _connectionsReceived;
-        private readonly List<TcpListener> _listenSockets = new List<TcpListener>();
-        private readonly Dictionary<ISshSession, Thread> _sessions = new Dictionary<ISshSession, Thread>();
 
         public Application(ILogger<Application> logger,
-            ILogger<ProxyNetworkInstance> proxyLogger,
-            IServiceProvider provider,
             NetworkSide side,
             IAppBuilder builder,
-            IPluginManager pluginManager)
+            IPluginManager pluginManager,
+            IServiceProvider provider)
         {
             _logger = logger;
-            _proxyLogger = proxyLogger;
-            _provider = provider;
             ExecutingSide = side;
             Builder = builder;
             PluginManager = pluginManager;
             RootFileProvider = new PhysicalFileProvider(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
-        }
-        public void Run(string[] args)
-        {
-            _config = _provider.GetService<IWritableOptions<NSshServiceConfiguration>>().Value;
-            _provider.GetService<IKeySetupService>().EnsureSetup();
-            _shutdown = false;
-            OptionSet options = new OptionSet()
-                .Add("p|proxy", "Connect to a proxy server.", v => _proxyMode = true)
-                .Add("proxyAddress|a=", "The address to connect to.", v => _proxyAddress = v)
-                .Add("proxyPort|o=", "The port to connect to.", v => _proxyPort = int.Parse(v));
-
-            options.Parse(args);
-            if (_proxyMode)
-            {
-                TcpClient client = new TcpClient();
-                client.Connect(_proxyAddress, _proxyPort);
-                ProxyClient instance = new ProxyClient(client, _provider);
-                _proxyLogger.LogInformation("Connected to proxy server.");
-                instance.Start();
-            }
-            else
-            {
-                _clientThread = new Thread(() =>
-                {
-                    handleConnections(_config.ListenEndPoints[0]);
-                });
-                //_proxyThread = new Thread(() =>
-                //{
-                //    _proxyListener = new TcpListener(IPAddress.Any, 8080);
-                //    _logger.LogInformation("Starting proxy listener.");
-                //    _proxyListener.Start();
-                //    while (true)
-                //    {
-                //        TcpClient client = _proxyListener.AcceptTcpClient();
-                //        _logger.LogInformation("A proxy client established a connection.");
-                //        ProxyNetworkInstance instance = new ProxyNetworkInstance(client, _provider);
-                //        _proxyClients.AddServer(instance);
-                //    }
-                //});
-                //_proxyThread.Start();
-                try
-                {
-                    _clientThread.Start();
-                    _clientThread.Join();
-                }
-                catch(ThreadStateException ex)
-                {
-                    _logger.LogError($"Unable to start client thread: {ex.Message}");
-                }
-            }
-        }
-
-        private void handleConnections(object endPointObject)
-        {
-            TcpListener socket = null;
-            var address = (NSshServiceConfiguration.IPSetting) endPointObject;
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(address.IPAddress), address.Port);
-
-            try
-            {
-                socket = new TcpListener(endPoint);
-                socket.Start();
-                _logger.LogInformation("Server started.");
-                lock (this)
-                {
-                    // Register this socket
-                    _listenSockets.Add(socket);
-                }
-
-                while (true)
-                {
-                    _logger.LogInformation("Accepting new connections.");
-                    Socket client = socket.AcceptSocket();
-
-                    Interlocked.Increment(ref _connectionsReceived);
-
-                    _logger.LogInformation("Connection from " + client.RemoteEndPoint + ". connection count=" + _sessions.Count + ".");
-
-                    lock (this)
-                    {
-                        // Create a new session and thread to handle this connection
-                        ISshSession session = _provider.GetService<ISshSession>();
-                        session.ClientSocket = client;
-                        session.SocketStream = new NetworkStream(client);
-
-                        int sameIpAddressCount =
-                           (from sess in _sessions.Keys
-                            where ((IPEndPoint)sess.ClientSocket.RemoteEndPoint).Address.ToString() == ((IPEndPoint)client.RemoteEndPoint).Address.ToString()
-                            select sess).Count();
-
-                        if (_sessions.Count >= _config.MaximumClientConnections)
-                        {
-                            _logger.LogWarning("Rejecting connection from " + client.RemoteEndPoint + " due to maximum client connections of "
-                                + _config.MaximumClientConnections + " limit being reached.");
-
-                            Thread rejectSessionThread = new Thread(session.Reject);
-                            rejectSessionThread.Start();
-                        }
-                        else if (sameIpAddressCount >= _config.MaximumSameIPAddressConnections)
-                        {
-                            _logger.LogWarning("Rejecting connection from " + client.RemoteEndPoint + " due to maximum client connections for "
-                              + " same IP address of " + _config.MaximumSameIPAddressConnections + " limit being reached.");
-
-                            Thread rejectSessionThread = new Thread(session.Reject);
-                            rejectSessionThread.Start();
-                        }
-                        else
-                        {
-                            Thread sessionThread = new Thread(session.Process);
-                            RegisterSession(session, sessionThread);
-                            sessionThread.Start();
-                        }
-                    }
-                }
-            }
-            catch (SocketException e)
-            {
-                // Ignore interrupted exception during shutdown
-                if (!_shutdown)
-                {
-                    _logger.LogWarning(e.Message, e);
-                }
-            }
-            finally
-            {
-                lock (this)
-                {
-                    // De-register this socket
-                    _listenSockets.Remove(socket);
-                }
-            }
-        }
-
-        public void RegisterSession(ISshSession session, Thread sessionThread)
-        {
-            lock (this)
-            {
-                _sessions.Add(session, sessionThread);
-            }
+            GlobalSystemProcessTable = new ProcessTable();
+            _provider = provider;
         }
 
         public void UnRegisterSession(ISshSession session)
         {
-            lock (this)
-            {
-                _sessions.Remove(session);
-            }
+            _sshProcess.EventBus.Publish(new UnRegisterSessionEvent(this, session));
+        }
+
+        public void Run(string[] args)
+        {
+            _factorySubsystem = _provider.GetService<ProcessFactorySubsystem>();
+            _applicationOptions = _provider.GetService<IWritableOptions<ApplicationOptions>>().Value;
+            _sshProcess = GlobalSystemProcessTable.CreateProcessBuilder()
+                .SetProcessName(name => "BootLoader")
+                .SetAction((innerArgs, context, token) =>
+                {
+                    List<RctProcess> processesToStart = new List<RctProcess>();
+                    foreach (var process in _applicationOptions.BootLoader.StartupPrograms)
+                    {
+                        var newProcess =
+                            _factorySubsystem.CreateProcess("Application", context, GlobalSystemProcessTable);
+                        newProcess.CommandLineName = process.Name;
+                        newProcess.Arguments = process.Arguments;
+                        newProcess.ThreadError += (sender, e) =>
+                            _logger.LogError($"An error occurred with a startup process: {e.Message}");
+                        processesToStart.Add(newProcess);
+                    }
+
+                    foreach (var process in processesToStart)
+                    {
+                        process.Start();
+                    }
+                    //Enter loop until cancelled.
+                    while(!token.IsCancellationRequested) {}
+                    return new CommandResponse(CommandResponse.CODE_SUCCESS);
+                })
+                .Build();
+            //_sshProcess = _factorySubsystem.CreateProcess("Application", null, GlobalSystemProcessTable);
+            _sshProcess.CommandLineName = "system-boot";
+            _sshProcess.Start();
+            _sshProcess.WaitForExit();
+        }
+
+        public void RegisterSession(ISshSession session, Thread sessionThread)
+        {
+
         }
 
         public void Dispose()
         {
-            _shutdown = true;
-
-            lock (this)
-            {
-                // Kill each of the listening sockets
-                foreach (TcpListener listener in _listenSockets)
-                {
-                    listener.Stop();
-                }
-                _listenSockets.Clear();
-            }
-
-            // wait for sessions threads to finish up
-            if (_sessions.Count > 0)
-            {
-                Thread.Sleep(1000);
-            }
-
-            lock (this)
-            {
-                // non-graceful shutdown of smtp sessions
-                foreach (Thread thread in _sessions.Values)
-                {
-                    thread.Abort();
-                }
-                _sessions.Clear();
-            }
+            _sshProcess.Close();
         }
     }
 }

@@ -7,10 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
 using RemoteControlToolkitCore.Common.Configuration;
 using RemoteControlToolkitCore.Common.Networking;
-using RemoteControlToolkitCore.Common.NSsh.Configuration;
-using RemoteControlToolkitCore.Common.NSsh.Services;
 using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common
@@ -33,14 +32,14 @@ namespace RemoteControlToolkitCore.Common
         protected virtual IHostApplication InjectHostApplication(IServiceProvider provider)
         {
             return new Application(provider.GetService<ILogger<Application>>(),
-                provider.GetService<ILogger<ProxyNetworkInstance>>(),
-                provider, ExecutingSide, this,
-                _pluginManager
+                ExecutingSide, this,
+                _pluginManager, provider
                 );
         }
         public IHostApplication Build()
         {
             _startups.ForEach(s => s.ConfigureServices(_services));
+            _services.ConfigureWritable<ApplicationOptions>(_configRoot, "Server", "appsettings.json");
             _services.AddSingleton(InjectHostApplication);
             var serviceProvider = _services.BuildServiceProvider();
             var hostApplication = serviceProvider.GetService<IHostApplication>();
@@ -95,11 +94,23 @@ namespace RemoteControlToolkitCore.Common
                 }
             }
             //Activate all IApplicationStartup classes.
-            foreach (var startup in _pluginManager.ActivateGenericTypes<IApplicationStartup>())
+            Type[] candidateTypes = _pluginManager.GetTypesByType<IApplicationStartup>();
+
+            foreach (Type candidateType in candidateTypes)
             {
+                ConstructorInfo info = candidateType.GetConstructor(new[] {typeof(IConfiguration)});
+                //Check if info is null. If it is, the constructor does not take an IConfiguration.
+                IApplicationStartup startup;
+                if (info != null)
+                {
+                    startup = (IApplicationStartup)Activator.CreateInstance(candidateType, _configRoot);
+                }
+                else
+                {
+                    startup = (IApplicationStartup) Activator.CreateInstance(candidateType);
+                }
                 if (!_startups.Contains(startup))
                 {
-                    startup.Configuration = _configRoot;
                     _startups.Add(startup);
                 }
             }
@@ -116,10 +127,19 @@ namespace RemoteControlToolkitCore.Common
 
         public IAppBuilder AddStartup<TStartup>() where TStartup : IApplicationStartup
         {
-            var startup = (IApplicationStartup) Activator.CreateInstance(typeof(TStartup));
+            ConstructorInfo info = typeof(TStartup).GetConstructor(new[] {typeof(IConfiguration)});
+            IApplicationStartup startup;
+            if (info != null)
+            {
+                startup = (IApplicationStartup) Activator.CreateInstance(typeof(TStartup), _configRoot);
+            }
+            else
+            {
+                startup = (IApplicationStartup)Activator.CreateInstance(typeof(TStartup));
+            }
+
             if (!_startups.Contains(startup))
             {
-                startup.Configuration = _configRoot;
                 _startups.Add(startup);
             }
             return this;

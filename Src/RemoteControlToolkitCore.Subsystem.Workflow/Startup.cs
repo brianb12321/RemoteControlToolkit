@@ -13,7 +13,6 @@ namespace RemoteControlToolkitCore.Subsystem.Workflow
     [Plugin]
     public class Startup : IApplicationStartup
     {
-        public IConfiguration Configuration { get; set; }
 
         public void ConfigureServices(IServiceCollection services)
         {

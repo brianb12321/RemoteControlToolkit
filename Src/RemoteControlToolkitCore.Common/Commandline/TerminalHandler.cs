@@ -8,7 +8,6 @@ using RemoteControlToolkitCore.Common.Commandline.Readline;
 using RemoteControlToolkitCore.Common.Commandline.Readline.Abstractions;
 using RemoteControlToolkitCore.Common.Commandline.TerminalExtensions;
 using RemoteControlToolkitCore.Common.Networking;
-using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {

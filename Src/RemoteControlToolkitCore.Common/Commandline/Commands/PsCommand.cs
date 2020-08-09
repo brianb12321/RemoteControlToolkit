@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using NDesk.Options;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Plugin;
@@ -15,11 +17,39 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
     [CommandHelp("Manages the RCT process table.")]
     public class PsCommand : RCTApplication
     {
+        private IHostApplication _application;
         public override string ProcessName => "Process status command";
+
+        public override void InitializeServices(IServiceProvider provider)
+        {
+            _application = provider.GetService<IHostApplication>();
+        }
+
         public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
-            context.Out.WriteLine("Showing processes for local connection:\n\n");
-            IProcessTable table = context.ClientContext.ProcessTable;
+            bool global = false;
+            bool help = false;
+            OptionSet options = new OptionSet()
+                .Add("help|?", "Displays the help screen.", v => help = true)
+                .Add("global|g", "Display the global process table.", v => global = true);
+
+            options.Parse(args.Arguments);
+            if (help)
+            {
+                options.WriteOptionDescriptions(context.Out);
+                return new CommandResponse(CommandResponse.CODE_SUCCESS);
+            }
+            IProcessTable table;
+            if (global)
+            {
+                context.Out.WriteLine("Showing processes for global:\n\n");
+                table = _application.GlobalSystemProcessTable;
+            }
+            else
+            {
+                context.Out.WriteLine("Showing processes for local connection:\n\n");
+                table = context.ClientContext.ProcessTable;
+            }
             Node rootNode = new Node(table.GetName(1), 1);
             populateChildren(rootNode, table);
             rootNode.PrintPretty("", true, context.Out);

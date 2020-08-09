@@ -7,9 +7,9 @@ using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
 using Microsoft.Extensions.DependencyInjection;
 using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
-using RemoteControlToolkitCore.Common.NSsh.ChannelLayer;
-using RemoteControlToolkitCore.Common.NSsh.ChannelLayer.Console;
-using RemoteControlToolkitCore.Common.NSsh.Services;
+using RemoteControlToolkitCore.Common.Networking.NSsh.ChannelLayer;
+using RemoteControlToolkitCore.Common.Networking.NSsh.ChannelLayer.Console;
+using RemoteControlToolkitCore.Common.Networking.NSsh.Services;
 using RemoteControlToolkitCore.Common.Utilities;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
 

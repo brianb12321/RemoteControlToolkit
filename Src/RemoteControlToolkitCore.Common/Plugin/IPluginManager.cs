@@ -20,6 +20,7 @@ namespace RemoteControlToolkitCore.Common.Plugin
         IEnumerable<IPluginModule<TSubsystem>> ActivateAllPluginModules<TSubsystem>()
             where TSubsystem : PluginSubsystem;
         PluginAttribute[] GetAllPluginModuleInformation<TType>();
+        Type[] GetTypesByType<TType>();
         TType[] ActivateGenericTypes<TType>();
     }
 }

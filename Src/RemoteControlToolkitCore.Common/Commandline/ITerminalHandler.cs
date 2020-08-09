@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading.Tasks;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Networking;
-using RemoteControlToolkitCore.Common.NSsh.Packets.Channel.RequestPayloads;
 
 namespace RemoteControlToolkitCore.Common.Commandline
 {

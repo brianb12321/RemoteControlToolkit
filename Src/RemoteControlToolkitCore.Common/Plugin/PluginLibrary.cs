@@ -155,6 +155,23 @@ namespace RemoteControlToolkitCore.Common.Plugin
             return foundTypes;
         }
 
+        public Type[] GetTypeByType<TType>()
+        {
+            List<Type> foundTypes = new List<Type>();
+            foreach (Type t in _pluginAssembly.GetTypes())
+            {
+                //Check if TType is interface.
+                if (typeof(TType).IsInterface)
+                {
+                    if(typeof(TType).IsAssignableFrom(t) &&
+                       t.GetCustomAttribute<PluginAttribute>() != null)
+                    foundTypes.Add(t);
+                }
+            }
+
+            return foundTypes.ToArray();
+        }
+
         private string buildReflectionError(string message, ReflectionTypeLoadException ex)
         {
             StringBuilder sb = new StringBuilder();
