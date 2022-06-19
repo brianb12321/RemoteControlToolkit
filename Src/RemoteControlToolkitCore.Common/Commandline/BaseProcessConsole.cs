@@ -5,7 +5,7 @@ using System.Linq;
 using System.Security.Principal;
 using System.ServiceModel;
 using System.Text;
-using Crayon;
+using static Crayon.Output;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
@@ -92,9 +92,8 @@ namespace RemoteControlToolkitCore.Common.Commandline
                     .SetSecurityPrincipal(identity)
                     .SetAction((args, current, token) =>
                     {
-                        current.Out.WriteLine(
-                            "There was a critical error loading a shell. You have been provided with an emergency shell."
-                                .Yellow());
+                        current.Out.WriteLine(Yellow(
+                            "There was a critical error loading a shell. You have been provided with an emergency shell."));
                         current.Out.WriteLine("No extensions will be loaded into any child processes.");
                         current.Out.WriteLine("You may request any application by typing its name.");
                         current.Out.WriteLine();
@@ -112,7 +111,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                                 process.ThreadError += (sender, e) =>
                                 {
                                     current.Error.WriteLine(
-                                        Output.Red($"Error while executing command: {e.Message}"));
+                                        Red($"Error while executing command: {e.Message}"));
                                 };
                                 process.Start();
                                 process.WaitForExit();
@@ -121,7 +120,7 @@ namespace RemoteControlToolkitCore.Common.Commandline
                             catch (RctProcessException)
                             {
                                 current.Error.WriteLine(
-                                    Output.Red("No such command, script, or built-in function exists."));
+                                    Red("No such command, script, or built-in function exists."));
                                 current.EnvironmentVariables.AddVariable("?", "-1");
                             }
                         }

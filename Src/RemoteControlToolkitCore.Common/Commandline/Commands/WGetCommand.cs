@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Crayon;
+using static Crayon.Output;
 using NDesk.Options;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
@@ -43,7 +43,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 {
                     context.Out.Write($"\rWriting {p}%");
                 }), token, localPath, context.Out).GetAwaiter().GetResult();
-                context.Out.WriteLine($"\r\n{"Finished writing!!!".BrightGreen()}");
+                context.Out.WriteLine(Bright.Green($"\r\n{"Finished writing!!!"}"));
                 return new CommandResponse(CommandResponse.CODE_SUCCESS);
             }
         }

@@ -396,7 +396,11 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
                 {
                     provider.RemoveExtension(this);
                 }
-                Children?.ForEach(c => c.Dispose());
+
+                for (int i = 0; i < Children.Count; i++)
+                {
+                    Children[i].Dispose();
+                }
 
                 //Check if process is already removed from table.
 
@@ -414,7 +418,6 @@ namespace RemoteControlToolkitCore.Common.ApplicationSystem
         public class RctProcessBuilder : IProcessBuilder
         {
             private readonly IProcessTable _table;
-            private readonly IServiceProvider _provider;
             private Func<string, string> _processNameFunction;
             private ProcessDelegate _action;
             private RctProcess _parent;

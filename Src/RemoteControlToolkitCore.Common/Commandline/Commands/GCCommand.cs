@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Crayon;
+using static Crayon.Output;
 using NDesk.Options;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
@@ -57,7 +57,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             }
             catch (Exception e)
             {
-                context.Out.WriteLine($"An error occurred while performing a GC action: {e.Message}".Red());
+                context.Out.WriteLine(Red($"An error occurred while performing a GC action: {e.Message}"));
                 return new CommandResponse(CommandResponse.CODE_FAILURE);
             }
         }

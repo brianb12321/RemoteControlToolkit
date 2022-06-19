@@ -4,7 +4,6 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Scripting.Hosting.Shell;
 using RemoteControlToolkitCore.Common.Plugin;
 
 namespace RemoteControlToolkitCore.Common

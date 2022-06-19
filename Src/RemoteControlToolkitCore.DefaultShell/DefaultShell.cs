@@ -5,7 +5,7 @@ using System.IO.Pipes;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Crayon;
+using static Crayon.Output;
 using Microsoft.Extensions.Logging;
 using NDesk.Options;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,7 +17,6 @@ using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Commandline.TerminalExtensions;
 using RemoteControlToolkitCore.Common.Networking;
 using RemoteControlToolkitCore.Common.Plugin;
-using RemoteControlToolkitCore.Common.Scripting;
 using RemoteControlToolkitCore.Common.Utilities;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
 using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
@@ -30,10 +29,7 @@ namespace RemoteControlToolkitCore.DefaultShell
     [CommandHelp("The main entry point for executing commands.")]
     public class DefaultShell : RCTApplication
     {
-        private IScriptingEngine _engine;
-        private ScriptingSubsystem _scriptingSubsystem;
         private ProcessFactorySubsystem _processFactory;
-        private IScriptExecutionContext _scriptContext;
         private IHostApplication _nodeApplication;
         private IPipeService _pipeService;
         private string _motd = "I love cookies!";
@@ -49,29 +45,29 @@ namespace RemoteControlToolkitCore.DefaultShell
         {
             _bannerArts = new List<(string art, string artist)>
             {
-                (@"
+                (Cyan(@"
                  _
      .,-;-;-,. /'_\
    _/_/_/_|_\_\) /
  '-<_><_><_><_>=/\
    `/_/====/_/-'\_\
-    ""     ""    """.Cyan(), "Joan Stark"),
-                (@"
+    ""     ""    """), "Joan Stark"),
+                (Cyan(@"
 .--.
 |__| .-------.
 |=.| |.-----.|
 |--| || KCK ||
 |  | |'-----'|
 |__|~')_____('
-".Cyan(), "KCK"),
-                (@"
+"), "KCK"),
+                (Cyan(@"
 .`.     _ _
 __;_ \ /,//`
 --, `._) (
  '//,,,  |
       )_/
      /_|
-".Cyan(), "sk")
+"), "sk")
             };
         }
         private void setupInternalCommands(RctProcess currentProc)
@@ -93,7 +89,7 @@ __;_ \ /,//`
                 }
                 else
                 {
-                    currentProc.Out.WriteLine($"Directory '{directory}' does not exist.".Red());
+                    currentProc.Out.WriteLine(Red($"Directory '{directory}' does not exist."));
                     return new CommandResponse(CommandResponse.CODE_FAILURE);
                 }
             });
@@ -210,8 +206,7 @@ __;_ \ /,//`
                 _logger.LogDebug("Drawing banner.");
                 loadBannerArt();
                 currentProc.Out.Write(drawBanner().ToString());
-                if(currentProc.Identity.IsInRole("Administrator")) currentProc.Out.WriteLine("WARNING: You are logged in as a server administrator.".BrightYellow());
-                token.Register(() => _engine?.Dispose());
+                if(currentProc.Identity.IsInRole("Administrator")) currentProc.Out.WriteLine(Bright.Yellow("WARNING: You are logged in as a server administrator."));
                 while (!token.IsCancellationRequested)
                 {
                     sb.Clear();
@@ -222,7 +217,7 @@ __;_ \ /,//`
                     }
                     else
                     {
-                        if (!currentProc.InRedirected || _promptAnyways) currentProc.Out.Write($"{currentProc.Identity.Identity.Name.BrightGreen()}{"@".BrightGreen()}{Environment.MachineName.BrightGreen()}:{currentProc.WorkingDirectory.ToString().BrightBlue()}{" $".Blue()} ");
+                        if (!currentProc.InRedirected || _promptAnyways) currentProc.Out.Write($"{Bright.Green(currentProc.Identity.Identity.Name)}{Bright.Green("@")}{Bright.Green(Environment.MachineName)}:{Bright.Blue(currentProc.WorkingDirectory.ToString())}{Blue(" $")} ");
                     }
                     _logger.LogDebug("Beginning readline.");
                     string newCommand = currentProc.In.ReadLine();
@@ -270,14 +265,6 @@ __;_ \ /,//`
             }
             return bannerBuilder;
         }
-        private void setupScriptingEngine(StreamWriter outWriter, StreamWriter errorWriter, TextReader inReader, RctProcess currentProc, CancellationToken token)
-        {
-            _engine.ParentProcess = currentProc;
-            _engine.Token = token;
-            _engine.SetIn(inReader);
-            _engine.SetOut(outWriter);
-            _engine.SetError(errorWriter);
-        }
         private void handleMultipleCommands(RctProcess currentProc, StringBuilder sb)
         {
             List<string> commands = new List<string>();
@@ -315,29 +302,7 @@ __;_ \ /,//`
         {
             if (command.StartsWith("::"))
             {
-                _processes.Add(currentProc.ClientContext.ProcessTable.CreateProcessBuilder()
-                    .SetProcessName(name => $"Scripting {name}")
-                    .SetParent(currentProc)
-                    .SetAction((args, proc, newToken) =>
-                    {
-                        _engine.ParentProcess = proc;
-                        _engine.Token = newToken;
-                        setupScriptingEngine(proc.Out, proc.Error, proc.In, proc, newToken);
-                        _engine.ExecuteString<dynamic>(command.Substring(2), _scriptContext);
-                        return new CommandResponse(CommandResponse.CODE_SUCCESS);
-                    })
-                    .Build());
-                _processes[0].ThreadError += (sender, e) =>
-                {
-                    currentProc.Error.WriteLine($"Error while running script: {e.Message}".Red());
-                };
-                _processes[0].SetOut(currentProc.OpenOutputStream());
-                _processes[0].SetError(currentProc.OpenErrorStream());
-                _processes[0].SetIn(currentProc.In, currentProc.OpenInputStream());
-                addProcessExtensions(_processes[0]);
-                _processes[0].Start();
-                _processes[0].WaitForExit();
-                return _processes[0].ExitCode;
+                //TODO: Add scripting
             }
             ILexer lexer = new Lexer();
             try
@@ -368,7 +333,7 @@ __;_ \ /,//`
                             _processes[p].ThreadError += (sender, e) =>
                             {
                                 currentProc.Error.WriteLine(
-                                    $"Error while executing built-in command: {e.Message}".Red());
+                                    Red($"Error while executing built-in command: {e.Message}"));
                             };
                             _processes[p].CommandLineName = newCommand;
                             _processes[p].Arguments = arguments.Skip(1).ToArray();
@@ -386,7 +351,7 @@ __;_ \ /,//`
 
                             _processes[p].ThreadError += (sender, e) =>
                             {
-                                currentProc.Error.WriteLine(Output.Red($"Error while running script: {e.Message}"));
+                                currentProc.Error.WriteLine(Red($"Error while running script: {e.Message}"));
                             };
                         }
                         else
@@ -401,12 +366,12 @@ __;_ \ /,//`
                                 if (e is RctProcessException)
                                 {
                                     currentProc.Error.WriteLine(
-                                        Output.Red("No such command, script, or built-in function exists."));
+                                        Red("No such command, script, or built-in function exists."));
                                 }
                                 else
                                 {
                                     currentProc.Error.WriteLine(
-                                        Output.Red($"Error while executing command: {e.Message}"));
+                                        Red($"Error while executing command: {e.Message}"));
                                 }
 
                             };
@@ -432,11 +397,9 @@ __;_ \ /,//`
                         }
                         catch (Exception ex)
                         {
-                            currentProc.Error.WriteLine(Output.Red($"Error while redirecting IO: {ex.Message}"));
+                            currentProc.Error.WriteLine(Red($"Error while redirecting IO: {ex.Message}"));
                             return new CommandResponse(CommandResponse.CODE_FAILURE);
                         }
-
-                        addProcessExtensions(_processes[p]);
                     }
                     //Execute processes
                     foreach (var process in _processes)
@@ -452,12 +415,12 @@ __;_ \ /,//`
             }
             catch (ParserException e)
             {
-                currentProc.Error.WriteLine(Output.Red($"Error while parsing command-line: {e.Message}"));
+                currentProc.Error.WriteLine(Red($"Error while parsing command-line: {e.Message}"));
                 return new CommandResponse(CommandResponse.CODE_FAILURE);
             }
             catch (CommandElementException e)
             {
-                currentProc.Error.WriteLine(Output.Red($"Error while expanding command element: {e.Message}"));
+                currentProc.Error.WriteLine(Red($"Error while expanding command element: {e.Message}"));
                 return new CommandResponse(CommandResponse.CODE_FAILURE);
             }
         }
@@ -492,10 +455,6 @@ __;_ \ /,//`
             return splittedTokens.ToArray();
         }
 
-        private void addProcessExtensions(RctProcess process)
-        {
-            process.Extensions.Add(_scriptContext);
-        }
         //private void redirectIo(IParser parser, RctProcess currentProc)
         //{
         //    IFileSystem workingDirFileSystem = currentProc.Extensions.Find<IExtensionFileSystem>().GetFileSystem();
@@ -553,9 +512,6 @@ __;_ \ /,//`
             _logger.LogInformation("Shell initialized.");
             _builtInCommands = new Dictionary<string, Func<CommandRequest, CommandResponse>>();
             _processes = new List<RctProcess>();
-            _scriptingSubsystem = kernel.GetService<ScriptingSubsystem>();
-            _engine = _scriptingSubsystem.CreateEngine();
-            _scriptContext = _engine.CreateContext();
         }
     }
 }

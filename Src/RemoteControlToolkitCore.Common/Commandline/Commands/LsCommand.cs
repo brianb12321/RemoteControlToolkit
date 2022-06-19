@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Crayon;
+using static Crayon.Output;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Plugin;
@@ -32,22 +32,22 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 var directories = fileSystem.EnumerateDirectoryEntries(directoryPath, "*", SearchOption.TopDirectoryOnly);
                 foreach (var directory in directories)
                 {
-                    context.Out.Write(directory.Name.Blue() + new string(' ', TAB));
+                    context.Out.Write(Blue(directory.Name) + new string(' ', TAB));
                 }
                 var files = fileSystem.EnumerateFileEntries(directoryPath, "*", SearchOption.TopDirectoryOnly);
                 foreach (var file in files)
                 {
                     if (file.Attributes == FileAttributes.System)
                     {
-                        context.Out.Write(file.Name.Cyan() + new string(' ', TAB));
+                        context.Out.Write(Blue(file.Name) + new string(' ', TAB));
                     }
                     else if (file.Attributes == FileAttributes.Compressed)
                     {
-                        context.Out.Write(file.Name.Red() + new string(' ', TAB));
+                        context.Out.Write(Red(file.Name) + new string(' ', TAB));
                     }
                     else if (file.Attributes == FileAttributes.Device)
                     {
-                        context.Out.Write(file.Name.BrightYellow() + new string(' ', TAB));
+                        context.Out.Write(Yellow(file.Name) + new string(' ', TAB));
                     }
                     else
                     {

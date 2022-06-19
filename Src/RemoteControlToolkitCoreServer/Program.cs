@@ -8,7 +8,6 @@ using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
 using RemoteControlToolkitCore.Common.VirtualFileSystem;
-using RemoteControlToolkitCore.Common.Scripting;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.Commandline.Commands;
 using RemoteControlToolkitCore.Common.DeviceBus;
@@ -17,10 +16,6 @@ using RemoteControlToolkitCore.Common.Networking.NSsh;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.Proxy;
 using RemoteControlToolkitCore.DefaultShell;
-using RemoteControlToolkitCore.Subsystem.Audio;
-using RemoteControlToolkitCore.Subsystem.Serial;
-using RemoteControlToolkitCore.Subsystem.Workflow;
-using RemoteControlToolkitCore.Subsystem.Roslyn;
 
 namespace RemoteControlToolkitCoreServer
 {
@@ -38,8 +33,6 @@ namespace RemoteControlToolkitCoreServer
                 .AddStartup<Startup>()
                 .ConfigureLogging(factory =>
                     factory.AddConsole())
-                .AddStartup<RemoteControlToolkitCore.Subsystem.Workflow.Startup>()
-                .AddStartup<RemoteControlToolkitCore.Subsystem.Audio.Startup>()
                 .UsePluginManager<PluginManager>()
                 .LoadFromPluginsFolder()
                 .Build();
@@ -61,7 +54,6 @@ namespace RemoteControlToolkitCoreServer
         {
             services.AddDeviceBus();
             services.AddVFS();
-            services.AddScriptingEngine();
             services.AddCommandLine();
             services.AddSingleton<IServerPool, ServerPool>();
             services.AddPipeService();
@@ -82,14 +74,9 @@ namespace RemoteControlToolkitCoreServer
         {
             application.PluginManager.LoadFromType(typeof(DefaultShell));
             application.PluginManager.LoadFromType(typeof(HelpCommand));
-            application.PluginManager.LoadFromType(typeof(AudioCommand));
-            application.PluginManager.LoadFromType(typeof(WorkflowCommand));
-            application.PluginManager.LoadFromType(typeof(RCTSerialDevice));
-            application.PluginManager.LoadFromType(typeof(AsmGen));
             provider.GetService<ApplicationSubsystem>().InitializeSubsystem();
             provider.GetService<ProcessFactorySubsystem>().InitializeSubsystem();;
             provider.GetService<FileSystemSubsystem>().InitializeSubsystem();;
-            provider.GetService<ScriptingSubsystem>().InitializeSubsystem();
             provider.GetService<DeviceBusSubsystem>().InitializeSubsystem();
         }
     }

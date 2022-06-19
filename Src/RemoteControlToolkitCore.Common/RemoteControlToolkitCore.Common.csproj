@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <LangVersion>8.0</LangVersion>
   </PropertyGroup>
 
@@ -17,20 +17,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Crayon" Version="1.2.48" />
+    <PackageReference Include="Crayon" Version="2.0.64" />
     <PackageReference Include="FxSsh.PwAuth" Version="1.0.2" />
-    <PackageReference Include="IronPython" Version="2.7.9" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.1" />
-    <PackageReference Include="Microsoft.Extensions.FileProviders.Abstractions" Version="3.1.5" />
-    <PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="3.1.5" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="3.1.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="6.0.0" />
     <PackageReference Include="Mono.Math.Port" Version="1.0.0" />
     <PackageReference Include="NDesk.Options.Core" Version="1.2.5" />
-    <PackageReference Include="Newtonsoft.Json" Version="10.0.2" />
-    <PackageReference Include="Owin" Version="1.0.0" />
-    <PackageReference Include="System.Reactive" Version="4.3.2" />
-    <PackageReference Include="System.ServiceModel.Primitives" Version="4.7.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="System.IO.Ports" Version="6.0.0" />
+    <PackageReference Include="System.Reactive" Version="5.0.0" />
+    <PackageReference Include="System.ServiceModel.Primitives" Version="4.9.0" />
     <PackageReference Include="TinyMessengerStandard" Version="1.0.2" />
   </ItemGroup>
 

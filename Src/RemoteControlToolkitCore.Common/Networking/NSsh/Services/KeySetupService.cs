@@ -20,10 +20,10 @@ namespace RemoteControlToolkitCore.Common.Networking.NSsh.Services
         {
             _config = config.Value;
             dsaCspParameters = new CspParameters(13);
-            dsaCspParameters.KeyContainerName = "NSshServer";
+            //dsaCspParameters.KeyContainerName = "NSshServer";
 
             rsaCspParameters = new CspParameters(1);
-            rsaCspParameters.KeyContainerName = "NSshServer";
+            //rsaCspParameters.KeyContainerName = "NSshServer";
         }
 
         #region IKeySetupService Members

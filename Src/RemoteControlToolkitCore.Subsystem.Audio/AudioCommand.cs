@@ -7,13 +7,11 @@ using System.IO.Packaging;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using AudioSwitcher.AudioApi.CoreAudio;
 using Crayon;
 using ManyConsole;
 using Microsoft.Extensions.DependencyInjection;
 using NAudio.Wave;
 using Mono.Options;
-using NReco.VideoConverter;
 using RemoteControlToolkitCore.Common;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline;
@@ -48,7 +46,6 @@ namespace RemoteControlToolkitCore.Subsystem.Audio
                 new StopCommand(currentProc),
                 new PauseCommand(currentProc),
                 new ResumeCommand(currentProc),
-                new VolumeCommand(),
                 new ShowAllDeviceCommand(currentProc, _bus),
                 new ShowAllProvidersCommand(currentProc, _audioSubsystem)
             }, args.Arguments.Skip(1).ToArray(), currentProc.Out, true));

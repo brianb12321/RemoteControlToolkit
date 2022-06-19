@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Crayon;
+using static Crayon.Output;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Plugin;
@@ -21,7 +21,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
         public override string ProcessName => "Colorfy";
         public override CommandResponse Execute(CommandRequest args, RctProcess context, CancellationToken token)
         {
-            context.Out.Write(context.In.ReadToEnd().Green());
+            context.Out.Write(Green(context.In.ReadToEnd()));
             return new CommandResponse(CommandResponse.CODE_SUCCESS);
         }
     }

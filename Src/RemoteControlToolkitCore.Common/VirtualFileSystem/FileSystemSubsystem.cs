@@ -1,6 +1,5 @@
 ﻿using System;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Scripting.Utils;
+using System.Linq;
 using RemoteControlToolkitCore.Common.Plugin;
 using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio.FileSystems;

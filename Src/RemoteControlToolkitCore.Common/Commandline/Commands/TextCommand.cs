@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using Crayon;
+using static Crayon.Output;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
@@ -779,7 +779,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             }
             catch (Exception e)
             {
-                die($"Error: {e}".Red());
+                die(Red($"Error: {e}"));
                 token.ThrowIfCancellationRequested();
                 return new CommandResponse(CommandResponse.CODE_FAILURE);
             }
@@ -798,7 +798,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             resetMode();
             _process.Out.Write("\u001b[2J");
             _process.Out.Write("\u001b[H");
-            _process.Error.WriteLine(message.Red());
+            _process.Error.WriteLine(Red(message));
             _process.Close();
         }
 

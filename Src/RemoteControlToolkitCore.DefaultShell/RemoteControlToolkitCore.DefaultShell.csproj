@@ -1,17 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net48</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="IronPython" Version="2.7.10" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\RemoteControlToolkitCore.Common\RemoteControlToolkitCore.Common.csproj">

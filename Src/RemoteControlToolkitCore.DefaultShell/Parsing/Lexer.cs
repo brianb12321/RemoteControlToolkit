@@ -83,9 +83,9 @@ namespace RemoteControlToolkitCore.DefaultShell.Parsing
                     case '"':
                         lexBoundary(_tokens, ref i, input, '"', TokenType.Quote);
                         break;
-                    case '{':
-                        lexBoundary(_tokens, ref i, input, '}', TokenType.Script);
-                        break;
+                    //case '{':
+                    //    lexBoundary(_tokens, ref i, input, '}', TokenType.Script);
+                    //    break;
                     case '>':
                         int newI;
                         if (input.Length <= i + 1)

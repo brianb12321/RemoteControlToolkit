@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Crayon;
+using static Crayon.Output;
 using Microsoft.Extensions.DependencyInjection;
 using NDesk.Options;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
@@ -85,50 +85,50 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
             {
                 context.Out.WriteLine($"Creating named pipe with name \"{name}\'");
                 var (position, stream) = _pipeService.OpenNamedPipe(PipeDirection.InOut, name);
-                context.Out.WriteLine($"Pipe successfully created at position {position}!".BrightGreen());
+                context.Out.WriteLine(Green($"Pipe successfully created at position {position}!"));
                 stream.WaitForConnectionAsync(token);
             }
             else if (mode == "createAnonymous")
             {
                 context.Out.WriteLine("Creating anonymous pipe.");
                 var (position, stream) = _pipeService.OpenAnonymousPipe(PipeDirection.In);
-                context.Out.WriteLine($"Pipe successfully created with handle \"{stream.GetClientHandleAsString()}\", position {position}!".BrightGreen());
+                context.Out.WriteLine(Green($"Pipe successfully created with handle \"{stream.GetClientHandleAsString()}\", position {position}!"));
             }
             else if (mode == "closeAnonymous")
             {
                 context.Out.WriteLine("Closing anonymous pipe.");
                 _pipeService.CloseAnonymousServerPipe(int.Parse(name));
-                context.Out.WriteLine($"Successfully closed anonymous pipe {name}.".BrightGreen());
+                context.Out.WriteLine(Green($"Successfully closed anonymous pipe {name}."));
             }
             else if (mode == "closeNamed")
             {
                 context.Out.WriteLine("Closing named pipe.");
                 _pipeService.CloseNamedServerPipe(int.Parse(name));
-                context.Out.WriteLine($"Successfully closed named pipe {name}.".BrightGreen());
+                context.Out.WriteLine(Green($"Successfully closed named pipe {name}."));
             }
             else if (mode == "closeClientAnonymous")
             {
                 context.Out.WriteLine("Closing client anonymous pipe.");
                 _pipeService.DisconnectAnonymousClientPipe(int.Parse(name));
-                context.Out.WriteLine($"Successfully closed anonymous client pipe {name}.".BrightGreen());
+                context.Out.WriteLine(Green($"Successfully closed anonymous client pipe {name}."));
             }
             else if (mode == "closeClientNamed")
             {
                 context.Out.WriteLine("Closing client named pipe.");
                 _pipeService.DisconnectNamedClientPipe(int.Parse(name));
-                context.Out.WriteLine($"Successfully closed named client pipe {name}.".BrightGreen());
+                context.Out.WriteLine(Green($"Successfully closed named client pipe {name}."));
             }
             else if (mode == "connectAnonymous")
             {
                 context.Out.WriteLine("Connecting to anonymous pipe.");
                 var (position, _) = _pipeService.ConnectToPipe(name, direction);
-                context.Out.WriteLine($"Successfully connected to anonymous pipe. Pipe index = {position}!".BrightGreen());
+                context.Out.WriteLine(Green($"Successfully connected to anonymous pipe. Pipe index = {position}!"));
             }
             else if (mode == "connectNamed")
             {
                 context.Out.WriteLine("Connecting to named pipe.");
                 var (position, _) = _pipeService.ConnectToNamedPipe(name, pipeName, direction, timeout);
-                context.Out.WriteLine($"Successfully connected to named pipe. Pipe Index = {position}".BrightGreen());
+                context.Out.WriteLine(Green($"Successfully connected to named pipe. Pipe Index = {position}"));
             }
             return new CommandResponse(CommandResponse.CODE_SUCCESS);
         }

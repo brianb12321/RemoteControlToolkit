@@ -1,20 +1,15 @@
 ﻿using System.Collections.Generic;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
-using RemoteControlToolkitCore.Common.Scripting;
 using RemoteControlToolkitCore.DefaultShell.Parsing.CommandElements;
 
 namespace RemoteControlToolkitCore.DefaultShell.Parsing
 {
     public class Parser : IParser
     {
-        private readonly IScriptingEngine _scriptingEngine;
-        private readonly IScriptExecutionContext _context;
         private readonly IReadOnlyDictionary<string, string> _envVars;
 
-        public Parser(IScriptingEngine engine, IScriptExecutionContext context, IReadOnlyDictionary<string, string> envVars)
+        public Parser(IReadOnlyDictionary<string, string> envVars)
         {
-            _context = context;
-            _scriptingEngine = engine;
             _envVars = envVars;
         }
 
@@ -48,9 +43,9 @@ namespace RemoteControlToolkitCore.DefaultShell.Parsing
                     case TokenType.Quote:
                         _elements.Add(new StringCommandElement(tokens[i].Value));
                         break;
-                    case TokenType.Script:
-                        _elements.Add(new ScriptCommandElement(tokens[i].ToString(), _scriptingEngine, _context));
-                        break;
+                    //case TokenType.Script:
+                    //    _elements.Add(new ScriptCommandElement(tokens[i].ToString(), _scriptingEngine, _context));
+                    //    break;
                     case TokenType.EnvironmentVariable:
                         string value = tokens[i].Value.Substring(1);
                         if (!_envVars.ContainsKey(value))

@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using Crayon;
 using ManyConsole;
 using NAudio.Wave;
-using NReco.VideoConverter;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.Commandline;
 using RemoteControlToolkitCore.Common.DeviceBus;
@@ -128,62 +127,7 @@ namespace RemoteControlToolkitCore.Subsystem.Audio.Commands
                         _fileStream = new FileStream(Path.GetFullPath(path), FileMode.Open, FileAccess.Read);
                         break;
                     case "REMOTE_YOUTUBE":
-                        try
-                        {
-                            _currentProc.Out.WriteLine("Loading Youtube client.".BrightCyan());
-                            var client = new YoutubeClient();
-                            var videoTitle = client.Videos.GetAsync(path).GetAwaiter().GetResult().Title;
-                            _currentProc.Out.WriteLine($"Found Youtube video: \"{videoTitle}\" Retrieving video manifest.".BrightGreen());
-                            var videoManifest = client.Videos.Streams.GetManifestAsync(new VideoId(path)).GetAwaiter()
-                                .GetResult();
-                            _currentProc.Out.WriteLine("Attempting to get audio only stream.".BrightCyan());
-                            var audioStreamInfo = videoManifest.GetAudio().FirstOrDefault();
-                            if (audioStreamInfo == null)
-                            {
-                                _currentProc.Out.WriteLine("Unable to retrieve audio only stream. Attempting to retrieve muxed stream.".BrightYellow());
-                                audioStreamInfo = videoManifest.GetMuxed().FirstOrDefault();
-                            }
-                            // Download video
-                            _currentProc.Out.WriteLine($"Downloading Video ({audioStreamInfo.Container}) please wait ... ".BrightCyan());
-
-                            //using (var progress = new ProgressBar())
-                            var stream = client.Videos.Streams.GetAsync(audioStreamInfo).GetAwaiter().GetResult();
-                            _currentProc.Out.WriteLine("Loading FFMPeg converter...".BrightCyan());
-                            var convert = new FFMpegConverter();
-                            MemoryStream audioStream = new MemoryStream();
-                            var task = convert.ConvertLiveMedia(stream, audioStreamInfo.Container.Name, audioStream, "mp3", new ConvertSettings());
-                            convert.LogReceived += (sender, eventArgs) =>
-                            {
-                                //Display progress bar.
-                                if (eventArgs.Data.StartsWith("size=") && !_currentProc.OutRedirected)
-                                {
-                                    var handler = _currentProc.ClientContext.GetExtension<ITerminalHandler>();
-                                    handler.ClearRow();
-                                    _currentProc.Out.Write($"LOG: {eventArgs.Data}");
-                                    handler.MoveCursorLeft(9999999);
-                                }
-                                else
-                                {
-                                    _currentProc.Out.WriteLine($"LOG: {eventArgs.Data}");
-                                }
-                            };
-                            task.Start();
-                            task.Wait();
-                            _currentProc.Out.WriteLine();
-                            audioStream.Seek(0, SeekOrigin.Begin);
-                            _fileStream = audioStream;
-                            _currentProc.Out.WriteLine($"Loaded file with audio: \"{videoTitle}\"".BrightGreen());
-                        }
-                        catch (AggregateException e)
-                        {
-                            _currentProc.Out.WriteLine(Output.Red("Error downloading youtube video: "));
-                            _currentProc.Out.WriteLine();
-                            foreach (Exception inner in e.InnerExceptions)
-                            {
-                                _currentProc.Out.WriteLine(Output.Red($"Exception: {inner.Message}"));
-                            }
-                            throw;
-                        }
+                        _currentProc.Out.WriteLine("Not supported");
                         break;
                     default:
                         throw new ArgumentException("Path mode must be VFS or PHYS.");

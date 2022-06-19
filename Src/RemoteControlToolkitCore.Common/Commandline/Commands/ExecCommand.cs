@@ -1,16 +1,13 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
-using Crayon;
-using IronPython.Modules;
+using static Crayon.Output;
 using Microsoft.Extensions.DependencyInjection;
 using NDesk.Options;
 using RemoteControlToolkitCore.Common.ApplicationSystem;
 using RemoteControlToolkitCore.Common.ApplicationSystem.Factory;
 using RemoteControlToolkitCore.Common.Commandline.Attributes;
 using RemoteControlToolkitCore.Common.Plugin;
-using RemoteControlToolkitCore.Common.VirtualFileSystem;
-using RemoteControlToolkitCore.Common.VirtualFileSystem.Zio;
 
 namespace RemoteControlToolkitCore.Common.Commandline.Commands
 {
@@ -45,7 +42,7 @@ namespace RemoteControlToolkitCore.Common.Commandline.Commands
                 process.CommandLineName = fileAndArguments[0];
                 process.Arguments = fileAndArguments.Skip(1).ToArray();
                 process.ThreadError += (sender, e) =>
-                    context.Error.WriteLine($"Error while running process: {e.Message}".Red());
+                    context.Error.WriteLine(Red($"Error while running process: {e.Message}"));
                 process.SetIn(context.OpenInputStream());
                 process.SetOut(context.OpenOutputStream());
                 process.SetError(context.OpenErrorStream());
